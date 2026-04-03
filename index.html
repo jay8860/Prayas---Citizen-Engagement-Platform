@@ -57,15 +57,20 @@
     }
 
     body[data-theme="dark"] {
-      --bg: #09111D;
-      --card: #132235;
-      --text: #ECF2FA;
-      --muted: #A9B6C5;
-      --border: #294058;
-      --navy-light: #18304D;
-      --shadow: 0 6px 24px rgba(0,0,0,0.28);
-      --shadow-lg: 0 18px 44px rgba(0,0,0,0.38);
-      --ticker-bg: #050B15;
+      --bg: #000000;
+      --card: #080B11;
+      --text: #F7F9FC;
+      --muted: #AEB6C6;
+      --border: #1A2330;
+      --navy: #8FB7FF;
+      --navy-light: #0B1220;
+      --shadow: 0 10px 34px rgba(0,0,0,0.5);
+      --shadow-lg: 0 24px 64px rgba(0,0,0,0.68);
+      --ticker-bg: #020407;
+      background:
+        radial-gradient(circle at top right, rgba(31, 81, 163, 0.22), transparent 28%),
+        radial-gradient(circle at top left, rgba(255, 153, 51, 0.12), transparent 22%),
+        linear-gradient(180deg, #020305 0%, #000000 100%);
     }
 
     body.modal-open { overflow: hidden; }
@@ -93,7 +98,102 @@
     }
 
     body[data-theme="dark"] .navbar {
-      background: rgba(9,17,29,0.92);
+      background: rgba(0,0,0,0.92);
+      box-shadow: 0 14px 36px rgba(0,0,0,0.55);
+    }
+
+    body[data-theme="dark"] .hero {
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255,153,51,0.12), transparent 26%),
+        radial-gradient(circle at 82% 22%, rgba(80,130,255,0.16), transparent 28%),
+        linear-gradient(135deg, #020407 0%, #08101A 52%, #000000 100%);
+    }
+
+    body[data-theme="dark"] .mission-card,
+    body[data-theme="dark"] .fund-card,
+    body[data-theme="dark"] .showcase-card,
+    body[data-theme="dark"] .leader-card,
+    body[data-theme="dark"] .ward-card,
+    body[data-theme="dark"] .panel-card,
+    body[data-theme="dark"] .stat-card,
+    body[data-theme="dark"] .volunteer-form,
+    body[data-theme="dark"] .newsletter-card,
+    body[data-theme="dark"] .cta-card,
+    body[data-theme="dark"] .sponsor-card,
+    body[data-theme="dark"] .modal-shell,
+    body[data-theme="dark"] .form-card,
+    body[data-theme="dark"] .admin-stat {
+      background: linear-gradient(180deg, rgba(10,13,19,0.98), rgba(5,7,11,0.98));
+      box-shadow: 0 16px 42px rgba(0,0,0,0.44);
+    }
+
+    body[data-theme="dark"] .section-title,
+    body[data-theme="dark"] .mission-title,
+    body[data-theme="dark"] .modal-title,
+    body[data-theme="dark"] .message-name,
+    body[data-theme="dark"] .detail-value,
+    body[data-theme="dark"] .fund-title,
+    body[data-theme="dark"] .showcase-title,
+    body[data-theme="dark"] .leader-name,
+    body[data-theme="dark"] .logo-name,
+    body[data-theme="dark"] .ward-card h3,
+    body[data-theme="dark"] .passport-name,
+    body[data-theme="dark"] .form-card-title {
+      color: #F7F9FC;
+    }
+
+    body[data-theme="dark"] .mission-desc,
+    body[data-theme="dark"] .showcase-story,
+    body[data-theme="dark"] .section-subtitle,
+    body[data-theme="dark"] .modal-subtitle,
+    body[data-theme="dark"] .message-text,
+    body[data-theme="dark"] .detail-label,
+    body[data-theme="dark"] .detail-card,
+    body[data-theme="dark"] .detail-value,
+    body[data-theme="dark"] .leader-area,
+    body[data-theme="dark"] .fund-meta,
+    body[data-theme="dark"] .contributor-role,
+    body[data-theme="dark"] .ward-meta {
+      color: #C7D0E2;
+    }
+
+    body[data-theme="dark"] .filter-btn,
+    body[data-theme="dark"] .tool-btn,
+    body[data-theme="dark"] .tab-btn,
+    body[data-theme="dark"] .admin-tab-btn,
+    body[data-theme="dark"] .payment-tab,
+    body[data-theme="dark"] .amount-pill {
+      background: #0B1220;
+      border-color: #22324B;
+      color: #EAF0FB;
+    }
+
+    body[data-theme="dark"] .detail-card,
+    body[data-theme="dark"] .message-card,
+    body[data-theme="dark"] .payment-panel,
+    body[data-theme="dark"] .upi-code,
+    body[data-theme="dark"] .bank-row,
+    body[data-theme="dark"] .timeline-item,
+    body[data-theme="dark"] .admin-stat {
+      background: #05080E;
+      border-color: #1D2940;
+    }
+
+    body[data-theme="dark"] input,
+    body[data-theme="dark"] textarea,
+    body[data-theme="dark"] select {
+      background: #05080E;
+      color: #F7F9FC;
+      border-color: #243248;
+    }
+
+    body[data-theme="dark"] .btn-primary {
+      background: linear-gradient(135deg, #22457D, #1A3361);
+    }
+
+    body[data-theme="dark"] .btn-soft {
+      background: #0B1220;
+      color: #DCE6FA;
     }
 
     .navbar-inner {
@@ -182,8 +282,7 @@
       margin-left: 4px;
     }
 
-    .tool-btn,
-    .size-btn {
+    .tool-btn {
       border: 1px solid var(--border);
       background: var(--card);
       color: var(--text);
@@ -194,19 +293,11 @@
       transition: all 0.2s ease;
     }
 
-    .tool-btn:hover,
-    .size-btn:hover,
-    .size-btn.active {
+    .tool-btn:hover {
       background: var(--navy);
       color: white;
       border-color: var(--navy);
       box-shadow: 0 8px 20px rgba(27,58,107,0.14);
-    }
-
-    .size-group {
-      display: flex;
-      gap: 6px;
-      margin-right: 2px;
     }
 
     .btn {
@@ -325,6 +416,10 @@
       padding: 11px 0;
       animation: ticker-scroll 34s linear infinite;
       white-space: nowrap;
+    }
+
+    .ticker:hover .ticker-track {
+      animation-play-state: paused;
     }
 
     .ticker-item {
@@ -1669,11 +1764,42 @@
       margin-bottom: 18px;
     }
 
+    .thread-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: var(--navy-light);
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
     .message-card {
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 14px;
+    }
+
+    .thread-card {
+      position: relative;
+      padding-left: 18px;
+    }
+
+    .thread-card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 14px;
+      bottom: 14px;
+      width: 4px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--saffron), var(--navy));
     }
 
     .message-name {
@@ -1751,6 +1877,18 @@
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 18px;
+    }
+
+    .pledge-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    @media (max-width: 720px) {
+      .pledge-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     .upi-code {
@@ -2065,7 +2203,6 @@
     @media (max-width: 560px) {
       .navbar-inner { padding-inline: 16px; }
       .mobile-menu { padding-inline: 16px; }
-      .size-group,
       #adminOpenBtn {
         display: none;
       }
@@ -2152,11 +2289,6 @@
       </nav>
 
       <div class="nav-tools">
-        <div class="size-group">
-          <button class="size-btn active" type="button" data-size="normal">A</button>
-          <button class="size-btn" type="button" data-size="large">A+</button>
-          <button class="size-btn" type="button" data-size="xlarge">A++</button>
-        </div>
         <button class="tool-btn" id="langToggle" type="button">अ/A</button>
         <button class="tool-btn" id="themeToggle" type="button" aria-label="Toggle theme">🌙</button>
         <button class="tool-btn" id="adminOpenBtn" type="button" data-i18n="nav-admin">Admin</button>
@@ -2654,23 +2786,33 @@
             <div class="amount-pills" id="amountPills"></div>
             <input id="customAmount" type="number" min="1" required />
           </div>
-          <div class="form-group checkbox-row">
-            <input id="anonymousDonation" type="checkbox" />
-            <label for="anonymousDonation" data-i18n="donation-anonymous">Donate anonymously</label>
-          </div>
-          <div class="form-group" id="donorNameGroup">
-            <label for="donorName" data-i18n="donation-name-label">Your name</label>
-            <input id="donorName" type="text" required />
+          <div class="pledge-grid">
+            <div class="form-group" id="donorNameGroup">
+              <label for="donorName" data-i18n="donation-name-label">Your name</label>
+              <input id="donorName" type="text" required />
+            </div>
+            <div class="form-group">
+              <label for="donationPhone" data-i18n="donation-phone-label">Mobile Number</label>
+              <input id="donationPhone" type="tel" data-i18n-placeholder="donation-phone-placeholder" placeholder="Phone for follow-up" />
+            </div>
           </div>
           <div class="form-group">
-            <label data-i18n="donation-method-label">Choose payment method</label>
+            <label for="donationEmail" data-i18n="donation-email-label">Email Address</label>
+            <input id="donationEmail" type="email" data-i18n-placeholder="donation-email-placeholder" placeholder="Email for follow-up" />
+          </div>
+          <div class="form-group">
+            <label data-i18n="donation-method-label">Preferred contribution mode</label>
             <div class="payment-tabbar">
-              <button class="payment-tab active" type="button" data-payment-method="upi">UPI</button>
+              <button class="payment-tab active" type="button" data-payment-method="cash">Cash</button>
+              <button class="payment-tab" type="button" data-payment-method="upi">UPI</button>
               <button class="payment-tab" type="button" data-payment-method="bank">Bank</button>
             </div>
           </div>
-          <div class="payment-panel" id="paymentUpiPane">
-            <p data-i18n="donation-upi-copy">Scan the QR code or use the UPI ID below.</p>
+          <div class="payment-panel" id="paymentCashPane">
+            <p data-i18n="donation-cash-copy">Share your contact details and pledge amount. The administration team can reach out to collect or coordinate the contribution offline.</p>
+          </div>
+          <div class="payment-panel hidden" id="paymentUpiPane">
+            <p data-i18n="donation-upi-copy">If you already paid via UPI, add the reference below. Otherwise, submit your interest and the team can guide you.</p>
             <div class="qr-block" id="qrBlock"></div>
             <div class="upi-code">prayas.district@upi</div>
           </div>
@@ -2684,17 +2826,17 @@
             </div>
           </div>
           <div class="form-group" style="margin-top:18px">
-            <label for="donationTxnRef" data-i18n="donation-reference-label">Payment Reference / UTR Number</label>
-            <input id="donationTxnRef" type="text" required data-i18n-placeholder="donation-reference-placeholder" placeholder="Enter transaction reference after payment" />
+            <label for="donationTxnRef" data-i18n="donation-reference-label">Transaction Reference (Optional if already paid)</label>
+            <input id="donationTxnRef" type="text" data-i18n-placeholder="donation-reference-placeholder" placeholder="Add UTR or transaction note if payment is already made" />
           </div>
           <div class="form-group">
             <label for="donationNote" data-i18n="donation-note-label">Note for Admin (Optional)</label>
-            <textarea id="donationNote" data-i18n-placeholder="donation-note-placeholder" placeholder="Any note to help reconcile this payment"></textarea>
+            <textarea id="donationNote" data-i18n-placeholder="donation-note-placeholder" placeholder="Mention organisation name, sponsorship note, or preferred callback timing"></textarea>
           </div>
           <div class="message-card" style="margin-top:6px">
-            <div class="message-text" data-i18n="donation-note-copy">This portal records the contribution request and payment reference. Crowdfunding totals are updated after admin verification.</div>
+            <div class="message-text" data-i18n="donation-note-copy">This form can capture pledge interest, contact details, and any payment reference already available. Live totals are updated only after the contribution is actually received and verified.</div>
           </div>
-          <button class="btn btn-primary" type="submit" style="width:100%;margin-top:18px" data-i18n="donation-submit">Submit Contribution for Verification</button>
+          <button class="btn btn-primary" type="submit" style="width:100%;margin-top:18px" data-i18n="donation-submit">Submit Contribution Interest</button>
         </form>
       </div>
     </div>
@@ -3482,18 +3624,22 @@
       "footer-copy": { en: "© 2026 Prayas Citizen Platform · An initiative of the District Administration · Built with public service in mind.", hi: "© 2026 प्रयास नागरिक मंच · जिला प्रशासन की पहल · सार्वजनिक सेवा के उद्देश्य से निर्मित।" },
       "mission-tab-details": { en: "Details", hi: "विवरण" },
       "mission-tab-discussion": { en: "Discussion", hi: "चर्चा" },
-      "donation-subtitle": { en: "Support a mission and submit your payment reference for admin verification.", hi: "किसी अभियान का समर्थन करें और एडमिन सत्यापन के लिए भुगतान संदर्भ साझा करें।" },
+      "donation-subtitle": { en: "Share your pledge amount and contact details so the team can follow up or verify any payment already made.", hi: "अपनी प्रतिज्ञा राशि और संपर्क विवरण साझा करें ताकि टीम फॉलो-अप कर सके या पहले से किए गए भुगतान का सत्यापन कर सके।" },
       "donation-amount-label": { en: "Select amount or enter a custom amount (₹)", hi: "राशि चुनें या कस्टम राशि दर्ज करें (₹)" },
-      "donation-anonymous": { en: "Donate anonymously", hi: "गुमनाम दान करें" },
       "donation-name-label": { en: "Your name", hi: "आपका नाम" },
-      "donation-method-label": { en: "Choose payment method", hi: "भुगतान विधि चुनें" },
-      "donation-upi-copy": { en: "Scan the QR code or use the UPI ID below.", hi: "QR कोड स्कैन करें या नीचे दिया गया UPI आईडी प्रयोग करें।" },
-      "donation-reference-label": { en: "Payment Reference / UTR Number", hi: "भुगतान संदर्भ / यूटीआर नंबर" },
-      "donation-reference-placeholder": { en: "Enter transaction reference after payment", hi: "भुगतान के बाद लेनदेन संदर्भ दर्ज करें" },
+      "donation-phone-label": { en: "Mobile Number", hi: "मोबाइल नंबर" },
+      "donation-phone-placeholder": { en: "Phone for follow-up", hi: "फॉलो-अप के लिए फोन नंबर" },
+      "donation-email-label": { en: "Email Address", hi: "ईमेल पता" },
+      "donation-email-placeholder": { en: "Email for follow-up", hi: "फॉलो-अप के लिए ईमेल" },
+      "donation-method-label": { en: "Preferred contribution mode", hi: "योगदान का पसंदीदा माध्यम" },
+      "donation-cash-copy": { en: "Share your contact details and pledge amount. The administration team can reach out to coordinate the contribution offline.", hi: "अपना संपर्क विवरण और प्रतिज्ञा राशि साझा करें। प्रशासनिक टीम ऑफलाइन योगदान समन्वित करने के लिए आपसे संपर्क कर सकती है।" },
+      "donation-upi-copy": { en: "If you already paid via UPI, add the reference below. Otherwise, submit your interest and the team can guide you.", hi: "यदि आपने UPI से भुगतान कर दिया है तो नीचे संदर्भ जोड़ें, अन्यथा रुचि भेजें और टीम मार्गदर्शन करेगी।" },
+      "donation-reference-label": { en: "Transaction Reference (Optional if already paid)", hi: "लेनदेन संदर्भ (यदि भुगतान हो चुका है तो वैकल्पिक)" },
+      "donation-reference-placeholder": { en: "Add UTR or transaction note if payment is already made", hi: "यदि भुगतान हो चुका है तो UTR या लेनदेन नोट जोड़ें" },
       "donation-note-label": { en: "Optional Note", hi: "वैकल्पिक टिप्पणी" },
-      "donation-note-placeholder": { en: "Share payer details, branch note, or purpose", hi: "भुगतानकर्ता विवरण, शाखा नोट या उद्देश्य लिखें" },
-      "donation-note-copy": { en: "Contributions are added to the live total after admin verifies the payment reference.", hi: "भुगतान संदर्भ सत्यापित होने के बाद ही योगदान लाइव कुल राशि में जुड़ता है।" },
-      "donation-submit": { en: "Submit Contribution for Verification", hi: "सत्यापन हेतु योगदान भेजें" },
+      "donation-note-placeholder": { en: "Mention organisation name, sponsorship note, or preferred callback timing", hi: "संगठन का नाम, प्रायोजन नोट या कॉल बैक समय लिखें" },
+      "donation-note-copy": { en: "This form can capture pledge interest, contact details, and any payment reference already available. Live totals update only after the contribution is actually received and verified.", hi: "यह फॉर्म प्रतिज्ञा रुचि, संपर्क विवरण और उपलब्ध भुगतान संदर्भ दर्ज करता है। लाइव कुल राशि तभी अपडेट होती है जब योगदान वास्तव में प्राप्त और सत्यापित हो जाता है।" },
+      "donation-submit": { en: "Submit Contribution Interest", hi: "योगदान रुचि भेजें" },
       "bank-holder": { en: "Account Holder", hi: "खाता धारक" },
       "bank-number": { en: "Account Number", hi: "खाता संख्या" },
       "bank-ifsc": { en: "IFSC Code", hi: "आईएफएससी कोड" },
@@ -3692,7 +3838,7 @@
 
     const UI_STORAGE_KEY = "prayas-portal-ui-v2";
     const ADMIN_TOKEN_KEY = "prayas-admin-token-v1";
-    const persistKeys = ["lang", "theme", "fontScale", "newsletterDraft"];
+    const persistKeys = ["lang", "theme", "newsletterDraft"];
 
     function deepClone(value) {
       if (typeof structuredClone === "function") {
@@ -3705,7 +3851,6 @@
       return {
         lang: "en",
         theme: "light",
-        fontScale: "normal",
         announcements: [
           "Van Mahotsav registrations open - 500 spots available.",
           "Wall Art Competition submissions close on 15 April.",
@@ -4334,12 +4479,13 @@
         .map((donation) => `
           <div class="message-card">
             <div class="message-name">₹${donation.amount.toLocaleString("en-IN")} · ${escapeHtml(donation.fundTitle)}</div>
-            <div class="message-text">${escapeHtml(donation.anonymous ? (state.lang === "hi" ? "गुमनाम नागरिक" : "Anonymous citizen") : donation.donorName)}</div>
-            <div class="message-text">${escapeHtml((donation.paymentMethod || "").toUpperCase())} · ${escapeHtml(donation.transactionReference)}</div>
+            <div class="message-text">${escapeHtml(donation.donorName)}</div>
+            <div class="message-text">${escapeHtml(donation.donorPhone || (state.lang === "hi" ? "फोन उपलब्ध नहीं" : "No phone"))} · ${escapeHtml(donation.donorEmail || (state.lang === "hi" ? "ईमेल उपलब्ध नहीं" : "No email"))}</div>
+            <div class="message-text">${escapeHtml((donation.preferredMode || donation.paymentMethod || "").toUpperCase())} · ${escapeHtml(donation.status === "lead" ? (state.lang === "hi" ? "फॉलो-अप आवश्यक" : "Follow-up needed") : donation.transactionReference)}</div>
             ${donation.note ? `<div class="message-text">${escapeHtml(donation.note)}</div>` : ""}
             <div class="message-time">${escapeHtml(donation.date)}</div>
             <div class="message-actions">
-              <button class="btn btn-primary" type="button" onclick="verifyDonation(${donation.id})">${state.lang === "hi" ? "सत्यापित करें" : "Verify Payment"}</button>
+              <button class="btn btn-primary" type="button" onclick="verifyDonation(${donation.id})">${donation.status === "lead" ? (state.lang === "hi" ? "राशि प्राप्त चिह्नित करें" : "Mark Received") : state.lang === "hi" ? "सत्यापित करें" : "Verify Payment"}</button>
             </div>
           </div>
         `)
@@ -4506,18 +4652,9 @@
       `;
 
       discussionPane.innerHTML = `
-        <div class="discussion-stream">
-          ${mission.discussion
-            .map(
-              (entry) => `
-                <div class="message-card">
-                  <div class="message-name">${escapeHtml(entry.name)}</div>
-                  <div class="message-text">${escapeHtml(entry.text)}</div>
-                  <div class="message-time">${escapeHtml(entry.time)}</div>
-                </div>
-              `
-            )
-            .join("")}
+        <div class="thread-summary">
+          <span>${mission.discussion.length} ${state.lang === "hi" ? "चर्चा संदेश" : "discussion messages"}</span>
+          <span>${state.lang === "hi" ? "नवीनतम ऊपर" : "newest first"}</span>
         </div>
         <form id="discussionForm">
           <div class="form-group">
@@ -4528,8 +4665,21 @@
             <label for="discussionText">${state.lang === "hi" ? "संदेश" : "Message"}</label>
             <textarea id="discussionText" required></textarea>
           </div>
-          <button class="btn btn-primary" type="submit" style="width:100%">${state.lang === "hi" ? "चर्चा पोस्ट करें" : "Post to Discussion"}</button>
+          <button class="btn btn-primary" type="submit" style="width:100%;margin-bottom:16px">${state.lang === "hi" ? "चर्चा पोस्ट करें" : "Post to Discussion"}</button>
         </form>
+        <div class="discussion-stream">
+          ${mission.discussion
+            .map(
+              (entry) => `
+                <div class="message-card thread-card">
+                  <div class="message-name">${escapeHtml(entry.name)}</div>
+                  <div class="message-text">${escapeHtml(entry.text)}</div>
+                  <div class="message-time">${escapeHtml(entry.time)}</div>
+                </div>
+              `
+            )
+            .join("")}
+        </div>
       `;
 
       document.getElementById("discussionForm").addEventListener("submit", submitDiscussionForm);
@@ -4541,17 +4691,23 @@
       document.getElementById("commentsModalTitle").textContent =
         state.lang === "hi" ? `टिप्पणियाँ - ${story.title}` : `Comments - ${story.title}`;
       document.getElementById("commentsStream").innerHTML = story.comments.length
-        ? story.comments
+        ? `
+            <div class="thread-summary">
+              <span>${story.comments.length} ${state.lang === "hi" ? "टिप्पणियाँ" : "comments"}</span>
+              <span>${state.lang === "hi" ? "सभी प्रतिक्रियाएँ" : "all replies in one thread"}</span>
+            </div>
+            ${story.comments
             .map(
               (comment) => `
-                <div class="message-card">
+                <div class="message-card thread-card">
                   <div class="message-name">${escapeHtml(comment.name)}</div>
                   <div class="message-text">${escapeHtml(comment.text)}</div>
                   <div class="message-time">${escapeHtml(comment.time)}</div>
                 </div>
               `
             )
-            .join("")
+            .join("")}
+          `
         : `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "अभी तक कोई टिप्पणी नहीं।" : "No comments yet."}</div></div>`;
     }
 
@@ -4569,7 +4725,7 @@
       document.getElementById("passportMissions").textContent = leader.missions;
       document.getElementById("passportBadges").innerHTML = leader.badges.map((badge) => `<span class="badge-emoji">${badge}</span>`).join("");
       document.getElementById("passportTimeline").innerHTML = leader.attended
-        .map((mission) => `<div class="timeline-item">${escapeHtml(mission)}</div>`)
+        .map((mission) => `<div class="timeline-item">${escapeHtml(mission)}${completedActivities.includes(mission) ? ` · ${state.lang === "hi" ? "पूर्ण" : "completed"}` : ""}</div>`)
         .join("");
       document.getElementById("passportEligibilityText").textContent = completedActivities.length
         ? state.lang === "hi"
@@ -4885,8 +5041,30 @@
       const certificateId = `PRAYAS-${String(leader.id).padStart(3, "0")}-${new Date().getFullYear()}`;
       const primaryActivity = completedActivities[0];
 
-      ctx.fillStyle = "#FDFBF7";
+      ctx.fillStyle = "#FBF7EE";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const drawSeal = (x, y, radius, topText, bottomText, centerText) => {
+        ctx.save();
+        ctx.strokeStyle = "#8B6A2F";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(x, y, radius - 10, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = "#1B3A6B";
+        ctx.font = "700 13px Inter";
+        ctx.textAlign = "center";
+        ctx.fillText(topText, x, y - radius - 10);
+        ctx.fillText(bottomText, x, y + radius + 24);
+        ctx.fillStyle = "#8B6A2F";
+        ctx.font = "700 24px Georgia";
+        ctx.fillText(centerText, x, y + 8);
+        ctx.restore();
+      };
 
       ctx.fillStyle = "#FF9933";
       ctx.fillRect(0, 0, canvas.width, 18);
@@ -4905,69 +5083,65 @@
       ctx.textAlign = "center";
       ctx.fillStyle = "#1B3A6B";
       ctx.font = "700 18px Inter";
-      ctx.fillText("DISTRICT ADMINISTRATION", canvas.width / 2, 108);
-      ctx.font = "700 34px Georgia";
-      ctx.fillText("Prayas Citizen Engagement Platform", canvas.width / 2, 152);
+      ctx.fillText("GOVERNMENT OF CHHATTISGARH", canvas.width / 2, 108);
+      ctx.font = "700 30px Georgia";
+      ctx.fillText("District Administration", canvas.width / 2, 148);
+      ctx.font = "700 26px Georgia";
+      ctx.fillText("Prayas Citizen Engagement Platform", canvas.width / 2, 186);
 
       ctx.fillStyle = "#6B7280";
       ctx.font = "600 16px Inter";
-      ctx.fillText("Official Certificate of Civic Contribution", canvas.width / 2, 186);
+      ctx.fillText("Official Certificate of Civic Contribution", canvas.width / 2, 220);
 
-      ctx.fillStyle = "#FF9933";
-      ctx.beginPath();
-      ctx.arc(180, 146, 46, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = "700 28px Georgia";
-      ctx.fillText("P", 180, 156);
-
-      ctx.fillStyle = "#138808";
-      ctx.beginPath();
-      ctx.arc(canvas.width - 180, 146, 46, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = "700 18px Inter";
-      ctx.fillText("2026", canvas.width - 180, 153);
+      drawSeal(190, 156, 48, "Government of", "Chhattisgarh", "CG");
+      drawSeal(canvas.width - 190, 156, 48, "Prayas", "Certificate Seal", "P");
 
       ctx.fillStyle = "#6B7280";
       ctx.font = "18px Georgia";
-      ctx.fillText("This is to certify that", canvas.width / 2, 272);
+      ctx.fillText("This is to certify that", canvas.width / 2, 294);
 
       ctx.fillStyle = "#1B3A6B";
       ctx.font = "700 42px Georgia";
-      ctx.fillText(leader.name, canvas.width / 2, 334);
+      ctx.fillText(leader.name, canvas.width / 2, 356);
 
       ctx.fillStyle = "#374151";
       ctx.font = "18px Georgia";
-      ctx.fillText("has successfully contributed to a verified public service activity under Prayas.", canvas.width / 2, 388);
+      ctx.fillText("has successfully contributed to a verified public service activity under the Prayas platform.", canvas.width / 2, 412);
 
       ctx.fillStyle = "#1B3A6B";
       ctx.font = "700 24px Inter";
-      ctx.fillText(primaryActivity, canvas.width / 2, 438);
+      ctx.fillText(primaryActivity, canvas.width / 2, 462);
 
       ctx.fillStyle = "#6B7280";
       ctx.font = "16px Inter";
-      ctx.fillText(`Completed activity count: ${completedActivities.length}  |  Certificate No: ${certificateId}`, canvas.width / 2, 476);
-      ctx.fillText(`Issued on ${formatDate(new Date(), "en")}  |  Verified by District Administration Portal`, canvas.width / 2, 504);
+      ctx.fillText(`Completed activity count: ${completedActivities.length}  |  Certificate No: ${certificateId}`, canvas.width / 2, 500);
+      ctx.fillText(`Issued on ${formatDate(new Date(), "en")}  |  Verified by District Administration`, canvas.width / 2, 528);
+
+      ctx.strokeStyle = "#C8A96A";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(210, 562);
+      ctx.lineTo(910, 562);
+      ctx.stroke();
 
       ctx.strokeStyle = "#1B3A6B";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(170, 620);
-      ctx.lineTo(370, 620);
-      ctx.moveTo(750, 620);
-      ctx.lineTo(950, 620);
+      ctx.moveTo(170, 640);
+      ctx.lineTo(370, 640);
+      ctx.moveTo(750, 640);
+      ctx.lineTo(950, 640);
       ctx.stroke();
 
       ctx.fillStyle = "#1B3A6B";
       ctx.font = "700 16px Inter";
-      ctx.fillText("Portal Verification Seal", 270, 646);
-      ctx.fillText("Authorised Signatory", 850, 646);
+      ctx.fillText("Government Header Treatment", 270, 666);
+      ctx.fillText("District Administration", 850, 666);
 
       ctx.fillStyle = "#6B7280";
       ctx.font = "14px Inter";
-      ctx.fillText("Prayas Citizen Engagement Platform", 270, 668);
-      ctx.fillText("District Civic Coordination Cell", 850, 668);
+      ctx.fillText("Prayas Citizen Engagement Platform", 270, 690);
+      ctx.fillText("Authorised Signatory", 850, 690);
 
       const link = document.createElement("a");
       link.href = canvas.toDataURL("image/png");
@@ -4978,19 +5152,19 @@
 
     function openDonationModal(fundId) {
       state.activeFundId = fundId;
-      state.paymentMethod = "upi";
+      state.paymentMethod = "cash";
       const fund = state.funds.find((item) => item.id === fundId);
       if (!fund) return;
       document.getElementById("donationModalTitle").textContent =
         state.lang === "hi" ? `${fund.title} के लिए दान` : `Donate to ${fund.title}`;
       document.getElementById("customAmount").value = "";
       document.getElementById("donorName").value = "";
+      document.getElementById("donationPhone").value = "";
+      document.getElementById("donationEmail").value = "";
       document.getElementById("donationTxnRef").value = "";
       document.getElementById("donationNote").value = "";
-      document.getElementById("anonymousDonation").checked = false;
-      document.getElementById("donorNameGroup").classList.remove("hidden");
       renderAmountPills();
-      setPaymentMethod("upi");
+      setPaymentMethod("cash");
       openModal("donationModal");
     }
 
@@ -5017,6 +5191,7 @@
       document.querySelectorAll(".payment-tab").forEach((button) => {
         button.classList.toggle("active", button.getAttribute("data-payment-method") === method);
       });
+      document.getElementById("paymentCashPane").classList.toggle("hidden", method !== "cash");
       document.getElementById("paymentUpiPane").classList.toggle("hidden", method !== "upi");
       document.getElementById("paymentBankPane").classList.toggle("hidden", method !== "bank");
     }
@@ -5024,30 +5199,35 @@
     async function submitDonationForm(event) {
       event.preventDefault();
       const amount = Number(document.getElementById("customAmount").value || 0);
+      const donorName = document.getElementById("donorName").value.trim();
+      const donorPhone = document.getElementById("donationPhone").value.trim();
+      const donorEmail = document.getElementById("donationEmail").value.trim();
       const transactionReference = document.getElementById("donationTxnRef").value.trim();
       if (!amount) {
         showToast(state.lang === "hi" ? "दान राशि दर्ज करें।" : "Please enter a donation amount.", "⚠️");
         return;
       }
-      if (!transactionReference) {
-        showToast(state.lang === "hi" ? "भुगतान संदर्भ दर्ज करें।" : "Please enter the payment reference.", "⚠️");
+      if (!donorName) {
+        showToast(state.lang === "hi" ? "कृपया अपना नाम दर्ज करें।" : "Please enter your name.", "⚠️");
+        return;
+      }
+      if (!donorPhone && !donorEmail) {
+        showToast(state.lang === "hi" ? "फोन या ईमेल में से कम से कम एक दें।" : "Please provide at least a phone number or email.", "⚠️");
         return;
       }
       const fund = state.funds.find((item) => item.id === state.activeFundId);
       if (!fund) return;
-      const donor =
-        document.getElementById("anonymousDonation").checked
-          ? state.lang === "hi" ? "एक दयालु नागरिक" : "A kind citizen"
-          : document.getElementById("donorName").value.trim() || (state.lang === "hi" ? "दाता" : "Donor");
       try {
         await apiRequest("/api/donations", {
           method: "POST",
           body: JSON.stringify({
             fundId: fund.id,
             amount,
-            donor,
-            donorName: donor,
-            anonymous: document.getElementById("anonymousDonation").checked,
+            donorName,
+            donorPhone,
+            donorEmail,
+            anonymous: false,
+            preferredMode: state.paymentMethod,
             paymentMethod: state.paymentMethod,
             transactionReference,
             note: document.getElementById("donationNote").value.trim()
@@ -5056,7 +5236,7 @@
         closeModal("donationModal");
         await refreshPortalData();
         showToast(
-          state.lang === "hi" ? `₹${amount} का योगदान सत्यापन हेतु जमा हो गया।` : `₹${amount} contribution submitted for verification.`,
+          state.lang === "hi" ? `₹${amount} की योगदान रुचि दर्ज हो गई। टीम फॉलो-अप कर सकेगी।` : `Contribution interest for ₹${amount} has been recorded for follow-up.`,
           "💰"
         );
       } catch (error) {
@@ -5300,16 +5480,6 @@
       persistState();
     }
 
-    function setFontScale(size) {
-      state.fontScale = size;
-      const values = { normal: 1, large: 1.13, xlarge: 1.28 };
-      document.documentElement.style.setProperty("--font-scale", values[size] || 1);
-      document.querySelectorAll(".size-btn").forEach((button) => {
-        button.classList.toggle("active", button.getAttribute("data-size") === size);
-      });
-      persistState();
-    }
-
     function toggleLanguage() {
       state.lang = state.lang === "en" ? "hi" : "en";
       renderAll();
@@ -5345,10 +5515,6 @@
         document.getElementById("mobileMenuBtn").textContent = menu.classList.contains("open") ? "✕" : "☰";
       });
 
-      document.querySelectorAll(".size-btn").forEach((button) => {
-        button.addEventListener("click", () => setFontScale(button.getAttribute("data-size")));
-      });
-
       document.querySelectorAll(".modal-overlay").forEach((overlay) => {
         overlay.addEventListener("click", (event) => {
           if (event.target === overlay) {
@@ -5377,10 +5543,6 @@
 
       document.getElementById("pmTemplate").addEventListener("change", (event) => {
         applyMissionTemplate(event.target.value);
-      });
-
-      document.getElementById("anonymousDonation").addEventListener("change", (event) => {
-        document.getElementById("donorNameGroup").classList.toggle("hidden", event.target.checked);
       });
 
       document.getElementById("volunteerForm").addEventListener("submit", submitVolunteerForm);
@@ -5425,7 +5587,6 @@
       document.getElementById("newsletterSubject").value = state.newsletterDraft.subject || "";
       document.getElementById("newsletterBody").value = state.newsletterDraft.body || "";
       attachEvents();
-      setFontScale(state.fontScale || "normal");
       renderAll();
       setStatText();
       try {

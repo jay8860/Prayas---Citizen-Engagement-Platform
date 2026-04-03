@@ -430,8 +430,11 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     fund_id INTEGER NOT NULL REFERENCES funds(id) ON DELETE CASCADE,
     donor_name TEXT NOT NULL,
+    donor_phone TEXT NOT NULL DEFAULT '',
+    donor_email TEXT NOT NULL DEFAULT '',
     anonymous INTEGER NOT NULL DEFAULT 0,
     amount INTEGER NOT NULL,
+    preferred_mode TEXT NOT NULL DEFAULT 'cash',
     payment_method TEXT NOT NULL,
     transaction_reference TEXT NOT NULL,
     note TEXT NOT NULL DEFAULT '',
@@ -448,6 +451,16 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 `);
+
+try {
+  db.exec("ALTER TABLE donations ADD COLUMN donor_phone TEXT NOT NULL DEFAULT ''");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE donations ADD COLUMN donor_email TEXT NOT NULL DEFAULT ''");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE donations ADD COLUMN preferred_mode TEXT NOT NULL DEFAULT 'cash'");
+} catch (error) {}
 
 seedDatabase();
 
@@ -933,8 +946,11 @@ function buildBootstrapPayload() {
     fundId: donation.fund_id,
     fundTitle: donation.fund_title || "Community Fund",
     donorName: donation.donor_name,
+    donorPhone: donation.donor_phone || "",
+    donorEmail: donation.donor_email || "",
     anonymous: Boolean(donation.anonymous),
     amount: donation.amount,
+    preferredMode: donation.preferred_mode || "cash",
     paymentMethod: donation.payment_method,
     transactionReference: donation.transaction_reference,
     note: donation.note,
@@ -1108,24 +1124,33 @@ function addMissionDiscussion(missionId, body) {
 function recordDonation(body) {
   const fundId = Number(body.fundId || 0);
   const amount = Number(body.amount || 0);
-  const paymentMethod = String(body.paymentMethod || "").trim().toLowerCase();
+  const donorName = String(body.donor || body.donorName || "").trim();
+  const donorPhone = String(body.donorPhone || body.phone || "").trim();
+  const donorEmail = String(body.donorEmail || body.email || "").trim();
+  const preferredMode = String(body.preferredMode || body.paymentMethod || "cash").trim().toLowerCase();
+  const paymentMethod = preferredMode;
   const transactionReference = String(body.transactionReference || "").trim();
-  if (!fundId || amount <= 0 || !paymentMethod || !transactionReference) {
-    throw publicError(400, "Fund, payment method, amount, and transaction reference are required.");
+  if (!fundId || amount <= 0 || !donorName || (!donorPhone && !donorEmail)) {
+    throw publicError(400, "Fund, amount, donor name, and at least one contact detail are required.");
   }
   ensureRowExists("funds", fundId, "Fund not found.");
+  const status = transactionReference ? "pending" : "lead";
   db.prepare(`
     INSERT INTO donations (
-      fund_id, donor_name, anonymous, amount, payment_method, transaction_reference, note, status, date_label, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+      fund_id, donor_name, donor_phone, donor_email, anonymous, amount, preferred_mode, payment_method, transaction_reference, note, status, date_label, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     fundId,
-    String(body.donor || body.donorName || "Citizen").trim() || "Citizen",
+    donorName,
+    donorPhone,
+    donorEmail,
     body.anonymous ? 1 : 0,
     amount,
+    preferredMode,
     paymentMethod,
-    transactionReference,
+    transactionReference || `LEAD-${Date.now()}`,
     String(body.note || "").trim(),
+    status,
     displayDate(),
     isoNow()
   );
