@@ -1,0 +1,4 @@
+data/*.sqlite
+data/*.sqlite-*
+node_modules/
+.DS_Store

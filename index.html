@@ -1,0 +1,5046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prayas Portal</title>
+  <meta
+    name="description"
+    content="Prayas is a district-ready citizen action platform for missions, volunteering, crowdfunding, community stories, and civic recognition."
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font-scale: 1;
+      --saffron: #FF9933;
+      --saffron-light: #FFF3E0;
+      --saffron-dark: #E67E00;
+      --green: #138808;
+      --green-light: #E8F5E9;
+      --navy: #1B3A6B;
+      --navy-light: #EEF2F8;
+      --white: #FFFFFF;
+      --bg: #F4F6FA;
+      --card: #FFFFFF;
+      --text: #1A1A2E;
+      --muted: #6B7280;
+      --border: #E5E7EB;
+      --shadow: 0 2px 16px rgba(27,58,107,0.09);
+      --shadow-lg: 0 16px 40px rgba(27,58,107,0.16);
+      --radius: 12px;
+      --radius-lg: 20px;
+      --ticker-bg: #10233F;
+      --danger: #DC2626;
+      --danger-light: #FEE2E2;
+      --warning: #F59E0B;
+      --success: #0F9D58;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "Inter", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: calc(16px * var(--font-scale));
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    body[data-theme="dark"] {
+      --bg: #09111D;
+      --card: #132235;
+      --text: #ECF2FA;
+      --muted: #A9B6C5;
+      --border: #294058;
+      --navy-light: #18304D;
+      --shadow: 0 6px 24px rgba(0,0,0,0.28);
+      --shadow-lg: 0 18px 44px rgba(0,0,0,0.38);
+      --ticker-bg: #050B15;
+    }
+
+    body.modal-open { overflow: hidden; }
+
+    a { color: inherit; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    .hidden { display: none !important; }
+
+    .tricolor-bar { display: flex; height: 5px; }
+    .tricolor-bar div:nth-child(1) { background: var(--saffron); flex: 1; }
+    .tricolor-bar div:nth-child(2) { background: var(--white); flex: 1; }
+    .tricolor-bar div:nth-child(3) { background: var(--green); flex: 1; }
+
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: background-color 0.25s ease, border-color 0.25s ease;
+    }
+
+    body[data-theme="dark"] .navbar {
+      background: rgba(9,17,29,0.92);
+    }
+
+    .navbar-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      min-height: 76px;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .logo-emblem {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--navy) 60%, var(--saffron));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      box-shadow: 0 8px 20px rgba(27,58,107,0.18);
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.05;
+    }
+
+    .logo-name {
+      font-family: "Playfair Display", serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -0.4px;
+    }
+
+    .logo-tag {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.55px;
+      font-weight: 600;
+    }
+
+    .nav-links {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 9px 14px;
+      border-radius: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus-visible {
+      background: var(--navy-light);
+      color: var(--navy);
+      outline: none;
+    }
+
+    .nav-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 4px;
+    }
+
+    .tool-btn,
+    .size-btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+
+    .tool-btn:hover,
+    .size-btn:hover,
+    .size-btn.active {
+      background: var(--navy);
+      color: white;
+      border-color: var(--navy);
+      box-shadow: 0 8px 20px rgba(27,58,107,0.14);
+    }
+
+    .size-group {
+      display: flex;
+      gap: 6px;
+      margin-right: 2px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 10px;
+      padding: 11px 22px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      border: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--navy);
+      color: white;
+      box-shadow: 0 8px 18px rgba(27,58,107,0.18);
+    }
+
+    .btn-primary:hover {
+      background: #142E56;
+      transform: translateY(-1px);
+    }
+
+    .btn-saffron {
+      background: var(--saffron);
+      color: white;
+      box-shadow: 0 8px 18px rgba(255,153,51,0.24);
+    }
+
+    .btn-saffron:hover {
+      background: var(--saffron-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--navy);
+      border: 2px solid var(--navy);
+    }
+
+    .btn-outline:hover {
+      background: var(--navy);
+      color: white;
+    }
+
+    .btn-soft {
+      background: var(--navy-light);
+      color: var(--navy);
+    }
+
+    .btn-green {
+      background: var(--green);
+      color: white;
+    }
+
+    .btn-green:hover {
+      background: #0E7007;
+      transform: translateY(-1px);
+    }
+
+    .hamburger {
+      display: none;
+      margin-left: auto;
+      background: transparent;
+      border: none;
+      color: var(--navy);
+      font-size: 22px;
+      padding: 8px;
+    }
+
+    .mobile-menu {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      padding: 14px 24px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+
+    .mobile-menu.open { display: flex; }
+
+    .mobile-menu a,
+    .mobile-menu button {
+      text-align: left;
+      text-decoration: none;
+      color: var(--text);
+      padding: 10px 0;
+      border: none;
+      background: transparent;
+      font-weight: 600;
+    }
+
+    .ticker {
+      background: var(--ticker-bg);
+      color: white;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .ticker-track {
+      display: flex;
+      gap: 32px;
+      width: max-content;
+      padding: 11px 0;
+      animation: ticker-scroll 34s linear infinite;
+      white-space: nowrap;
+    }
+
+    .ticker-item {
+      color: rgba(255,255,255,0.85);
+      font-size: 13px;
+      font-weight: 500;
+      padding-left: 24px;
+    }
+
+    .ticker-item strong { color: #FFC36B; }
+
+    @keyframes ticker-scroll {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #0F2444 0%, #1B3A6B 52%, #1A3A6A 100%);
+      color: white;
+      padding: 88px 24px 108px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: -42%;
+      right: -14%;
+      width: 700px;
+      height: 700px;
+      border-radius: 50%;
+      background: rgba(255,153,51,0.07);
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      left: -10%;
+      bottom: -28%;
+      width: 520px;
+      height: 520px;
+      border-radius: 50%;
+      background: rgba(19,136,8,0.07);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 72px;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,153,51,0.34);
+      background: rgba(255,153,51,0.18);
+      color: #FFC36B;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 16px;
+      margin-bottom: 22px;
+    }
+
+    .hero-title {
+      font-family: "Playfair Display", serif;
+      font-size: clamp(2.4rem, 5vw, 3.45rem);
+      line-height: 1.12;
+      margin-bottom: 22px;
+      letter-spacing: -0.5px;
+    }
+
+    .hero-title span { color: var(--saffron); }
+
+    .hero-copy {
+      color: rgba(255,255,255,0.8);
+      max-width: 540px;
+      font-size: 17px;
+      line-height: 1.78;
+      margin-bottom: 34px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .hero-visual {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .hero-card {
+      background: rgba(255,255,255,0.09);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: var(--radius);
+      padding: 22px;
+      transition: transform 0.3s ease;
+    }
+
+    .hero-card:hover { transform: translateY(-3px); }
+
+    .hero-card:first-child {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .hero-card-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .hero-card-num {
+      font-size: 30px;
+      line-height: 1;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .hero-card-label {
+      color: rgba(255,255,255,0.65);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.45px;
+    }
+
+    .stats-bar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 32px 24px;
+    }
+
+    .stats-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      text-align: center;
+    }
+
+    .stat-item {
+      position: relative;
+      padding: 8px;
+    }
+
+    .stat-item:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      top: 20%;
+      right: 0;
+      width: 1px;
+      height: 60%;
+      background: var(--border);
+    }
+
+    .stat-num {
+      font-size: 38px;
+      line-height: 1;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .section {
+      padding: 76px 24px;
+    }
+
+    .section.alt { background: var(--card); }
+    .section-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    .section-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .section-top.center {
+      text-align: center;
+      justify-content: center;
+      margin-bottom: 48px;
+    }
+
+    .section-top.center .section-subtitle { margin: 0 auto; }
+
+    .section-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 14px;
+      margin-bottom: 12px;
+      border-radius: 999px;
+      background: var(--navy-light);
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.45px;
+      text-transform: uppercase;
+    }
+
+    .section-title {
+      font-family: "Playfair Display", serif;
+      color: var(--navy);
+      font-size: 36px;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+
+    .section-subtitle {
+      max-width: 620px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.68;
+    }
+
+    .filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .filter-btn {
+      border: 2px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+      border-color: var(--navy);
+      background: var(--navy);
+      color: white;
+    }
+
+    .missions-grid,
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .mission-card,
+    .showcase-card,
+    .fund-card,
+    .sponsor-card,
+    .ward-card,
+    .leader-card,
+    .story-form-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      transition: all 0.28s ease;
+    }
+
+    .mission-card:hover,
+    .showcase-card:hover,
+    .fund-card:hover,
+    .sponsor-card:hover,
+    .ward-card:hover,
+    .leader-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .mission-banner {
+      position: relative;
+      height: 164px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 58px;
+      overflow: hidden;
+    }
+
+    .mission-tag,
+    .mission-status,
+    .mission-ward-chip {
+      position: absolute;
+      top: 14px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    .mission-tag {
+      left: 14px;
+      color: var(--navy);
+      background: rgba(255,255,255,0.92);
+    }
+
+    .mission-status { right: 14px; }
+
+    .mission-ward-chip {
+      top: auto;
+      bottom: 14px;
+      left: 14px;
+      background: rgba(15,36,68,0.8);
+      color: white;
+    }
+
+    .status-open { background: var(--green-light); color: var(--green); }
+    .status-upcoming { background: var(--saffron-light); color: var(--saffron-dark); }
+    .status-full { background: var(--danger-light); color: var(--danger); }
+
+    .mission-body { padding: 22px; }
+
+    .mission-title {
+      color: var(--navy);
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .mission-desc {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.66;
+      margin-bottom: 16px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .mission-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 18px;
+    }
+
+    .mission-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .progress-bar {
+      height: 7px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--navy), var(--saffron));
+    }
+
+    .mission-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .volunteers-avatars {
+      display: flex;
+      align-items: center;
+    }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2px solid var(--card);
+      margin-left: -8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .avatar:first-child { margin-left: 0; }
+
+    .mission-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .mission-share {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: none;
+      background: #25D366;
+      color: white;
+      font-size: 18px;
+      box-shadow: 0 10px 18px rgba(37,211,102,0.22);
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+      position: relative;
+      margin-top: 18px;
+    }
+
+    .steps-grid::before {
+      content: "";
+      position: absolute;
+      top: 36px;
+      left: 14%;
+      right: 14%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--saffron), var(--navy), var(--green));
+    }
+
+    .step {
+      position: relative;
+      text-align: center;
+    }
+
+    .step-num {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 3px solid var(--card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      position: relative;
+      z-index: 1;
+      font-size: 26px;
+      font-weight: 800;
+    }
+
+    .step h3 {
+      color: var(--navy);
+      font-size: 17px;
+      margin-bottom: 10px;
+    }
+
+    .step p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .fund-grid,
+    .sponsor-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .fund-card {
+      overflow: hidden;
+      position: relative;
+      padding: 0 0 24px;
+    }
+
+    .fund-band {
+      height: 48px;
+      position: relative;
+    }
+
+    .fund-emoji {
+      width: 62px;
+      height: 62px;
+      border-radius: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 18px;
+      left: 22px;
+      font-size: 34px;
+      box-shadow: var(--shadow);
+    }
+
+    .fund-body {
+      padding: 48px 22px 0;
+    }
+
+    .fund-title {
+      color: var(--navy);
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .fund-amount-line {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .fund-amount-line strong {
+      color: var(--saffron-dark);
+      font-size: 18px;
+    }
+
+    .fund-meta {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .sponsor-card {
+      padding: 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sponsor-card h3 {
+      color: var(--navy);
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+
+    .sponsor-card .tier-icon {
+      font-size: 30px;
+      margin-bottom: 14px;
+    }
+
+    .sponsor-card .tier-price {
+      color: var(--saffron-dark);
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .sponsor-card ul {
+      list-style: none;
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0 0 20px;
+      text-align: left;
+    }
+
+    .sponsor-card ul li::before {
+      content: "•";
+      color: var(--saffron);
+      margin-right: 8px;
+      font-weight: 900;
+    }
+
+    .tier-bronze { border-color: #CD7F32; }
+    .tier-silver { border-color: #C0C0C0; }
+    .tier-gold { border-color: #FFD700; }
+    .tier-platinum { border-color: var(--navy); box-shadow: 0 16px 40px rgba(27,58,107,0.18); }
+
+    .district-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      max-width: 980px;
+      margin: 0 auto 26px;
+    }
+
+    .ward-card {
+      padding: 22px;
+      border-left: 5px solid var(--navy);
+      position: relative;
+      min-height: 170px;
+    }
+
+    .ward-card.empty {
+      opacity: 0.72;
+    }
+
+    .ward-card h3 {
+      color: var(--navy);
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .ward-count {
+      color: var(--saffron-dark);
+      font-size: 42px;
+      line-height: 1;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .ward-meta {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .ward-dots {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .dot-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      padding: 0 10px;
+      color: white;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .map-summary {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 16px 20px;
+      border-radius: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      text-align: center;
+      color: var(--muted);
+      font-weight: 700;
+      box-shadow: var(--shadow);
+    }
+
+    .showcase-top-band,
+    .story-image-shell {
+      height: 190px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .showcase-top-band {
+      font-size: 68px;
+    }
+
+    .story-image-shell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .showcase-body {
+      padding: 22px;
+    }
+
+    .showcase-contributor {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .contributor-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 13px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .contributor-name {
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .contributor-role {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .showcase-title {
+      color: var(--navy);
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .showcase-story {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .showcase-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 14px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--navy-light);
+      color: var(--navy);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .tag.saffron { background: var(--saffron-light); color: var(--saffron-dark); }
+    .tag.green { background: var(--green-light); color: var(--green); }
+
+    .showcase-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .showcase-action-btn {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .showcase-action-btn:hover {
+      background: var(--navy-light);
+      color: var(--navy);
+      border-color: var(--navy);
+    }
+
+    .story-form-wrap {
+      margin-top: 32px;
+    }
+
+    .story-toggle {
+      margin-bottom: 16px;
+    }
+
+    .story-form-card {
+      padding: 30px;
+    }
+
+    .form-card-title {
+      color: var(--navy);
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .form-card-subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    .leaderboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .leader-card {
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .leader-card.gold { border-color: #FFD700; }
+    .leader-card.silver { border-color: #C0C0C0; }
+    .leader-card.bronze { border-color: #CD7F32; }
+
+    .leader-rank {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      font-size: 20px;
+    }
+
+    .leader-avatar {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      margin: 0 auto 14px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 800;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.14);
+    }
+
+    .leader-name {
+      color: var(--navy);
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .leader-area {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 14px;
+    }
+
+    .leader-score {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      background: var(--navy-light);
+      color: var(--navy);
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .leader-badges {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .badge-emoji {
+      font-size: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+
+    .volunteer-split {
+      display: grid;
+      grid-template-columns: 1fr 1.08fr;
+      gap: 72px;
+      align-items: start;
+    }
+
+    .volunteer-perks {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      margin-top: 32px;
+    }
+
+    .perk {
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+    }
+
+    .perk-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 20px;
+    }
+
+    .perk-content h4 {
+      color: var(--navy);
+      font-size: 15px;
+      margin-bottom: 5px;
+    }
+
+    .perk-content p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.62;
+    }
+
+    .form-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 36px;
+    }
+
+    .selected-mission {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,153,51,0.28);
+      background: rgba(255,153,51,0.1);
+      color: var(--text);
+    }
+
+    .selected-mission strong { color: var(--navy); }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--navy);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .skill-check {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: var(--card);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .skill-check:hover {
+      border-color: var(--navy);
+      background: var(--navy-light);
+      color: var(--navy);
+    }
+
+    .skill-check input {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--navy);
+      padding: 0;
+      border: none;
+    }
+
+    .newsletter-bar {
+      background: linear-gradient(135deg, var(--saffron) 0%, #FF7700 100%);
+      padding: 48px 24px;
+    }
+
+    .newsletter-inner {
+      max-width: 760px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .newsletter-inner h2 {
+      font-family: "Playfair Display", serif;
+      font-size: 32px;
+      color: white;
+      margin-bottom: 10px;
+    }
+
+    .newsletter-inner p {
+      color: rgba(255,255,255,0.86);
+      font-size: 16px;
+      margin-bottom: 28px;
+    }
+
+    .newsletter-form {
+      display: flex;
+      gap: 12px;
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    .newsletter-form input {
+      flex: 1;
+      border: none;
+      background: white;
+    }
+
+    .cta-banner {
+      background: linear-gradient(135deg, var(--navy) 0%, #2A5298 100%);
+      color: white;
+      padding: 72px 24px;
+      text-align: center;
+    }
+
+    .cta-banner h2 {
+      font-family: "Playfair Display", serif;
+      font-size: 42px;
+      margin-bottom: 16px;
+    }
+
+    .cta-banner h2 span { color: var(--saffron); }
+
+    .cta-banner p {
+      max-width: 620px;
+      margin: 0 auto 36px;
+      color: rgba(255,255,255,0.82);
+      font-size: 17px;
+    }
+
+    .cta-actions {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .footer {
+      background: #0E2240;
+      color: rgba(255,255,255,0.6);
+      padding: 56px 24px 28px;
+    }
+
+    .footer-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    .footer-top {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 48px;
+    }
+
+    .footer-brand .logo-name { color: white; }
+    .footer-brand .logo-tag { color: rgba(255,255,255,0.46); }
+
+    .footer-desc {
+      margin-top: 16px;
+      color: rgba(255,255,255,0.56);
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .footer-col h4 {
+      color: white;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 18px;
+    }
+
+    .footer-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    .footer-col a {
+      text-decoration: none;
+      color: rgba(255,255,255,0.58);
+      font-size: 14px;
+      transition: color 0.2s ease;
+    }
+
+    .footer-col a:hover { color: var(--saffron); }
+
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding-top: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+
+    .ashoka {
+      color: var(--saffron);
+      font-size: 22px;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,20,40,0.62);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-shell {
+      width: min(100%, 780px);
+      max-height: 92vh;
+      overflow: auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(18px) scale(0.98);
+      transition: transform 0.28s ease;
+    }
+
+    .modal-overlay.active .modal-shell { transform: translateY(0) scale(1); }
+
+    .modal-shell.narrow { width: min(100%, 560px); }
+    .modal-shell.wide { width: min(100%, 960px); }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      padding: 28px 28px 0;
+    }
+
+    .modal-title {
+      color: var(--navy);
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .modal-subtitle {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .modal-close {
+      border: none;
+      background: var(--bg);
+      color: var(--muted);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .modal-close:hover {
+      background: var(--danger-light);
+      color: var(--danger);
+    }
+
+    .modal-body {
+      padding: 22px 28px 28px;
+    }
+
+    .mission-banner-large {
+      margin: 20px 28px 0;
+      height: 190px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 78px;
+      position: relative;
+    }
+
+    .modal-tabbar,
+    .admin-tabbar,
+    .payment-tabbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn,
+    .admin-tab-btn,
+    .payment-tab {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .tab-btn.active,
+    .admin-tab-btn.active,
+    .payment-tab.active {
+      border-color: var(--navy);
+      background: var(--navy);
+      color: white;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .detail-card {
+      background: var(--bg);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 14px;
+    }
+
+    .detail-label {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.55px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    .detail-value {
+      color: var(--navy);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .discussion-stream,
+    .comments-stream,
+    .announcement-stream {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .message-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .message-name {
+      color: var(--navy);
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .message-text {
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.65;
+      margin-bottom: 6px;
+      white-space: pre-wrap;
+    }
+
+    .message-time {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .amount-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .amount-pill {
+      border: 2px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .amount-pill.active {
+      border-color: var(--navy);
+      background: var(--navy);
+      color: white;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .checkbox-row input {
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      accent-color: var(--navy);
+    }
+
+    .payment-panel {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .upi-code {
+      font-family: monospace;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--navy);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .qr-block {
+      width: 132px;
+      height: 132px;
+      margin: 12px auto 0;
+      border-radius: 12px;
+      border: 10px solid white;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      background: white;
+    }
+
+    .bank-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .bank-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .bank-row strong { color: var(--navy); }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .admin-stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .admin-stat-value {
+      color: var(--navy);
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .admin-stat-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .admin-pane { display: none; }
+    .admin-pane.active { display: block; }
+
+    .admin-two-col {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 22px;
+    }
+
+    .panel-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .panel-card h3 {
+      color: var(--navy);
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .panel-card p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+
+    .volunteer-table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .volunteer-table th,
+    .volunteer-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      font-size: 13px;
+      vertical-align: top;
+    }
+
+    .volunteer-table th {
+      background: var(--bg);
+      color: var(--navy);
+      font-weight: 800;
+    }
+
+    .volunteer-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .passport-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .passport-avatar {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      margin: 0 auto 14px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 800;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.14);
+    }
+
+    .passport-name {
+      color: var(--navy);
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .passport-area {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+
+    .passport-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .passport-stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .passport-stat-value {
+      color: var(--navy);
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .passport-stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.45px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .timeline-item {
+      position: relative;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 14px 14px 20px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: 10px;
+      top: 18px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--saffron);
+    }
+
+    .toast {
+      position: fixed;
+      right: 28px;
+      bottom: 28px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 400px;
+      background: var(--navy);
+      color: white;
+      padding: 16px 20px;
+      border-radius: 16px;
+      box-shadow: 0 18px 36px rgba(0,0,0,0.22);
+      opacity: 0;
+      transform: translateY(120px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 1140px) {
+      .hero-inner,
+      .volunteer-split,
+      .admin-two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-visual { max-width: 520px; }
+      .missions-grid,
+      .showcase-grid,
+      .leaderboard-grid,
+      .fund-grid,
+      .district-grid,
+      .admin-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 860px) {
+      .nav-links,
+      .nav-tools .join-btn {
+        display: none;
+      }
+
+      .hamburger { display: block; }
+
+      .nav-tools {
+        margin-left: auto;
+      }
+
+      .hero {
+        padding: 64px 24px 86px;
+      }
+
+      .hero-visual { display: none; }
+
+      .stats-inner,
+      .steps-grid,
+      .detail-grid,
+      .passport-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .steps-grid::before { display: none; }
+
+      .footer-top {
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+      }
+
+      .form-row,
+      .skills-grid,
+      .district-grid,
+      .fund-grid,
+      .sponsor-grid,
+      .showcase-grid,
+      .missions-grid,
+      .leaderboard-grid,
+      .admin-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .navbar-inner { padding-inline: 16px; }
+      .mobile-menu { padding-inline: 16px; }
+      .section,
+      .hero,
+      .cta-banner,
+      .newsletter-bar,
+      .footer {
+        padding-inline: 16px;
+      }
+
+      .stats-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .stat-item:not(:last-child)::after {
+        display: none;
+      }
+
+      .steps-grid,
+      .detail-grid,
+      .passport-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .section-title {
+        font-size: 29px;
+      }
+
+      .newsletter-form,
+      .cta-actions,
+      .hero-actions,
+      .mission-footer,
+      .showcase-actions {
+        flex-direction: column;
+      }
+
+      .footer-top,
+      .footer-bottom {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .modal-header,
+      .modal-body {
+        padding-inline: 18px;
+      }
+
+      .mission-banner-large {
+        margin-inline: 18px;
+      }
+
+      .toast {
+        right: 16px;
+        left: 16px;
+        bottom: 16px;
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <div class="tricolor-bar"><div></div><div></div><div></div></div>
+
+  <header class="navbar">
+    <div class="navbar-inner">
+      <a class="logo" href="#home">
+        <div class="logo-emblem">🪷</div>
+        <div class="logo-text">
+          <span class="logo-name">Prayas</span>
+          <span class="logo-tag" data-i18n="logo-tag">Citizen Action Platform</span>
+        </div>
+      </a>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="#missions" data-i18n="nav-missions">Missions</a></li>
+          <li><a href="#funding" data-i18n="nav-funding">Crowdfund</a></li>
+          <li><a href="#district-map" data-i18n="nav-map">District Map</a></li>
+          <li><a href="#showcase" data-i18n="nav-showcase">Showcase</a></li>
+          <li><a href="#leaderboard" data-i18n="nav-leaders">Leaders</a></li>
+          <li><a href="#volunteer" data-i18n="nav-volunteer">Volunteer</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-tools">
+        <div class="size-group">
+          <button class="size-btn active" type="button" data-size="normal">A</button>
+          <button class="size-btn" type="button" data-size="large">A+</button>
+          <button class="size-btn" type="button" data-size="xlarge">A++</button>
+        </div>
+        <button class="tool-btn" id="langToggle" type="button">अ/A</button>
+        <button class="tool-btn" id="themeToggle" type="button" aria-label="Toggle theme">🌙</button>
+        <button class="tool-btn" id="adminOpenBtn" type="button" data-i18n="nav-admin">Admin</button>
+        <a class="btn btn-primary join-btn" href="#volunteer" data-i18n="nav-join">Join Now</a>
+      </div>
+
+      <button class="hamburger" id="mobileMenuBtn" type="button" aria-label="Open menu">☰</button>
+    </div>
+
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="#missions" data-i18n="nav-missions" onclick="closeMobileMenu()">Missions</a>
+      <a href="#funding" data-i18n="nav-funding" onclick="closeMobileMenu()">Crowdfund</a>
+      <a href="#district-map" data-i18n="nav-map" onclick="closeMobileMenu()">District Map</a>
+      <a href="#showcase" data-i18n="nav-showcase" onclick="closeMobileMenu()">Showcase</a>
+      <a href="#leaderboard" data-i18n="nav-leaders" onclick="closeMobileMenu()">Leaders</a>
+      <a href="#volunteer" data-i18n="nav-volunteer" onclick="closeMobileMenu()">Volunteer</a>
+      <button type="button" onclick="openAdminLogin(); closeMobileMenu();" data-i18n="nav-admin">Admin</button>
+    </div>
+  </header>
+
+  <div class="ticker">
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-inner">
+        <div>
+          <div class="hero-badge">
+            <span>🇮🇳</span>
+            <span data-i18n="hero-badge">District Administration Initiative</span>
+          </div>
+          <h1 class="hero-title" data-i18n="hero-title">Every citizen can <span>change</span> their district.</h1>
+          <p class="hero-copy" data-i18n="hero-copy">
+            Join sanitation drives, wall art competitions, awareness marches, teaching missions, and district campaigns posted directly by the administration. Contribute your skills, fund a good cause, and get recognised for public service.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-saffron" href="#missions" data-i18n="hero-explore">Explore Missions</a>
+            <a class="btn btn-soft" href="#volunteer" data-i18n="hero-register">Register as Volunteer</a>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="hero-card" style="background:rgba(255,153,51,0.15)">
+            <div class="hero-card-icon" style="background:rgba(255,153,51,0.24);color:#FFC36B">🏆</div>
+            <div>
+              <div class="hero-card-num" id="heroVolunteerCount">2,400+</div>
+              <div class="hero-card-label" data-i18n="hero-stat-volunteers">Active Volunteers This District</div>
+            </div>
+          </div>
+          <div class="hero-card" style="text-align:center;">
+            <div style="font-size:36px;margin-bottom:8px">🌳</div>
+            <div class="hero-card-num" id="heroImpactTrees">840</div>
+            <div class="hero-card-label" data-i18n="hero-stat-trees">Trees Planted</div>
+          </div>
+          <div class="hero-card" style="text-align:center;">
+            <div style="font-size:36px;margin-bottom:8px">🧹</div>
+            <div class="hero-card-num" id="heroImpactDrives">156</div>
+            <div class="hero-card-label" data-i18n="hero-stat-drives">Drives Completed</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="stats-bar" id="statsBar">
+      <div class="stats-inner">
+        <div class="stat-item">
+          <div class="stat-num" id="statVolunteers">0</div>
+          <div class="stat-label" data-i18n="stats-volunteers">Registered Volunteers</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" id="statMissions">0</div>
+          <div class="stat-label" data-i18n="stats-missions">Active Missions</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" id="statCompleted">0</div>
+          <div class="stat-label" data-i18n="stats-completed">Programs Completed</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" id="statLives">0</div>
+          <div class="stat-label" data-i18n="stats-lives">Lives Impacted</div>
+        </div>
+      </div>
+    </div>
+
+    <section class="section" id="missions">
+      <div class="section-inner">
+        <div class="section-top">
+          <div>
+            <div class="section-badge"><i class="fa-solid fa-bullseye"></i> <span data-i18n="missions-badge">Active Missions</span></div>
+            <h2 class="section-title" data-i18n="missions-title">Choose your cause. Make your mark.</h2>
+            <p class="section-subtitle" data-i18n="missions-subtitle">
+              From cleanliness drives to district teaching programs, explore missions that match your time, location, and skills.
+            </p>
+          </div>
+          <button class="btn btn-saffron" type="button" onclick="openAdminLogin()">
+            <i class="fa-solid fa-plus"></i>
+            <span data-i18n="missions-post">Post a Mission</span>
+          </button>
+        </div>
+
+        <div class="filters" id="categoryFilters"></div>
+        <div class="filters" id="wardFilters"></div>
+        <div class="missions-grid" id="missionsGrid"></div>
+      </div>
+    </section>
+
+    <section class="section alt" id="funding">
+      <div class="section-inner">
+        <div class="section-top">
+          <div>
+            <div class="section-badge" style="background:var(--saffron-light);color:var(--saffron-dark)">
+              <i class="fa-solid fa-hand-holding-heart"></i>
+              <span data-i18n="funding-badge">Community Funding</span>
+            </div>
+            <h2 class="section-title" data-i18n="funding-title">Fund the missions you believe in</h2>
+            <p class="section-subtitle" data-i18n="funding-subtitle">
+              Every rupee goes directly into mission execution, materials, training, outreach, and on-ground impact.
+            </p>
+          </div>
+        </div>
+        <div class="fund-grid" id="fundGrid"></div>
+      </div>
+    </section>
+
+    <section class="section" id="sponsors">
+      <div class="section-inner">
+        <div class="section-top center">
+          <div>
+            <div class="section-badge" style="background:var(--green-light);color:var(--green)">
+              <i class="fa-solid fa-building"></i>
+              <span data-i18n="sponsor-badge">Corporate Partners</span>
+            </div>
+            <h2 class="section-title" data-i18n="sponsor-title">Sponsor a mission. Build a legacy.</h2>
+            <p class="section-subtitle" data-i18n="sponsor-subtitle">
+              Bring businesses, institutions, alumni groups, and civic organisations into district transformation.
+            </p>
+          </div>
+        </div>
+        <div class="sponsor-grid" id="sponsorGrid"></div>
+      </div>
+    </section>
+
+    <section class="section alt" id="district-map">
+      <div class="section-inner">
+        <div class="section-top center">
+          <div>
+            <div class="section-badge"><i class="fa-solid fa-map-location-dot"></i> <span data-i18n="map-badge">District Overview</span></div>
+            <h2 class="section-title" data-i18n="map-title">Missions across your district</h2>
+            <p class="section-subtitle" data-i18n="map-subtitle">
+              Track which wards are already active, where volunteer energy is concentrated, and where new missions are needed.
+            </p>
+          </div>
+        </div>
+        <div class="district-grid" id="wardGrid"></div>
+        <div class="map-summary" id="mapSummary"></div>
+      </div>
+    </section>
+
+    <section class="section" id="how">
+      <div class="section-inner">
+        <div class="section-top center">
+          <div>
+            <div class="section-badge"><i class="fa-solid fa-route"></i> <span data-i18n="how-badge">Simple Process</span></div>
+            <h2 class="section-title" data-i18n="how-title">How Prayas works</h2>
+            <p class="section-subtitle" data-i18n="how-subtitle">
+              Register once, explore mission opportunities, contribute on-ground, and get recognised publicly for civic action.
+            </p>
+          </div>
+        </div>
+
+        <div class="steps-grid">
+          <div class="step">
+            <div class="step-num" style="background:var(--saffron-light);color:var(--saffron-dark)">1</div>
+            <h3 data-i18n="how-step-1-title">Register Free</h3>
+            <p data-i18n="how-step-1-text">Sign up with your area, skills, and availability. It takes under two minutes and keeps you mission-ready.</p>
+          </div>
+          <div class="step">
+            <div class="step-num" style="background:var(--navy-light);color:var(--navy)">2</div>
+            <h3 data-i18n="how-step-2-title">Choose a Mission</h3>
+            <p data-i18n="how-step-2-text">Browse campaigns by ward, mission type, time requirement, and current volunteer demand.</p>
+          </div>
+          <div class="step">
+            <div class="step-num" style="background:var(--green-light);color:var(--green)">3</div>
+            <h3 data-i18n="how-step-3-title">Contribute</h3>
+            <p data-i18n="how-step-3-text">Show up, participate, donate, mentor, coordinate, or spread awareness using your strongest skills.</p>
+          </div>
+          <div class="step">
+            <div class="step-num" style="background:var(--saffron-light);color:var(--saffron-dark)">4</div>
+            <h3 data-i18n="how-step-4-title">Get Recognised</h3>
+            <p data-i18n="how-step-4-text">Share your story, climb the leaderboard, and download appreciation certificates for your contribution.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="showcase">
+      <div class="section-inner">
+        <div class="section-top">
+          <div>
+            <div class="section-badge" style="background:var(--saffron-light);color:var(--saffron-dark)">
+              <i class="fa-solid fa-star"></i>
+              <span data-i18n="showcase-badge">Wall of Fame</span>
+            </div>
+            <h2 class="section-title" data-i18n="showcase-title">Citizens making a real difference</h2>
+            <p class="section-subtitle" data-i18n="showcase-subtitle">
+              Public service deserves public visibility. Celebrate the stories, photos, and impact behind every mission.
+            </p>
+          </div>
+        </div>
+
+        <div class="showcase-grid" id="showcaseGrid"></div>
+
+        <div class="story-form-wrap">
+          <button class="btn btn-saffron story-toggle" type="button" id="storyToggleBtn">
+            <i class="fa-solid fa-camera"></i>
+            <span data-i18n="story-toggle">Share Your Story</span>
+          </button>
+
+          <div class="story-form-card hidden" id="storyFormCard">
+            <h3 class="form-card-title" data-i18n="story-form-title">Share what you did for your district</h3>
+            <p class="form-card-subtitle" data-i18n="story-form-subtitle">Add a story, optionally attach a photo, and feature the contribution on the public showcase.</p>
+            <form id="storyForm">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="storyName" data-i18n="story-name-label">Name</label>
+                  <input id="storyName" type="text" required />
+                </div>
+                <div class="form-group">
+                  <label for="storyRole" data-i18n="story-role-label">Your Role</label>
+                  <input id="storyRole" type="text" required data-i18n-placeholder="story-role-placeholder" placeholder="Community Volunteer" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="storyCategory" data-i18n="story-category-label">Mission Category</label>
+                  <select id="storyCategory" required></select>
+                </div>
+                <div class="form-group">
+                  <label for="storyPhoto" data-i18n="story-photo-label">Photo (Optional)</label>
+                  <input id="storyPhoto" type="file" accept="image/*" />
+                </div>
+              </div>
+              <div class="form-group full">
+                <label for="storyHeadline" data-i18n="story-headline-label">Story Title</label>
+                <input id="storyHeadline" type="text" required data-i18n-placeholder="story-headline-placeholder" placeholder="What changed because of your effort?" />
+              </div>
+              <div class="form-group full">
+                <label for="storyText" data-i18n="story-text-label">Your Story</label>
+                <textarea id="storyText" required data-i18n-placeholder="story-text-placeholder" placeholder="Describe what you did, who joined, and what impact you saw."></textarea>
+              </div>
+              <button class="btn btn-primary" type="submit" data-i18n="story-submit">Publish Story</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="leaderboard">
+      <div class="section-inner">
+        <div class="section-top center">
+          <div>
+            <div class="section-badge" style="background:var(--green-light);color:var(--green)">
+              <i class="fa-solid fa-trophy"></i>
+              <span data-i18n="leader-badge">Monthly Leaders</span>
+            </div>
+            <h2 class="section-title" data-i18n="leader-title">Top contributors - April 2026</h2>
+            <p class="section-subtitle" data-i18n="leader-subtitle">
+              Meet the citizens whose time, effort, and consistency are moving the district forward.
+            </p>
+          </div>
+        </div>
+        <div class="leaderboard-grid" id="leaderboardGrid"></div>
+      </div>
+    </section>
+
+    <section class="section alt" id="volunteer">
+      <div class="section-inner">
+        <div class="volunteer-split">
+          <div>
+            <div class="section-badge"><i class="fa-solid fa-hands-helping"></i> <span data-i18n="volunteer-badge">Join the Movement</span></div>
+            <h2 class="section-title" data-i18n="volunteer-title">Your district needs you.</h2>
+            <p class="section-subtitle" data-i18n="volunteer-subtitle">
+              Whether you have two hours a week or an entire weekend, every act of contribution can strengthen public life.
+            </p>
+
+            <div class="volunteer-perks">
+              <div class="perk">
+                <div class="perk-icon" style="background:var(--saffron-light);color:var(--saffron-dark)">🏅</div>
+                <div class="perk-content">
+                  <h4 data-i18n="perk-1-title">Official Recognition</h4>
+                  <p data-i18n="perk-1-text">Certificates, leaderboard visibility, and district-level acknowledgement for sustained contribution.</p>
+                </div>
+              </div>
+              <div class="perk">
+                <div class="perk-icon" style="background:var(--green-light);color:var(--green)">📣</div>
+                <div class="perk-content">
+                  <h4 data-i18n="perk-2-title">Be First to Know</h4>
+                  <p data-i18n="perk-2-text">Get mission alerts, new drives, and announcements before general public slots fill up.</p>
+                </div>
+              </div>
+              <div class="perk">
+                <div class="perk-icon" style="background:var(--navy-light);color:var(--navy)">🤝</div>
+                <div class="perk-content">
+                  <h4 data-i18n="perk-3-title">Build Local Networks</h4>
+                  <p data-i18n="perk-3-text">Work with citizens, administration teams, NGOs, schools, and local institutions on real initiatives.</p>
+                </div>
+              </div>
+              <div class="perk">
+                <div class="perk-icon" style="background:#FEE2E2;color:#DC2626">📸</div>
+                <div class="perk-content">
+                  <h4 data-i18n="perk-4-title">Showcase Your Work</h4>
+                  <p data-i18n="perk-4-text">Your service can be featured on the public Wall of Fame to inspire other citizens to join.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-card">
+            <div class="selected-mission hidden" id="selectedMissionBox">
+              <div>
+                <div class="detail-label" data-i18n="selected-mission-label">Selected Mission</div>
+                <strong id="selectedMissionText"></strong>
+              </div>
+              <button class="btn btn-soft" type="button" onclick="clearSelectedMission()" data-i18n="selected-mission-clear">Clear</button>
+            </div>
+
+            <h3 class="form-card-title" data-i18n="volunteer-form-title">Register as a Volunteer</h3>
+            <p class="form-card-subtitle" data-i18n="volunteer-form-subtitle">Free to join. Built for rapid district deployment.</p>
+
+            <form id="volunteerForm">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="volName" data-i18n="vol-name-label">Full Name *</label>
+                  <input id="volName" type="text" required />
+                </div>
+                <div class="form-group">
+                  <label for="volPhone" data-i18n="vol-phone-label">Mobile Number *</label>
+                  <input id="volPhone" type="tel" required />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="volEmail" data-i18n="vol-email-label">Email Address</label>
+                  <input id="volEmail" type="email" />
+                </div>
+                <div class="form-group">
+                  <label for="volWard" data-i18n="vol-area-label">Area / Ward</label>
+                  <select id="volWard"></select>
+                </div>
+              </div>
+
+              <div class="form-group full">
+                <label for="volOccupation" data-i18n="vol-occupation-label">Profession / Occupation</label>
+                <input id="volOccupation" type="text" data-i18n-placeholder="vol-occupation-placeholder" placeholder="Teacher, engineer, student, homemaker, retired officer" />
+              </div>
+
+              <div class="form-group full">
+                <label data-i18n="vol-skills-label">Your Skills - select all that apply</label>
+                <div class="skills-grid" id="skillsGrid"></div>
+              </div>
+
+              <div class="form-group full">
+                <label for="volAvailability" data-i18n="vol-availability-label">Availability</label>
+                <select id="volAvailability"></select>
+              </div>
+
+              <div class="form-group full">
+                <label for="volMessage" data-i18n="vol-message-label">Why do you want to contribute?</label>
+                <textarea id="volMessage" data-i18n-placeholder="vol-message-placeholder" placeholder="Tell us how you want to help your district."></textarea>
+              </div>
+
+              <button class="btn btn-primary" type="submit" style="width:100%" data-i18n="vol-submit">Register as Volunteer</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="newsletter-bar">
+      <div class="newsletter-inner">
+        <h2 data-i18n="newsletter-title">Never miss a mission.</h2>
+        <p data-i18n="newsletter-copy">Subscribe to receive new mission alerts, special drives, and public service updates directly in your inbox.</p>
+        <form class="newsletter-form" id="newsletterForm">
+          <input id="newsletterEmail" type="email" required data-i18n-placeholder="newsletter-placeholder" placeholder="Enter your email address" />
+          <button class="btn btn-primary" type="submit" data-i18n="newsletter-submit">Subscribe Free</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="cta-banner">
+      <h2 data-i18n="cta-title">The change you want to see - <span>start today.</span></h2>
+      <p data-i18n="cta-copy">Mission slots, sponsorship support, skilled volunteering, and public stories are all in one place now. The district can move faster when good citizens can act faster.</p>
+      <div class="cta-actions">
+        <a class="btn btn-saffron" href="#missions" data-i18n="cta-missions">See Open Missions</a>
+        <a class="btn btn-soft" href="#volunteer" data-i18n="cta-register">Register Now</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a class="logo" href="#home" style="text-decoration:none">
+            <div class="logo-emblem">🪷</div>
+            <div class="logo-text">
+              <span class="logo-name">Prayas</span>
+              <span class="logo-tag" data-i18n="logo-tag">Citizen Action Platform</span>
+            </div>
+          </a>
+          <p class="footer-desc" data-i18n="footer-desc">
+            An initiative by the District Administration to connect citizens with meaningful social programs, drives, campaigns, crowdfunding, and recognition.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4 data-i18n="footer-platform">Platform</h4>
+          <ul>
+            <li><a href="#missions" data-i18n="nav-missions">Missions</a></li>
+            <li><a href="#funding" data-i18n="nav-funding">Crowdfund</a></li>
+            <li><a href="#district-map" data-i18n="nav-map">District Map</a></li>
+            <li><a href="#showcase" data-i18n="nav-showcase">Showcase</a></li>
+            <li><a href="#leaderboard" data-i18n="nav-leaders">Leaders</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 data-i18n="footer-categories">Categories</h4>
+          <ul>
+            <li><a href="#missions" onclick="setCategoryFilter('sanitation')">Sanitation</a></li>
+            <li><a href="#missions" onclick="setCategoryFilter('environment')">Environment</a></li>
+            <li><a href="#missions" onclick="setCategoryFilter('awareness')">Awareness</a></li>
+            <li><a href="#missions" onclick="setCategoryFilter('arts')">Arts &amp; Culture</a></li>
+            <li><a href="#missions" onclick="setCategoryFilter('education')">Education</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 data-i18n="footer-admin">Administration</h4>
+          <ul>
+            <li><a href="#volunteer" data-i18n="nav-volunteer">Volunteer</a></li>
+            <li><a href="#sponsors" data-i18n="footer-sponsor-link">Sponsor a Mission</a></li>
+            <li><a href="#" onclick="openAdminLogin(); return false;" data-i18n="footer-admin-link">Open Admin Panel</a></li>
+            <li><a href="#district-map" data-i18n="footer-wards-link">Ward Overview</a></li>
+            <li><a href="#funding" data-i18n="footer-donate-link">Contribute Funds</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p data-i18n="footer-copy">© 2026 Prayas Citizen Platform · An initiative of the District Administration · Built with public service in mind.</p>
+        <span class="ashoka" title="Ashoka Chakra">☸</span>
+      </div>
+    </div>
+  </footer>
+
+  <div class="modal-overlay" id="missionModal">
+    <div class="modal-shell">
+      <div class="modal-header">
+        <div>
+          <div class="detail-label" id="missionModalTag"></div>
+          <h2 class="modal-title" id="missionModalTitle"></h2>
+          <p class="modal-subtitle" id="missionModalSubtitle"></p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="missionModal">✕</button>
+      </div>
+      <div class="mission-banner-large" id="missionModalBanner"></div>
+      <div class="modal-body">
+        <div class="modal-tabbar">
+          <button class="tab-btn active" type="button" data-mission-tab="details" data-i18n="mission-tab-details">Details</button>
+          <button class="tab-btn" type="button" data-mission-tab="discussion" data-i18n="mission-tab-discussion">Discussion</button>
+        </div>
+        <div id="missionDetailsPane"></div>
+        <div id="missionDiscussionPane" class="hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="donationModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="donationModalTitle">Donate</h2>
+          <p class="modal-subtitle" data-i18n="donation-subtitle">Support a mission with a direct contribution.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="donationModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="donationForm">
+          <div class="form-group">
+            <label data-i18n="donation-amount-label">Select amount or enter a custom amount (₹)</label>
+            <div class="amount-pills" id="amountPills"></div>
+            <input id="customAmount" type="number" min="1" required />
+          </div>
+          <div class="form-group checkbox-row">
+            <input id="anonymousDonation" type="checkbox" />
+            <label for="anonymousDonation" data-i18n="donation-anonymous">Donate anonymously</label>
+          </div>
+          <div class="form-group" id="donorNameGroup">
+            <label for="donorName" data-i18n="donation-name-label">Your name</label>
+            <input id="donorName" type="text" required />
+          </div>
+          <div class="form-group">
+            <label data-i18n="donation-method-label">Choose payment method</label>
+            <div class="payment-tabbar">
+              <button class="payment-tab active" type="button" data-payment-method="upi">UPI</button>
+              <button class="payment-tab" type="button" data-payment-method="bank">Bank</button>
+            </div>
+          </div>
+          <div class="payment-panel" id="paymentUpiPane">
+            <p data-i18n="donation-upi-copy">Scan the QR code or use the UPI ID below.</p>
+            <div class="qr-block" id="qrBlock"></div>
+            <div class="upi-code">prayas.district@upi</div>
+          </div>
+          <div class="payment-panel hidden" id="paymentBankPane">
+            <div class="bank-grid">
+              <div class="bank-row"><span data-i18n="bank-holder">Account Holder</span><strong>Prayas District Fund</strong></div>
+              <div class="bank-row"><span data-i18n="bank-number">Account Number</span><strong>50100123456789</strong></div>
+              <div class="bank-row"><span data-i18n="bank-ifsc">IFSC Code</span><strong>HDFC0001234</strong></div>
+              <div class="bank-row"><span data-i18n="bank-name">Bank</span><strong>HDFC Bank</strong></div>
+              <div class="bank-row"><span data-i18n="bank-branch">Branch</span><strong>Civil Lines</strong></div>
+            </div>
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%;margin-top:18px" data-i18n="donation-submit">Donate Now</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="sponsorModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" data-i18n="sponsor-modal-title">Become a Sponsor</h2>
+          <p class="modal-subtitle" data-i18n="sponsor-modal-subtitle">Share your organisation details and preferred support tier.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="sponsorModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="sponsorForm">
+          <div class="form-group">
+            <label for="sponsorCompany" data-i18n="sponsor-company-label">Company Name</label>
+            <input id="sponsorCompany" type="text" required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="sponsorContact" data-i18n="sponsor-contact-label">Contact Person</label>
+              <input id="sponsorContact" type="text" required />
+            </div>
+            <div class="form-group">
+              <label for="sponsorPhone" data-i18n="sponsor-phone-label">Phone</label>
+              <input id="sponsorPhone" type="tel" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="sponsorEmail" data-i18n="sponsor-email-label">Email</label>
+              <input id="sponsorEmail" type="email" required />
+            </div>
+            <div class="form-group">
+              <label for="sponsorTier" data-i18n="sponsor-tier-label">Selected Tier</label>
+              <input id="sponsorTier" type="text" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="sponsorMessage" data-i18n="sponsor-message-label">Message</label>
+            <textarea id="sponsorMessage" data-i18n-placeholder="sponsor-message-placeholder" placeholder="Tell us what mission area you want to support."></textarea>
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%" data-i18n="sponsor-submit">Submit Sponsorship Interest</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="commentsModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="commentsModalTitle" data-i18n="comments-title">Comments</h2>
+          <p class="modal-subtitle" data-i18n="comments-subtitle">Add your note to this story.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="commentsModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="comments-stream" id="commentsStream"></div>
+        <form id="commentForm">
+          <div class="form-group">
+            <label for="commentName" data-i18n="comments-name-label">Your Name</label>
+            <input id="commentName" type="text" required />
+          </div>
+          <div class="form-group">
+            <label for="commentText" data-i18n="comments-text-label">Comment</label>
+            <textarea id="commentText" required></textarea>
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%" data-i18n="comments-submit">Post Comment</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="passportModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" data-i18n="passport-title">Volunteer Passport</h2>
+          <p class="modal-subtitle" data-i18n="passport-subtitle">Recognising sustained civic contribution.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="passportModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="passport-header">
+          <div class="passport-avatar" id="passportAvatar"></div>
+          <div class="passport-name" id="passportName"></div>
+          <div class="passport-area" id="passportArea"></div>
+        </div>
+        <div class="passport-stats">
+          <div class="passport-stat">
+            <div class="passport-stat-value" id="passportPoints"></div>
+            <div class="passport-stat-label" data-i18n="passport-points">Points</div>
+          </div>
+          <div class="passport-stat">
+            <div class="passport-stat-value" id="passportMissions"></div>
+            <div class="passport-stat-label" data-i18n="passport-missions">Missions</div>
+          </div>
+        </div>
+        <div>
+          <h3 class="form-card-title" style="font-size:18px;margin-bottom:12px" data-i18n="passport-badges">Badges Earned</h3>
+          <div class="leader-badges" id="passportBadges" style="justify-content:flex-start"></div>
+        </div>
+        <div>
+          <h3 class="form-card-title" style="font-size:18px;margin:18px 0 12px" data-i18n="passport-timeline">Missions Attended</h3>
+          <div class="timeline" id="passportTimeline"></div>
+        </div>
+        <button class="btn btn-saffron" id="downloadCertificateBtn" type="button" style="width:100%;margin-top:18px" data-i18n="passport-download">Download Certificate</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="adminLoginModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" data-i18n="admin-login-title">Admin Login</h2>
+          <p class="modal-subtitle" data-i18n="admin-login-subtitle">Enter the portal password to open the control panel.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="adminLoginModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="adminLoginForm">
+          <div class="form-group">
+            <label for="adminPassword" data-i18n="admin-password-label">Password</label>
+            <input id="adminPassword" type="password" required />
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%" data-i18n="admin-login-submit">Login</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="adminPanelModal">
+    <div class="modal-shell wide">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" data-i18n="admin-panel-title">Admin Control Panel</h2>
+          <p class="modal-subtitle" data-i18n="admin-panel-subtitle">Manage missions, volunteers, announcements, and newsletter communication.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="adminPanelModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="admin-tabbar">
+          <button class="admin-tab-btn active" type="button" data-admin-tab="overview" data-i18n="admin-tab-overview">Overview</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="post" data-i18n="admin-tab-post">Post Mission</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="volunteers" data-i18n="admin-tab-volunteers">Volunteers</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="announcements" data-i18n="admin-tab-announcements">Announcements</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="newsletter" data-i18n="admin-tab-newsletter">Newsletter</button>
+        </div>
+
+        <div class="admin-pane active" id="adminPaneOverview">
+          <div class="admin-grid" id="adminStatsGrid"></div>
+          <div class="admin-two-col" style="margin-top:20px">
+            <div class="panel-card">
+              <h3 data-i18n="admin-overview-sponsors-title">Latest Sponsor Leads</h3>
+              <p data-i18n="admin-overview-sponsors-subtitle">Organisations that have expressed interest in supporting district missions.</p>
+              <div class="announcement-stream" id="sponsorLeadList"></div>
+            </div>
+            <div class="panel-card">
+              <h3 data-i18n="admin-overview-volunteers-title">Latest Volunteers</h3>
+              <p data-i18n="admin-overview-volunteers-subtitle">Newest citizen registrations captured from the volunteer form.</p>
+              <div class="announcement-stream" id="recentVolunteerList"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-pane" id="adminPanePost">
+          <form id="postMissionForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pmTitle" data-i18n="pm-title-label">Mission Title</label>
+                <input id="pmTitle" type="text" required />
+              </div>
+              <div class="form-group">
+                <label for="pmCategory" data-i18n="pm-category-label">Category</label>
+                <select id="pmCategory" required></select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pmWard" data-i18n="pm-ward-label">Ward</label>
+                <select id="pmWard" required></select>
+              </div>
+              <div class="form-group">
+                <label for="pmDate" data-i18n="pm-date-label">Date / Schedule</label>
+                <input id="pmDate" type="text" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pmLocation" data-i18n="pm-location-label">Location</label>
+                <input id="pmLocation" type="text" required />
+              </div>
+              <div class="form-group">
+                <label for="pmCoordinator" data-i18n="pm-coordinator-label">Coordinator</label>
+                <input id="pmCoordinator" type="text" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pmSlots" data-i18n="pm-slots-label">Volunteer Slots</label>
+                <input id="pmSlots" type="number" min="1" value="50" required />
+              </div>
+              <div class="form-group">
+                <label for="pmDuration" data-i18n="pm-duration-label">Duration</label>
+                <input id="pmDuration" type="text" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="pmDescription" data-i18n="pm-description-label">Description</label>
+              <textarea id="pmDescription" required></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit" data-i18n="pm-submit">Post Mission</button>
+          </form>
+        </div>
+
+        <div class="admin-pane" id="adminPaneVolunteers">
+          <div class="section-top" style="margin-bottom:18px">
+            <div>
+              <h3 class="form-card-title" style="font-size:20px;margin-bottom:4px" data-i18n="admin-volunteers-title">Registered Volunteers</h3>
+              <p class="form-card-subtitle" style="margin-bottom:0" data-i18n="admin-volunteers-subtitle">Export the current volunteer registry for follow-up and field planning.</p>
+            </div>
+            <button class="btn btn-primary" type="button" id="exportVolunteersBtn" data-i18n="admin-volunteers-export">Export CSV</button>
+          </div>
+          <div style="overflow:auto">
+            <table class="volunteer-table">
+              <thead>
+                <tr>
+                  <th data-i18n="table-name">Name</th>
+                  <th data-i18n="table-phone">Phone</th>
+                  <th data-i18n="table-area">Area</th>
+                  <th data-i18n="table-skills">Skills</th>
+                  <th data-i18n="table-mission">Mission</th>
+                  <th data-i18n="table-date">Registered</th>
+                </tr>
+              </thead>
+              <tbody id="volunteersTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-pane" id="adminPaneAnnouncements">
+          <div class="admin-two-col">
+            <div class="panel-card">
+              <h3 data-i18n="admin-announcement-title">Current Announcements</h3>
+              <p data-i18n="admin-announcement-subtitle">These items power the live ticker above the portal.</p>
+              <div class="announcement-stream" id="announcementList"></div>
+            </div>
+            <div class="panel-card">
+              <h3 data-i18n="admin-announcement-form-title">Post New Announcement</h3>
+              <p data-i18n="admin-announcement-form-subtitle">Add a new alert, update, or call to action for citizens.</p>
+              <div class="form-group">
+                <label for="announcementText" data-i18n="admin-announcement-label">Announcement Text</label>
+                <textarea id="announcementText"></textarea>
+              </div>
+              <button class="btn btn-primary" type="button" id="postAnnouncementBtn" data-i18n="admin-announcement-submit">Add Announcement</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-pane" id="adminPaneNewsletter">
+          <div class="admin-two-col">
+            <div class="panel-card">
+              <h3 data-i18n="admin-newsletter-title">Newsletter Builder</h3>
+              <p data-i18n="admin-newsletter-subtitle">Prepare a district message and preview how it will read.</p>
+              <div class="form-group">
+                <label for="newsletterSubject" data-i18n="admin-newsletter-subject-label">Subject</label>
+                <input id="newsletterSubject" type="text" />
+              </div>
+              <div class="form-group">
+                <label for="newsletterBody" data-i18n="admin-newsletter-body-label">Body</label>
+                <textarea id="newsletterBody" style="min-height:220px"></textarea>
+              </div>
+              <button class="btn btn-primary" type="button" id="sendNewsletterBtn" data-i18n="admin-newsletter-send">Send to Subscribers</button>
+            </div>
+            <div class="panel-card">
+              <h3 data-i18n="admin-newsletter-preview-title">Preview</h3>
+              <p data-i18n="admin-newsletter-preview-subtitle">Live preview of the current newsletter draft.</p>
+              <div class="message-card">
+                <div class="message-name" id="newsletterPreviewSubject">District Update</div>
+                <div class="message-text" id="newsletterPreviewBody">Write your newsletter body to preview it here.</div>
+                <div class="message-time" id="newsletterPreviewFoot">0 subscribers selected.</div>
+              </div>
+              <div style="margin-top:18px">
+                <h3 style="font-size:18px;color:var(--navy);margin-bottom:6px" data-i18n="admin-newsletter-subscribers-title">Recent Subscribers</h3>
+                <p style="font-size:14px;color:var(--muted);margin-bottom:14px" data-i18n="admin-newsletter-subscribers-subtitle">Most recent email signups collected on this browser.</p>
+                <div class="announcement-stream" id="subscriberList"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <span class="toast-icon" id="toastIcon">✅</span>
+    <span id="toastText"></span>
+  </div>
+
+  <script>
+    const escapeHtml = (value) =>
+      String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
+    const formatCompact = (value) =>
+      new Intl.NumberFormat("en-IN", { notation: "compact", maximumFractionDigits: 1 }).format(value);
+
+    const formatDate = (value, lang = "en") =>
+      new Intl.DateTimeFormat(lang === "hi" ? "hi-IN" : "en-IN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      }).format(new Date(value));
+
+    const nowLabel = () => formatDate(new Date(), state.lang);
+
+    const initialMissions = [
+      {
+        id: 1,
+        category: "sanitation",
+        ward: "Ward 2",
+        emoji: "🧹",
+        bg: "linear-gradient(135deg,#FFF3E0,#FFE0B2)",
+        title: "Swachh Market Drive",
+        desc: "Join the Sunday morning market clean-up with gloves, bags, masks, and disposal support already arranged by the administration.",
+        date: "Every Sunday, 7-10 AM",
+        location: "Civil Lines Market",
+        volunteers: 48,
+        total: 60,
+        status: "open",
+        coordinator: "Anita Mishra (Municipal Officer)",
+        duration: "3 hours",
+        age: "16+",
+        impact: "6 tonnes of waste removed",
+        discussion: [
+          { name: "Ramesh K.", text: "Do we need to bring our own gloves?", time: "2 days ago" },
+          { name: "Admin", text: "No. All equipment is provided at the venue.", time: "1 day ago" },
+          { name: "Preethi V.", text: "See everyone on Sunday.", time: "5 hours ago" }
+        ]
+      },
+      {
+        id: 2,
+        category: "arts",
+        ward: "Ward 1",
+        emoji: "🎨",
+        bg: "linear-gradient(135deg,#F3E5F5,#E1BEE7)",
+        title: "Wall Art Competition 2026",
+        desc: "Paint district boundary walls on themes of national pride, local culture, and civic responsibility. Winning pieces get district recognition.",
+        date: "15 Apr 2026",
+        location: "MG Road and Station Road",
+        volunteers: 72,
+        total: 80,
+        status: "open",
+        coordinator: "Rahul Gupta (Culture Department)",
+        duration: "1 full day",
+        age: "All ages",
+        impact: "2.4 km of walls beautified",
+        discussion: [
+          { name: "Ananya S.", text: "Can we use spray paint or only brushes?", time: "3 days ago" },
+          { name: "Admin", text: "Both are allowed. Please bring your own supplies.", time: "2 days ago" }
+        ]
+      },
+      {
+        id: 3,
+        category: "environment",
+        ward: "Ward 3",
+        emoji: "🌳",
+        bg: "linear-gradient(135deg,#E8F5E9,#C8E6C9)",
+        title: "Van Mahotsav - Plant 1,000 Trees",
+        desc: "District-wide plantation campaign across schools, roadsides, parks, and panchayat sites. Saplings and guidance are arranged centrally.",
+        date: "20 Apr 2026",
+        location: "District-wide (12 sites)",
+        volunteers: 320,
+        total: 500,
+        status: "open",
+        coordinator: "Forest Department",
+        duration: "Full day",
+        age: "14+",
+        impact: "840 trees planted so far",
+        discussion: [
+          { name: "Deepak M.", text: "Which site is nearest to Sector 4?", time: "1 day ago" },
+          { name: "Admin", text: "Site 7 at Sector 4 Park. Report at 7 AM.", time: "20 hours ago" }
+        ]
+      },
+      {
+        id: 4,
+        category: "awareness",
+        ward: "Ward 1",
+        emoji: "🚦",
+        bg: "linear-gradient(135deg,#FFF8E1,#FFECB3)",
+        title: "Road Safety Volunteer Corps",
+        desc: "Support traffic police during peak hours at key intersections, promote school-zone discipline, and guide pedestrians safely.",
+        date: "Mon-Sat, 8-10 AM",
+        location: "12 major intersections",
+        volunteers: 100,
+        total: 100,
+        status: "full",
+        coordinator: "Traffic Police District HQ",
+        duration: "2 hours / day",
+        age: "18+",
+        impact: "40% fewer violations in active zones",
+        discussion: [
+          { name: "Sunita B.", text: "What if it rains?", time: "4 days ago" },
+          { name: "Admin", text: "The drive continues unless there is a storm warning.", time: "3 days ago" }
+        ]
+      },
+      {
+        id: 5,
+        category: "education",
+        ward: "Ward 4",
+        emoji: "📚",
+        bg: "linear-gradient(135deg,#E3F2FD,#BBDEFB)",
+        title: "Padh Aage - Evening Classes",
+        desc: "Teach children aged 8-14 in weekday evening classes. Volunteers can contribute in language, maths, science, or life skills.",
+        date: "Mon, Wed, Fri - 5-7 PM",
+        location: "Community Hall, Sector 4",
+        volunteers: 22,
+        total: 30,
+        status: "open",
+        coordinator: "Dr. Sunita Rao",
+        duration: "2 hours / session",
+        age: "18+",
+        impact: "86 children enrolled",
+        discussion: [
+          { name: "Deepak M.", text: "I can teach basic computer skills.", time: "2 days ago" },
+          { name: "Dr. Sunita Rao", text: "That would be wonderful. Please register.", time: "1 day ago" }
+        ]
+      },
+      {
+        id: 6,
+        category: "awareness",
+        ward: "Ward 5",
+        emoji: "💧",
+        bg: "linear-gradient(135deg,#E1F5FE,#B3E5FC)",
+        title: "Jal Shakti Awareness March",
+        desc: "Join the Earth Day march on water conservation, rainwater harvesting, plastic reduction, and protection of local water bodies.",
+        date: "22 Apr 2026 (Earth Day)",
+        location: "Starting: Collectorate Gate",
+        volunteers: 120,
+        total: 200,
+        status: "upcoming",
+        coordinator: "Water Department and NGO Network",
+        duration: "Half day",
+        age: "All ages",
+        impact: "5,000+ citizens expected",
+        discussion: [
+          { name: "NCC Cadet", text: "Can our battalion join as a group?", time: "1 day ago" },
+          { name: "Admin", text: "Absolutely. Group registrations are welcome.", time: "18 hours ago" }
+        ]
+      }
+    ];
+
+    const initialFunds = [
+      { id: 1, missionId: 1, title: "Swachh Drive", emoji: "🧹", color: "#FF9933", target: 50000, raised: 32400, donors: 186, daysLeft: 12 },
+      { id: 2, missionId: 3, title: "Van Mahotsav", emoji: "🌳", color: "#138808", target: 100000, raised: 71200, donors: 341, daysLeft: 8 },
+      { id: 3, missionId: 2, title: "Wall Art", emoji: "🎨", color: "#7C3AED", target: 30000, raised: 18600, donors: 94, daysLeft: 15 },
+      { id: 4, missionId: 5, title: "Padh Aage", emoji: "📚", color: "#0284C7", target: 40000, raised: 11000, donors: 53, daysLeft: 20 }
+    ];
+
+    const initialStories = [
+      {
+        id: 1,
+        contributor: "Ananya S.",
+        initials: "AS",
+        color: "#7C3AED",
+        role: "Teacher and Volunteer",
+        title: "Painting hope on blank walls",
+        story: "I coordinated 40 student artists over two weekends. The station road mural now greets thousands daily with messages of pride and civic responsibility.",
+        bg: "linear-gradient(135deg,#EDE9FE,#C4B5FD)",
+        emoji: "🎨",
+        tags: ["Arts", "Youth", "District Winner"],
+        likes: 45,
+        comments: [
+          { name: "District Admin", text: "A beautiful example of citizen-led place making.", time: "2 days ago" }
+        ],
+        imageUrl: ""
+      },
+      {
+        id: 2,
+        contributor: "Ramesh K.",
+        initials: "RK",
+        color: "#059669",
+        role: "Retired Banker",
+        title: "Planting trees and building ownership",
+        story: "At 62, I planted 18 saplings in one day and now water them every week. The mission made me feel useful, healthy, and connected to my ward again.",
+        bg: "linear-gradient(135deg,#D1FAE5,#A7F3D0)",
+        emoji: "🌱",
+        tags: ["Environment", "Senior Volunteer"],
+        likes: 62,
+        comments: [
+          { name: "Meera", text: "This inspired my father to join too.", time: "1 day ago" }
+        ],
+        imageUrl: ""
+      },
+      {
+        id: 3,
+        contributor: "Preethi V.",
+        initials: "PV",
+        color: "#DC2626",
+        role: "Medical Student",
+        title: "Sunday mornings with purpose",
+        story: "The Swachh Market Drive has become my weekly meditation. We cleaned the market, but more importantly, we changed how people treat shared spaces.",
+        bg: "linear-gradient(135deg,#FEE2E2,#FECACA)",
+        emoji: "🧹",
+        tags: ["Sanitation", "Consistency"],
+        likes: 31,
+        comments: [],
+        imageUrl: ""
+      },
+      {
+        id: 4,
+        contributor: "Deepak M.",
+        initials: "DM",
+        color: "#D97706",
+        role: "Software Engineer",
+        title: "Teaching beyond textbooks",
+        story: "I joined Padh Aage to teach English but ended up introducing Scratch to a group of curious children. Two now want to become engineers.",
+        bg: "linear-gradient(135deg,#FEF3C7,#FDE68A)",
+        emoji: "💡",
+        tags: ["Education", "Tech Skills"],
+        likes: 78,
+        comments: [
+          { name: "Sunita Rao", text: "The children talk about your class every week.", time: "8 hours ago" }
+        ],
+        imageUrl: ""
+      },
+      {
+        id: 5,
+        contributor: "Sunita B.",
+        initials: "SB",
+        color: "#0284C7",
+        role: "Homemaker and Safety Advocate",
+        title: "Intersections are safer now",
+        story: "Standing at a junction felt daunting at first, but violation numbers dropped in our zone and parents started thanking the volunteer team personally.",
+        bg: "linear-gradient(135deg,#DBEAFE,#BFDBFE)",
+        emoji: "🚦",
+        tags: ["Awareness", "Road Safety"],
+        likes: 29,
+        comments: [],
+        imageUrl: ""
+      },
+      {
+        id: 6,
+        contributor: "NCC Battalion 7",
+        initials: "NCC",
+        color: "#065F46",
+        role: "Group Volunteer Team",
+        title: "A river bank clean-up that shifted habits",
+        story: "Our battalion removed plastic from the river edge in four hours. The bigger success was convincing nearby households to start waste segregation.",
+        bg: "linear-gradient(135deg,#D1FAE5,#6EE7B7)",
+        emoji: "🏞️",
+        tags: ["Group Effort", "Environment"],
+        likes: 54,
+        comments: [],
+        imageUrl: ""
+      }
+    ];
+
+    const sponsorTiers = [
+      {
+        name: "Bronze",
+        icon: "🥉",
+        price: "₹10,000",
+        tierClass: "tier-bronze",
+        benefits: ["Name listed on mission page", "Acknowledgement in district social post", "Digital appreciation certificate"]
+      },
+      {
+        name: "Silver",
+        icon: "🥈",
+        price: "₹25,000",
+        tierClass: "tier-silver",
+        benefits: ["Logo on mission page", "Recognition in event roll-up", "Mention in district press note"]
+      },
+      {
+        name: "Gold",
+        icon: "🥇",
+        price: "₹50,000",
+        tierClass: "tier-gold",
+        benefits: ["Banner presence at mission events", "Logo in communication creatives", "Priority co-branding visibility"]
+      },
+      {
+        name: "Platinum",
+        icon: "🏛️",
+        price: "₹1,00,000",
+        tierClass: "tier-platinum",
+        benefits: ["Co-organiser status for flagship mission", "Dedicated impact acknowledgement", "District-level partnership spotlight"]
+      }
+    ];
+
+    const leaders = [
+      {
+        id: 1,
+        name: "Ananya Srivastava",
+        area: "Civil Lines",
+        initials: "AS",
+        color: "#7C3AED",
+        points: 920,
+        missions: 14,
+        rank: "🥇",
+        cls: "gold",
+        badges: ["🌱", "🏅", "🌟", "🎨"],
+        attended: ["Wall Art Competition", "Van Mahotsav", "Padh Aage", "Swachh Market Drive"]
+      },
+      {
+        id: 2,
+        name: "Ramesh Kumar",
+        area: "Sector 3",
+        initials: "RK",
+        color: "#059669",
+        points: 840,
+        missions: 11,
+        rank: "🥈",
+        cls: "silver",
+        badges: ["🌱", "🏅", "🌟", "🌳"],
+        attended: ["Van Mahotsav", "Jal Shakti March", "Swachh Market Drive"]
+      },
+      {
+        id: 3,
+        name: "Preethi Verma",
+        area: "Station Road",
+        initials: "PV",
+        color: "#DC2626",
+        points: 790,
+        missions: 10,
+        rank: "🥉",
+        cls: "bronze",
+        badges: ["🌱", "🏅", "🌟", "🧹"],
+        attended: ["Swachh Market Drive", "Van Mahotsav", "Padh Aage"]
+      },
+      {
+        id: 4,
+        name: "Deepak Mehta",
+        area: "Sector 4",
+        initials: "DM",
+        color: "#D97706",
+        points: 680,
+        missions: 8,
+        rank: "4",
+        cls: "",
+        badges: ["🌱", "🏅", "📚"],
+        attended: ["Padh Aage", "Wall Art Competition"]
+      }
+    ];
+
+    const translations = {
+      "logo-tag": { en: "Citizen Action Platform", hi: "नागरिक कार्रवाई मंच" },
+      "nav-missions": { en: "Missions", hi: "अभियान" },
+      "nav-funding": { en: "Crowdfund", hi: "क्राउडफंड" },
+      "nav-map": { en: "District Map", hi: "वार्ड दृश्य" },
+      "nav-showcase": { en: "Showcase", hi: "प्रदर्शनी" },
+      "nav-leaders": { en: "Leaders", hi: "लीडर्स" },
+      "nav-volunteer": { en: "Volunteer", hi: "स्वयंसेवक" },
+      "nav-admin": { en: "Admin", hi: "प्रशासक" },
+      "nav-join": { en: "Join Now", hi: "अभी जुड़ें" },
+      "hero-badge": { en: "District Administration Initiative", hi: "जिला प्रशासन पहल" },
+      "hero-title": { en: "Every citizen can <span>change</span> their district.", hi: "हर नागरिक अपने जिले को <span>बदल</span> सकता है।" },
+      "hero-copy": { en: "Join sanitation drives, wall art competitions, awareness marches, teaching missions, and district campaigns posted directly by the administration. Contribute your skills, fund a good cause, and get recognised for public service.", hi: "स्वच्छता अभियान, वॉल आर्ट प्रतियोगिता, जागरूकता मार्च, शिक्षण कार्यक्रम और जिला अभियानों से जुड़ें। अपने कौशल से योगदान दें, किसी अच्छे उद्देश्य को फंड करें और सार्वजनिक सेवा के लिए पहचान प्राप्त करें।" },
+      "hero-explore": { en: "Explore Missions", hi: "अभियान देखें" },
+      "hero-register": { en: "Register as Volunteer", hi: "स्वयंसेवक बनें" },
+      "hero-stat-volunteers": { en: "Active Volunteers This District", hi: "इस जिले के सक्रिय स्वयंसेवक" },
+      "hero-stat-trees": { en: "Trees Planted", hi: "लगाए गए पेड़" },
+      "hero-stat-drives": { en: "Drives Completed", hi: "पूर्ण अभियान" },
+      "stats-volunteers": { en: "Registered Volunteers", hi: "पंजीकृत स्वयंसेवक" },
+      "stats-missions": { en: "Active Missions", hi: "सक्रिय अभियान" },
+      "stats-completed": { en: "Programs Completed", hi: "पूर्ण कार्यक्रम" },
+      "stats-lives": { en: "Lives Impacted", hi: "प्रभावित जीवन" },
+      "missions-badge": { en: "Active Missions", hi: "सक्रिय अभियान" },
+      "missions-title": { en: "Choose your cause. Make your mark.", hi: "अपना उद्देश्य चुनें। अपनी पहचान बनाएं।" },
+      "missions-subtitle": { en: "From cleanliness drives to district teaching programs, explore missions that match your time, location, and skills.", hi: "स्वच्छता अभियान से लेकर शिक्षण कार्यक्रम तक, अपने समय, स्थान और कौशल के अनुसार अभियान चुनें।" },
+      "missions-post": { en: "Post a Mission", hi: "अभियान पोस्ट करें" },
+      "funding-badge": { en: "Community Funding", hi: "सामुदायिक निधि" },
+      "funding-title": { en: "Fund the missions you believe in", hi: "उन अभियानों को फंड करें जिन पर आप विश्वास करते हैं" },
+      "funding-subtitle": { en: "Every rupee goes directly into mission execution, materials, training, outreach, and on-ground impact.", hi: "हर रुपया सीधे अभियान क्रियान्वयन, सामग्री, प्रशिक्षण, जनसंपर्क और प्रभाव में लगता है।" },
+      "sponsor-badge": { en: "Corporate Partners", hi: "कॉर्पोरेट साझेदार" },
+      "sponsor-title": { en: "Sponsor a mission. Build a legacy.", hi: "एक अभियान प्रायोजित करें। विरासत बनाएं।" },
+      "sponsor-subtitle": { en: "Bring businesses, institutions, alumni groups, and civic organisations into district transformation.", hi: "व्यवसाय, संस्थान, पूर्व छात्र समूह और सामाजिक संगठनों को जिला परिवर्तन से जोड़ें।" },
+      "map-badge": { en: "District Overview", hi: "जिला अवलोकन" },
+      "map-title": { en: "Missions across your district", hi: "आपके जिले के विभिन्न वार्डों में अभियान" },
+      "map-subtitle": { en: "Track which wards are already active, where volunteer energy is concentrated, and where new missions are needed.", hi: "देखें कौन से वार्ड सक्रिय हैं, स्वयंसेवी ऊर्जा कहाँ केंद्रित है, और कहाँ नए अभियानों की जरूरत है।" },
+      "how-badge": { en: "Simple Process", hi: "सरल प्रक्रिया" },
+      "how-title": { en: "How Prayas works", hi: "प्रयास कैसे काम करता है" },
+      "how-subtitle": { en: "Register once, explore mission opportunities, contribute on-ground, and get recognised publicly for civic action.", hi: "एक बार पंजीकरण करें, अभियान चुनें, ज़मीन पर योगदान दें और सार्वजनिक पहचान पाएँ।" },
+      "how-step-1-title": { en: "Register Free", hi: "निःशुल्क पंजीकरण" },
+      "how-step-1-text": { en: "Sign up with your area, skills, and availability. It takes under two minutes and keeps you mission-ready.", hi: "अपने क्षेत्र, कौशल और उपलब्धता के साथ जुड़ें। इसमें दो मिनट से भी कम समय लगता है।" },
+      "how-step-2-title": { en: "Choose a Mission", hi: "अभियान चुनें" },
+      "how-step-2-text": { en: "Browse campaigns by ward, mission type, time requirement, and current volunteer demand.", hi: "वार्ड, श्रेणी, समय और स्वयंसेवक आवश्यकता के अनुसार अभियान देखें।" },
+      "how-step-3-title": { en: "Contribute", hi: "योगदान दें" },
+      "how-step-3-text": { en: "Show up, participate, donate, mentor, coordinate, or spread awareness using your strongest skills.", hi: "आएँ, भाग लें, दान करें, मार्गदर्शन दें, समन्वय करें या जागरूकता फैलाएँ।" },
+      "how-step-4-title": { en: "Get Recognised", hi: "मान्यता पाएं" },
+      "how-step-4-text": { en: "Share your story, climb the leaderboard, and download appreciation certificates for your contribution.", hi: "अपनी कहानी साझा करें, लीडरबोर्ड पर आएँ और प्रशंसा प्रमाणपत्र डाउनलोड करें।" },
+      "showcase-badge": { en: "Wall of Fame", hi: "सम्मान की दीवार" },
+      "showcase-title": { en: "Citizens making a real difference", hi: "नागरिक जो वास्तविक बदलाव ला रहे हैं" },
+      "showcase-subtitle": { en: "Public service deserves public visibility. Celebrate the stories, photos, and impact behind every mission.", hi: "सार्वजनिक सेवा को सार्वजनिक दृश्यता मिलनी चाहिए। हर योगदान की कहानी और प्रभाव को सामने लाएँ।" },
+      "story-toggle": { en: "Share Your Story", hi: "अपनी कहानी साझा करें" },
+      "story-form-title": { en: "Share what you did for your district", hi: "जिले के लिए आपने क्या किया, बताइए" },
+      "story-form-subtitle": { en: "Add a story, optionally attach a photo, and feature the contribution on the public showcase.", hi: "एक कहानी जोड़ें, चाहें तो फोटो लगाएँ, और अपने योगदान को सार्वजनिक प्रदर्शनी में दिखाएँ।" },
+      "story-name-label": { en: "Name", hi: "नाम" },
+      "story-role-label": { en: "Your Role", hi: "आपकी भूमिका" },
+      "story-role-placeholder": { en: "Community Volunteer", hi: "समुदाय स्वयंसेवक" },
+      "story-category-label": { en: "Mission Category", hi: "अभियान श्रेणी" },
+      "story-photo-label": { en: "Photo (Optional)", hi: "फोटो (वैकल्पिक)" },
+      "story-headline-label": { en: "Story Title", hi: "कहानी का शीर्षक" },
+      "story-headline-placeholder": { en: "What changed because of your effort?", hi: "आपके प्रयास से क्या बदला?" },
+      "story-text-label": { en: "Your Story", hi: "आपकी कहानी" },
+      "story-text-placeholder": { en: "Describe what you did, who joined, and what impact you saw.", hi: "बताइए आपने क्या किया, कौन जुड़ा, और क्या प्रभाव देखा।" },
+      "story-submit": { en: "Publish Story", hi: "कहानी प्रकाशित करें" },
+      "leader-badge": { en: "Monthly Leaders", hi: "मासिक लीडर्स" },
+      "leader-title": { en: "Top contributors - April 2026", hi: "शीर्ष योगदानकर्ता - अप्रैल 2026" },
+      "leader-subtitle": { en: "Meet the citizens whose time, effort, and consistency are moving the district forward.", hi: "उन नागरिकों से मिलिए जिनका समय, श्रम और निरंतरता जिले को आगे बढ़ा रही है।" },
+      "volunteer-badge": { en: "Join the Movement", hi: "इस अभियान से जुड़ें" },
+      "volunteer-title": { en: "Your district needs you.", hi: "आपके जिले को आपकी ज़रूरत है।" },
+      "volunteer-subtitle": { en: "Whether you have two hours a week or an entire weekend, every act of contribution can strengthen public life.", hi: "चाहे आपके पास हर सप्ताह दो घंटे हों या पूरा सप्ताहांत, हर योगदान सार्वजनिक जीवन को मजबूत करता है।" },
+      "perk-1-title": { en: "Official Recognition", hi: "आधिकारिक मान्यता" },
+      "perk-1-text": { en: "Certificates, leaderboard visibility, and district-level acknowledgement for sustained contribution.", hi: "निरंतर योगदान पर प्रमाणपत्र, लीडरबोर्ड दृश्यता और जिला स्तर की पहचान।" },
+      "perk-2-title": { en: "Be First to Know", hi: "सबसे पहले जानें" },
+      "perk-2-text": { en: "Get mission alerts, new drives, and announcements before general public slots fill up.", hi: "मिशन अलर्ट, नए अभियान और घोषणाएँ पहले प्राप्त करें।" },
+      "perk-3-title": { en: "Build Local Networks", hi: "स्थानीय नेटवर्क बनाएं" },
+      "perk-3-text": { en: "Work with citizens, administration teams, NGOs, schools, and local institutions on real initiatives.", hi: "नागरिकों, प्रशासन, एनजीओ, स्कूल और संस्थानों के साथ काम करें।" },
+      "perk-4-title": { en: "Showcase Your Work", hi: "अपने कार्य को प्रदर्शित करें" },
+      "perk-4-text": { en: "Your service can be featured on the public Wall of Fame to inspire other citizens to join.", hi: "आपके योगदान को सार्वजनिक सम्मान दीवार पर दिखाया जा सकता है।" },
+      "selected-mission-label": { en: "Selected Mission", hi: "चयनित अभियान" },
+      "selected-mission-clear": { en: "Clear", hi: "हटाएँ" },
+      "volunteer-form-title": { en: "Register as a Volunteer", hi: "स्वयंसेवक के रूप में पंजीकरण करें" },
+      "volunteer-form-subtitle": { en: "Free to join. Built for rapid district deployment.", hi: "जुड़ना निःशुल्क है। किसी भी जिले में तेजी से उपयोग के लिए तैयार।" },
+      "vol-name-label": { en: "Full Name *", hi: "पूरा नाम *" },
+      "vol-phone-label": { en: "Mobile Number *", hi: "मोबाइल नंबर *" },
+      "vol-email-label": { en: "Email Address", hi: "ईमेल पता" },
+      "vol-area-label": { en: "Area / Ward", hi: "क्षेत्र / वार्ड" },
+      "vol-occupation-label": { en: "Profession / Occupation", hi: "पेशा / व्यवसाय" },
+      "vol-occupation-placeholder": { en: "Teacher, engineer, student, homemaker, retired officer", hi: "शिक्षक, इंजीनियर, छात्र, गृहिणी, सेवानिवृत्त अधिकारी" },
+      "vol-skills-label": { en: "Your Skills - select all that apply", hi: "आपके कौशल - सभी लागू विकल्प चुनें" },
+      "vol-availability-label": { en: "Availability", hi: "उपलब्धता" },
+      "vol-message-label": { en: "Why do you want to contribute?", hi: "आप योगदान क्यों देना चाहते हैं?" },
+      "vol-message-placeholder": { en: "Tell us how you want to help your district.", hi: "बताइए आप अपने जिले की कैसे मदद करना चाहते हैं।" },
+      "vol-submit": { en: "Register as Volunteer", hi: "स्वयंसेवक पंजीकरण" },
+      "newsletter-title": { en: "Never miss a mission.", hi: "कोई अभियान न छूटे।" },
+      "newsletter-copy": { en: "Subscribe to receive new mission alerts, special drives, and public service updates directly in your inbox.", hi: "नए अभियान, विशेष ड्राइव और सार्वजनिक सेवा अपडेट सीधे अपने इनबॉक्स में पाएँ।" },
+      "newsletter-placeholder": { en: "Enter your email address", hi: "अपना ईमेल पता दर्ज करें" },
+      "newsletter-submit": { en: "Subscribe Free", hi: "निःशुल्क सदस्यता लें" },
+      "cta-title": { en: "The change you want to see - <span>start today.</span>", hi: "जो बदलाव आप देखना चाहते हैं - <span>आज से शुरू करें।</span>" },
+      "cta-copy": { en: "Mission slots, sponsorship support, skilled volunteering, and public stories are all in one place now. The district can move faster when good citizens can act faster.", hi: "अभियान, प्रायोजन, कौशल-आधारित स्वयंसेवा और सार्वजनिक कहानियाँ अब एक ही मंच पर हैं।" },
+      "cta-missions": { en: "See Open Missions", hi: "खुले अभियान देखें" },
+      "cta-register": { en: "Register Now", hi: "अभी पंजीकरण करें" },
+      "footer-desc": { en: "An initiative by the District Administration to connect citizens with meaningful social programs, drives, campaigns, crowdfunding, and recognition.", hi: "जिला प्रशासन की एक पहल जो नागरिकों को सामाजिक कार्यक्रमों, अभियानों, क्राउडफंडिंग और मान्यता से जोड़ती है।" },
+      "footer-platform": { en: "Platform", hi: "प्लेटफॉर्म" },
+      "footer-categories": { en: "Categories", hi: "श्रेणियाँ" },
+      "footer-admin": { en: "Administration", hi: "प्रशासन" },
+      "footer-sponsor-link": { en: "Sponsor a Mission", hi: "अभियान प्रायोजित करें" },
+      "footer-admin-link": { en: "Open Admin Panel", hi: "एडमिन पैनल खोलें" },
+      "footer-wards-link": { en: "Ward Overview", hi: "वार्ड अवलोकन" },
+      "footer-donate-link": { en: "Contribute Funds", hi: "फंड योगदान" },
+      "footer-copy": { en: "© 2026 Prayas Citizen Platform · An initiative of the District Administration · Built with public service in mind.", hi: "© 2026 प्रयास नागरिक मंच · जिला प्रशासन की पहल · सार्वजनिक सेवा के उद्देश्य से निर्मित।" },
+      "mission-tab-details": { en: "Details", hi: "विवरण" },
+      "mission-tab-discussion": { en: "Discussion", hi: "चर्चा" },
+      "donation-subtitle": { en: "Support a mission with a direct contribution.", hi: "सीधे योगदान के साथ किसी अभियान का समर्थन करें।" },
+      "donation-amount-label": { en: "Select amount or enter a custom amount (₹)", hi: "राशि चुनें या कस्टम राशि दर्ज करें (₹)" },
+      "donation-anonymous": { en: "Donate anonymously", hi: "गुमनाम दान करें" },
+      "donation-name-label": { en: "Your name", hi: "आपका नाम" },
+      "donation-method-label": { en: "Choose payment method", hi: "भुगतान विधि चुनें" },
+      "donation-upi-copy": { en: "Scan the QR code or use the UPI ID below.", hi: "QR कोड स्कैन करें या नीचे दिया गया UPI आईडी प्रयोग करें।" },
+      "donation-submit": { en: "Donate Now", hi: "अभी दान करें" },
+      "bank-holder": { en: "Account Holder", hi: "खाता धारक" },
+      "bank-number": { en: "Account Number", hi: "खाता संख्या" },
+      "bank-ifsc": { en: "IFSC Code", hi: "आईएफएससी कोड" },
+      "bank-name": { en: "Bank", hi: "बैंक" },
+      "bank-branch": { en: "Branch", hi: "शाखा" },
+      "sponsor-modal-title": { en: "Become a Sponsor", hi: "प्रायोजक बनें" },
+      "sponsor-modal-subtitle": { en: "Share your organisation details and preferred support tier.", hi: "अपने संगठन का विवरण और चुना हुआ सहयोग स्तर दर्ज करें।" },
+      "sponsor-company-label": { en: "Company Name", hi: "कंपनी का नाम" },
+      "sponsor-contact-label": { en: "Contact Person", hi: "संपर्क व्यक्ति" },
+      "sponsor-phone-label": { en: "Phone", hi: "फोन" },
+      "sponsor-email-label": { en: "Email", hi: "ईमेल" },
+      "sponsor-tier-label": { en: "Selected Tier", hi: "चयनित स्तर" },
+      "sponsor-message-label": { en: "Message", hi: "संदेश" },
+      "sponsor-message-placeholder": { en: "Tell us what mission area you want to support.", hi: "बताइए आप किस अभियान क्षेत्र का समर्थन करना चाहते हैं।" },
+      "sponsor-submit": { en: "Submit Sponsorship Interest", hi: "प्रायोजन रुचि भेजें" },
+      "comments-title": { en: "Comments", hi: "टिप्पणियाँ" },
+      "comments-subtitle": { en: "Add your note to this story.", hi: "इस कहानी पर अपनी टिप्पणी जोड़ें।" },
+      "comments-name-label": { en: "Your Name", hi: "आपका नाम" },
+      "comments-text-label": { en: "Comment", hi: "टिप्पणी" },
+      "comments-submit": { en: "Post Comment", hi: "टिप्पणी पोस्ट करें" },
+      "passport-title": { en: "Volunteer Passport", hi: "स्वयंसेवक पासपोर्ट" },
+      "passport-subtitle": { en: "Recognising sustained civic contribution.", hi: "निरंतर नागरिक योगदान की पहचान।" },
+      "passport-points": { en: "Points", hi: "अंक" },
+      "passport-missions": { en: "Missions", hi: "अभियान" },
+      "passport-badges": { en: "Badges Earned", hi: "अर्जित बैज" },
+      "passport-timeline": { en: "Missions Attended", hi: "शामिल अभियान" },
+      "passport-download": { en: "Download Certificate", hi: "प्रमाणपत्र डाउनलोड करें" },
+      "admin-login-title": { en: "Admin Login", hi: "प्रशासक लॉगिन" },
+      "admin-login-subtitle": { en: "Enter the portal password to open the control panel.", hi: "कंट्रोल पैनल खोलने के लिए पोर्टल पासवर्ड दर्ज करें।" },
+      "admin-password-label": { en: "Password", hi: "पासवर्ड" },
+      "admin-login-submit": { en: "Login", hi: "लॉगिन" },
+      "admin-panel-title": { en: "Admin Control Panel", hi: "प्रशासक नियंत्रण पैनल" },
+      "admin-panel-subtitle": { en: "Manage missions, volunteers, announcements, and newsletter communication.", hi: "अभियान, स्वयंसेवक, घोषणाएँ और न्यूज़लेटर प्रबंधन करें।" },
+      "admin-tab-overview": { en: "Overview", hi: "अवलोकन" },
+      "admin-tab-post": { en: "Post Mission", hi: "अभियान पोस्ट करें" },
+      "admin-tab-volunteers": { en: "Volunteers", hi: "स्वयंसेवक" },
+      "admin-tab-announcements": { en: "Announcements", hi: "घोषणाएँ" },
+      "admin-tab-newsletter": { en: "Newsletter", hi: "न्यूज़लेटर" },
+      "pm-title-label": { en: "Mission Title", hi: "अभियान शीर्षक" },
+      "pm-category-label": { en: "Category", hi: "श्रेणी" },
+      "pm-ward-label": { en: "Ward", hi: "वार्ड" },
+      "pm-date-label": { en: "Date / Schedule", hi: "तारीख / शेड्यूल" },
+      "pm-location-label": { en: "Location", hi: "स्थान" },
+      "pm-coordinator-label": { en: "Coordinator", hi: "समन्वयक" },
+      "pm-slots-label": { en: "Volunteer Slots", hi: "स्वयंसेवक स्थान" },
+      "pm-duration-label": { en: "Duration", hi: "अवधि" },
+      "pm-description-label": { en: "Description", hi: "विवरण" },
+      "pm-submit": { en: "Post Mission", hi: "अभियान पोस्ट करें" },
+      "admin-volunteers-title": { en: "Registered Volunteers", hi: "पंजीकृत स्वयंसेवक" },
+      "admin-volunteers-subtitle": { en: "Export the current volunteer registry for follow-up and field planning.", hi: "फॉलो-अप और फील्ड प्लानिंग के लिए स्वयंसेवक रजिस्ट्री निर्यात करें।" },
+      "admin-volunteers-export": { en: "Export CSV", hi: "CSV निर्यात करें" },
+      "table-name": { en: "Name", hi: "नाम" },
+      "table-phone": { en: "Phone", hi: "फोन" },
+      "table-area": { en: "Area", hi: "क्षेत्र" },
+      "table-skills": { en: "Skills", hi: "कौशल" },
+      "table-mission": { en: "Mission", hi: "अभियान" },
+      "table-date": { en: "Registered", hi: "पंजीकरण तिथि" },
+      "admin-announcement-title": { en: "Current Announcements", hi: "वर्तमान घोषणाएँ" },
+      "admin-announcement-subtitle": { en: "These items power the live ticker above the portal.", hi: "यही आइटम पोर्टल के लाइव टिकर में दिखते हैं।" },
+      "admin-announcement-form-title": { en: "Post New Announcement", hi: "नई घोषणा पोस्ट करें" },
+      "admin-announcement-form-subtitle": { en: "Add a new alert, update, or call to action for citizens.", hi: "नया अलर्ट, अपडेट या नागरिक आह्वान जोड़ें।" },
+      "admin-announcement-label": { en: "Announcement Text", hi: "घोषणा पाठ" },
+      "admin-announcement-submit": { en: "Add Announcement", hi: "घोषणा जोड़ें" },
+      "admin-overview-sponsors-title": { en: "Latest Sponsor Leads", hi: "नवीनतम प्रायोजक लीड्स" },
+      "admin-overview-sponsors-subtitle": { en: "Organisations that have expressed interest in supporting district missions.", hi: "वे संस्थाएँ जिन्होंने जिला अभियानों को समर्थन देने में रुचि दिखाई है।" },
+      "admin-overview-volunteers-title": { en: "Latest Volunteers", hi: "नवीनतम स्वयंसेवक" },
+      "admin-overview-volunteers-subtitle": { en: "Newest citizen registrations captured from the volunteer form.", hi: "स्वयंसेवक फॉर्म से प्राप्त नवीनतम नागरिक पंजीकरण।" },
+      "admin-newsletter-title": { en: "Newsletter Builder", hi: "न्यूज़लेटर बिल्डर" },
+      "admin-newsletter-subtitle": { en: "Prepare a district message and preview how it will read.", hi: "जिला संदेश तैयार करें और उसका पूर्वावलोकन देखें।" },
+      "admin-newsletter-subject-label": { en: "Subject", hi: "विषय" },
+      "admin-newsletter-body-label": { en: "Body", hi: "बॉडी" },
+      "admin-newsletter-send": { en: "Send to Subscribers", hi: "ग्राहकों को भेजें" },
+      "admin-newsletter-preview-title": { en: "Preview", hi: "पूर्वावलोकन" },
+      "admin-newsletter-preview-subtitle": { en: "Live preview of the current newsletter draft.", hi: "वर्तमान न्यूज़लेटर ड्राफ्ट का लाइव पूर्वावलोकन।" },
+      "admin-newsletter-subscribers-title": { en: "Recent Subscribers", hi: "हाल के ग्राहक" },
+      "admin-newsletter-subscribers-subtitle": { en: "Most recent email signups collected on this browser.", hi: "इस ब्राउज़र पर संग्रहित हाल के ईमेल साइनअप।" }
+    };
+
+    const categoryMeta = {
+      sanitation: { en: "Sanitation", hi: "स्वच्छता", emoji: "🧹", dot: "#F97316" },
+      environment: { en: "Environment", hi: "पर्यावरण", emoji: "🌳", dot: "#16A34A" },
+      awareness: { en: "Awareness", hi: "जागरूकता", emoji: "🚦", dot: "#0284C7" },
+      arts: { en: "Arts & Culture", hi: "कला व संस्कृति", emoji: "🎨", dot: "#9333EA" },
+      education: { en: "Education", hi: "शिक्षा", emoji: "📚", dot: "#2563EB" }
+    };
+
+    const UI_STORAGE_KEY = "prayas-portal-ui-v2";
+    const ADMIN_TOKEN_KEY = "prayas-admin-token-v1";
+    const persistKeys = ["lang", "theme", "fontScale", "newsletterDraft"];
+
+    function deepClone(value) {
+      if (typeof structuredClone === "function") {
+        return structuredClone(value);
+      }
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function createDefaultState() {
+      return {
+        lang: "en",
+        theme: "light",
+        fontScale: "normal",
+        announcements: [
+          "Van Mahotsav registrations open - 500 spots available.",
+          "Wall Art Competition submissions close on 15 April.",
+          "Road Safety Corps waitlist now open.",
+          "Earth Day Jal Shakti March route updated."
+        ],
+        missions: deepClone(initialMissions),
+        funds: deepClone(initialFunds),
+        stories: deepClone(initialStories),
+        leaders: deepClone(leaders),
+        volunteers: [],
+        newsletterSubs: 847,
+        newsletterSignups: [],
+        newsletterDraft: { subject: "", body: "" },
+        sponsorLeads: [],
+        currentCategory: "all",
+        currentWard: "all",
+        activeMissionId: null,
+        activeMissionTab: "details",
+        activeFundId: null,
+        activeStoryId: null,
+        activeLeaderId: null,
+        selectedMissionId: null,
+        paymentMethod: "upi",
+        adminLoggedIn: Boolean(window.localStorage.getItem(ADMIN_TOKEN_KEY)),
+        currentAdminTab: "overview",
+        statsAnimated: false
+      };
+    }
+
+    function getAdminToken() {
+      return window.localStorage.getItem(ADMIN_TOKEN_KEY) || "";
+    }
+
+    function setAdminToken(token) {
+      if (!token) {
+        window.localStorage.removeItem(ADMIN_TOKEN_KEY);
+        return;
+      }
+      window.localStorage.setItem(ADMIN_TOKEN_KEY, token);
+    }
+
+    function clearAdminToken() {
+      window.localStorage.removeItem(ADMIN_TOKEN_KEY);
+    }
+
+    function loadState() {
+      const nextState = createDefaultState();
+      try {
+        const raw = window.localStorage.getItem(UI_STORAGE_KEY);
+        if (!raw) return nextState;
+        const parsed = JSON.parse(raw);
+        persistKeys.forEach((key) => {
+          if (Object.prototype.hasOwnProperty.call(parsed, key)) {
+            nextState[key] = parsed[key];
+          }
+        });
+      } catch (error) {
+        console.warn("Unable to restore portal state:", error);
+      }
+
+      if (!nextState.newsletterDraft || typeof nextState.newsletterDraft !== "object") {
+        nextState.newsletterDraft = { subject: "", body: "" };
+      }
+      return nextState;
+    }
+
+    function persistState() {
+      try {
+        const snapshot = {};
+        persistKeys.forEach((key) => {
+          snapshot[key] = deepClone(state[key]);
+        });
+        window.localStorage.setItem(UI_STORAGE_KEY, JSON.stringify(snapshot));
+      } catch (error) {
+        console.warn("Unable to persist portal state:", error);
+      }
+    }
+
+    const state = loadState();
+    state.adminLoggedIn = Boolean(getAdminToken());
+
+    async function apiRequest(url, options = {}) {
+      const token = getAdminToken();
+      const headers = {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch(url, {
+        ...options,
+        headers
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(payload.error || "Request failed.");
+        error.status = response.status;
+        throw error;
+      }
+      return payload;
+    }
+
+    function applyBootstrapData(payload) {
+      state.announcements = Array.isArray(payload.announcements) ? payload.announcements : [];
+      state.missions = Array.isArray(payload.missions) ? payload.missions : [];
+      state.funds = Array.isArray(payload.funds) ? payload.funds : [];
+      state.stories = Array.isArray(payload.stories) ? payload.stories : [];
+      state.leaders = Array.isArray(payload.leaders) ? payload.leaders : deepClone(leaders);
+      state.volunteers = Array.isArray(payload.volunteers) ? payload.volunteers : [];
+      state.sponsorLeads = Array.isArray(payload.sponsorLeads) ? payload.sponsorLeads : [];
+      state.newsletterSignups = Array.isArray(payload.newsletterSignups) ? payload.newsletterSignups : [];
+      state.newsletterSubs = Number(payload.newsletterSubs || 0);
+      if (payload.newsletterDraft && typeof payload.newsletterDraft === "object") {
+        state.newsletterDraft = {
+          subject: payload.newsletterDraft.subject || "",
+          body: payload.newsletterDraft.body || ""
+        };
+      }
+    }
+
+    async function refreshPortalData() {
+      const payload = await apiRequest("/api/bootstrap", { method: "GET" });
+      applyBootstrapData(payload);
+      const subjectInput = document.getElementById("newsletterSubject");
+      const bodyInput = document.getElementById("newsletterBody");
+      if (subjectInput) {
+        subjectInput.value = state.newsletterDraft.subject || "";
+      }
+      if (bodyInput) {
+        bodyInput.value = state.newsletterDraft.body || "";
+      }
+      renderAll();
+    }
+
+    function toDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        if (!file) {
+          resolve("");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Unable to read selected image."));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function tr(key) {
+      return translations[key]?.[state.lang] || translations[key]?.en || key;
+    }
+
+    function applyTranslations() {
+      document.documentElement.lang = state.lang === "hi" ? "hi" : "en";
+      document.querySelectorAll("[data-i18n]").forEach((node) => {
+        const key = node.getAttribute("data-i18n");
+        const value = tr(key);
+        node.innerHTML = value;
+      });
+      document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+        const key = node.getAttribute("data-i18n-placeholder");
+        node.setAttribute("placeholder", tr(key));
+      });
+      document.getElementById("langToggle").textContent = state.lang === "en" ? "अ/A" : "A/अ";
+      document.getElementById("themeToggle").textContent = state.theme === "light" ? "🌙" : "☀️";
+    }
+
+    function categoryLabel(category) {
+      return categoryMeta[category]?.[state.lang] || category;
+    }
+
+    function categoryEmoji(category) {
+      return categoryMeta[category]?.emoji || "⭐";
+    }
+
+    function statusLabel(status) {
+      const labels = {
+        open: { en: "Open", hi: "खुला" },
+        upcoming: { en: "Upcoming", hi: "आगामी" },
+        full: { en: "Full", hi: "पूर्ण" }
+      };
+      return labels[status]?.[state.lang] || status;
+    }
+
+    function wardLabel(value) {
+      return state.lang === "hi" ? value.replace("Ward", "वार्ड") : value;
+    }
+
+    function getStats() {
+      const volunteerBase = 2400 + state.volunteers.length;
+      const activeMissions = state.missions.length;
+      const completed = 156;
+      const lives = 18000 + state.stories.length * 75 + state.volunteers.length * 3;
+      return { volunteerBase, activeMissions, completed, lives };
+    }
+
+    function renderHeroStats() {
+      const stats = getStats();
+      document.getElementById("heroVolunteerCount").textContent = `${formatCompact(stats.volunteerBase)}+`;
+      document.getElementById("heroImpactTrees").textContent = "840";
+      document.getElementById("heroImpactDrives").textContent = "156";
+    }
+
+    function setStatText() {
+      const stats = getStats();
+      document.getElementById("statVolunteers").textContent = stats.volunteerBase.toLocaleString("en-IN");
+      document.getElementById("statMissions").textContent = stats.activeMissions.toLocaleString("en-IN");
+      document.getElementById("statCompleted").textContent = stats.completed.toLocaleString("en-IN");
+      document.getElementById("statLives").textContent = stats.lives.toLocaleString("en-IN");
+    }
+
+    function animateStats() {
+      if (state.statsAnimated) return;
+      state.statsAnimated = true;
+      const stats = getStats();
+      const config = [
+        { id: "statVolunteers", target: stats.volunteerBase },
+        { id: "statMissions", target: stats.activeMissions },
+        { id: "statCompleted", target: stats.completed },
+        { id: "statLives", target: stats.lives }
+      ];
+
+      config.forEach(({ id, target }) => {
+        const node = document.getElementById(id);
+        let current = 0;
+        const step = Math.max(1, target / 60);
+        const timer = setInterval(() => {
+          current += step;
+          if (current >= target) {
+            current = target;
+            clearInterval(timer);
+          }
+          node.textContent = Math.floor(current).toLocaleString("en-IN");
+        }, 16);
+      });
+    }
+
+    function renderTicker() {
+      const items = [...state.announcements, ...state.announcements];
+      document.getElementById("tickerTrack").innerHTML = items
+        .map((item, index) => `<div class="ticker-item"><strong>${index % 2 === 0 ? "📢" : "✅"}</strong> ${escapeHtml(item)}</div>`)
+        .join("");
+    }
+
+    function renderCategorySelectOptions() {
+      const options = Object.keys(categoryMeta)
+        .map((key) => `<option value="${key}">${categoryEmoji(key)} ${categoryLabel(key)}</option>`)
+        .join("");
+      document.getElementById("storyCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें" : "Select Category"}</option>${options}`;
+      document.getElementById("pmCategory").innerHTML = options;
+    }
+
+    function renderWardSelectOptions() {
+      const wardOptions = Array.from({ length: 5 }, (_, i) => `Ward ${i + 1}`)
+        .map((ward) => `<option value="${ward}">${wardLabel(ward)}</option>`)
+        .join("");
+      document.getElementById("volWard").innerHTML = `<option value="">${state.lang === "hi" ? "वार्ड चुनें" : "Select ward"}</option>${wardOptions}`;
+      document.getElementById("pmWard").innerHTML = wardOptions;
+    }
+
+    function renderAvailabilityOptions() {
+      const options = [
+        { en: "Weekday mornings (7-10 AM)", hi: "कार्यदिवस सुबह (7-10 बजे)" },
+        { en: "Weekday evenings (5-8 PM)", hi: "कार्यदिवस शाम (5-8 बजे)" },
+        { en: "Weekends only", hi: "केवल सप्ताहांत" },
+        { en: "Flexible / anytime", hi: "लचीला / कभी भी" },
+        { en: "One-time events only", hi: "केवल एकमुश्त कार्यक्रम" }
+      ];
+      document.getElementById("volAvailability").innerHTML =
+        `<option value="">${state.lang === "hi" ? "उपलब्धता चुनें" : "Select your availability"}</option>` +
+        options.map((option) => `<option value="${option.en}">${option[state.lang]}</option>`).join("");
+    }
+
+    function renderSkills() {
+      const skills = [
+        { id: "art", labelEn: "Art & Design", labelHi: "कला व डिज़ाइन", emoji: "🎨" },
+        { id: "photo", labelEn: "Photography", labelHi: "फोटोग्राफी", emoji: "📸" },
+        { id: "garden", labelEn: "Gardening", labelHi: "बागवानी", emoji: "🌿" },
+        { id: "teach", labelEn: "Teaching", labelHi: "शिक्षण", emoji: "👶" },
+        { id: "aid", labelEn: "First Aid", labelHi: "प्राथमिक उपचार", emoji: "🏥" },
+        { id: "tech", labelEn: "Tech / IT", labelHi: "टेक / आईटी", emoji: "💻" },
+        { id: "speak", labelEn: "Public Speaking", labelHi: "जनसंपर्क / भाषण", emoji: "🎙️" },
+        { id: "labour", labelEn: "Physical Labour", labelHi: "शारीरिक श्रम", emoji: "🏗️" },
+        { id: "drive", labelEn: "Driving / Logistics", labelHi: "ड्राइविंग / लॉजिस्टिक्स", emoji: "🚗" }
+      ];
+      document.getElementById("skillsGrid").innerHTML = skills
+        .map((skill) => `
+          <label class="skill-check">
+            <input type="checkbox" name="skills" value="${escapeHtml(skill.labelEn)}" />
+            <span>${skill.emoji} ${escapeHtml(state.lang === "hi" ? skill.labelHi : skill.labelEn)}</span>
+          </label>
+        `)
+        .join("");
+    }
+
+    function renderCategoryFilters() {
+      const items = [
+        { value: "all", label: state.lang === "hi" ? "सभी अभियान" : "All Missions", emoji: "🗂" },
+        ...Object.keys(categoryMeta).map((key) => ({ value: key, label: categoryLabel(key), emoji: categoryEmoji(key) }))
+      ];
+      document.getElementById("categoryFilters").innerHTML = items
+        .map(
+          (item) => `
+            <button class="filter-btn ${state.currentCategory === item.value ? "active" : ""}" type="button" onclick="setCategoryFilter('${item.value}')">
+              ${item.emoji} ${escapeHtml(item.label)}
+            </button>
+          `
+        )
+        .join("");
+    }
+
+    function renderWardFilters() {
+      const items = [
+        { value: "all", label: state.lang === "hi" ? "सभी वार्ड" : "All Wards" },
+        ...Array.from({ length: 5 }, (_, index) => ({ value: `Ward ${index + 1}`, label: wardLabel(`Ward ${index + 1}`) }))
+      ];
+      document.getElementById("wardFilters").innerHTML = items
+        .map(
+          (item) => `
+            <button class="filter-btn ${state.currentWard === item.value ? "active" : ""}" type="button" onclick="setWardFilter('${item.value}')">
+              ${escapeHtml(item.label)}
+            </button>
+          `
+        )
+        .join("");
+    }
+
+    function filteredMissions() {
+      return state.missions.filter((mission) => {
+        const categoryOk = state.currentCategory === "all" || mission.category === state.currentCategory;
+        const wardOk = state.currentWard === "all" || mission.ward === state.currentWard;
+        return categoryOk && wardOk;
+      });
+    }
+
+    function renderMissions() {
+      const missions = filteredMissions();
+      const grid = document.getElementById("missionsGrid");
+      if (!missions.length) {
+        grid.innerHTML = `
+          <div class="mission-card" style="grid-column:1/-1;padding:32px;text-align:center">
+            <h3 class="mission-title">${state.lang === "hi" ? "इस फ़िल्टर संयोजन के लिए कोई अभियान नहीं मिला।" : "No missions match this filter combination."}</h3>
+            <p class="mission-desc" style="display:block">${state.lang === "hi" ? "अन्य श्रेणियाँ या वार्ड चुनकर देखें।" : "Try another category or ward selection."}</p>
+          </div>
+        `;
+        return;
+      }
+
+      const avatarPalette = ["#E74C3C", "#3498DB", "#2ECC71", "#9B59B6", "#F39C12"];
+      const avatarLetters = ["R", "S", "A", "P", "M"];
+
+      grid.innerHTML = missions
+        .map((mission) => {
+          const percentage = Math.min(100, Math.round((mission.volunteers / mission.total) * 100));
+          const avatars = avatarLetters
+            .map((letter, index) => `<div class="avatar" style="background:${avatarPalette[index]}">${letter}</div>`)
+            .join("") + `<div class="avatar" style="background:#94A3B8;font-size:9px">+${Math.max(0, mission.volunteers - 5)}</div>`;
+
+          return `
+            <article class="mission-card">
+              <div class="mission-banner" style="background:${mission.bg}">
+                ${mission.emoji}
+                <span class="mission-tag">${escapeHtml(categoryLabel(mission.category))}</span>
+                <span class="mission-status status-${mission.status}">${escapeHtml(statusLabel(mission.status))}</span>
+                <span class="mission-ward-chip">${escapeHtml(wardLabel(mission.ward))}</span>
+              </div>
+              <div class="mission-body">
+                <h3 class="mission-title">${escapeHtml(mission.title)}</h3>
+                <p class="mission-desc">${escapeHtml(mission.desc)}</p>
+                <div class="mission-meta">
+                  <span><i class="fa-solid fa-calendar-days"></i> ${escapeHtml(mission.date)}</span>
+                  <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(mission.location)}</span>
+                  <span><i class="fa-solid fa-comments"></i> ${mission.discussion.length} ${state.lang === "hi" ? "चर्चा" : "comments"}</span>
+                </div>
+                <div class="progress-info">
+                  <span><strong>${mission.volunteers}</strong> ${state.lang === "hi" ? "स्वयंसेवक जुड़े" : "volunteers joined"}</span>
+                  <span>${percentage}% ${state.lang === "hi" ? "भरा" : "filled"}</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${percentage}%"></div></div>
+                <div class="mission-footer">
+                  <div class="volunteers-avatars">${avatars}</div>
+                  <div class="mission-actions">
+                    <button class="btn btn-primary" type="button" onclick="openMissionModal(${mission.id})">
+                      ${state.lang === "hi" ? "विवरण" : "View Details"}
+                    </button>
+                    <button class="mission-share" type="button" onclick="shareMission(${mission.id})" aria-label="Share mission">
+                      <i class="fa-brands fa-whatsapp"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          `;
+        })
+        .join("");
+    }
+
+    function renderFundCards() {
+      document.getElementById("fundGrid").innerHTML = state.funds
+        .map((fund) => {
+          const percentage = Math.min(100, Math.round((fund.raised / fund.target) * 100));
+          return `
+            <article class="fund-card">
+              <div class="fund-band" style="background:${fund.color}"></div>
+              <div class="fund-emoji">${fund.emoji}</div>
+              <div class="fund-body">
+                <h3 class="fund-title">${escapeHtml(fund.title)}</h3>
+                <div class="fund-amount-line">
+                  <strong>₹${fund.raised.toLocaleString("en-IN")}</strong>
+                  ${state.lang === "hi" ? `₹${fund.target.toLocaleString("en-IN")} के लक्ष्य में से` : `raised of ₹${fund.target.toLocaleString("en-IN")} goal`}
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${percentage}%"></div></div>
+                <div class="fund-meta">
+                  ${fund.donors} ${state.lang === "hi" ? "दाता" : "donors"} · ${fund.daysLeft} ${state.lang === "hi" ? "दिन शेष" : "days left"}
+                </div>
+                <button class="btn btn-primary" type="button" style="width:100%" onclick="openDonationModal(${fund.id})">
+                  ${state.lang === "hi" ? "योगदान करें" : "Contribute ₹"}
+                </button>
+              </div>
+            </article>
+          `;
+        })
+        .join("");
+    }
+
+    function renderSponsorCards() {
+      document.getElementById("sponsorGrid").innerHTML = sponsorTiers
+        .map(
+          (tier) => `
+            <article class="sponsor-card ${tier.tierClass}">
+              <div class="tier-icon">${tier.icon}</div>
+              <h3>${escapeHtml(tier.name)}</h3>
+              <div class="tier-price">${escapeHtml(tier.price)}</div>
+              <ul>${tier.benefits.map((benefit) => `<li>${escapeHtml(benefit)}</li>`).join("")}</ul>
+              <button class="btn btn-primary" type="button" onclick="openSponsorModal('${tier.name}')">
+                ${state.lang === "hi" ? "प्रायोजक बनें" : "Become Sponsor"}
+              </button>
+            </article>
+          `
+        )
+        .join("");
+    }
+
+    function renderWardGrid() {
+      const wards = Array.from({ length: 9 }, (_, index) => `Ward ${index + 1}`);
+      const cards = wards.map((ward, index) => {
+        const missions = state.missions.filter((mission) => mission.ward === ward);
+        const categories = [...new Set(missions.map((mission) => mission.category))];
+        const borderColors = [varValue("--saffron"), varValue("--navy"), varValue("--green")];
+        const borderColor = borderColors[index % borderColors.length];
+        const dots = categories.length
+          ? categories.map((category) => `<span class="dot-pill" style="background:${categoryMeta[category].dot}">${categoryEmoji(category)}</span>`).join("")
+          : `<span style="color:var(--muted);font-size:13px">${state.lang === "hi" ? "अभी कोई अभियान नहीं" : "No missions yet"}</span>`;
+
+        return `
+          <article class="ward-card ${missions.length ? "" : "empty"}" style="border-left-color:${borderColor}">
+            <h3>${escapeHtml(wardLabel(ward))}</h3>
+            <div class="ward-count">${missions.length}</div>
+            <div class="ward-meta">${missions.length ? `${missions.length} ${state.lang === "hi" ? "सक्रिय अभियान" : "active missions"}` : state.lang === "hi" ? "नया अभियान आवश्यक" : "Mission opportunity zone"}</div>
+            <div class="ward-dots">${dots}</div>
+            ${
+              missions.length
+                ? `<button class="btn btn-soft" type="button" onclick="focusWard('${ward}')">${state.lang === "hi" ? "अभियान देखें" : "View Missions"}</button>`
+                : `<button class="btn btn-soft" type="button" onclick="openAdminLogin()">${state.lang === "hi" ? "नया अभियान जोड़ें" : "Add Mission"}</button>`
+            }
+          </article>
+        `;
+      });
+      document.getElementById("wardGrid").innerHTML = cards.join("");
+
+      const activeWards = new Set(state.missions.map((mission) => mission.ward)).size;
+      const categories = new Set(state.missions.map((mission) => mission.category)).size;
+      const volunteers = state.missions.reduce((sum, mission) => sum + mission.volunteers, 0);
+      document.getElementById("mapSummary").textContent =
+        state.lang === "hi"
+          ? `${state.missions.length} सक्रिय अभियान · ${activeWards} वार्ड · ${categories} श्रेणियाँ · ${volunteers.toLocaleString("en-IN")} स्वयंसेवक सक्रिय`
+          : `${state.missions.length} active missions across ${activeWards} wards · ${categories} categories · ${volunteers.toLocaleString("en-IN")} volunteers engaged`;
+    }
+
+    function storyCardMedia(story) {
+      if (story.imageUrl) {
+        return `<div class="story-image-shell"><img src="${escapeHtml(story.imageUrl)}" alt="${escapeHtml(story.title)}" /></div>`;
+      }
+      return `<div class="showcase-top-band" style="background:${story.bg}">${story.emoji}</div>`;
+    }
+
+    function renderStories() {
+      document.getElementById("showcaseGrid").innerHTML = state.stories
+        .map(
+          (story) => `
+            <article class="showcase-card">
+              ${storyCardMedia(story)}
+              <div class="showcase-body">
+                <div class="showcase-contributor">
+                  <div class="contributor-avatar" style="background:${story.color}">${escapeHtml(story.initials)}</div>
+                  <div>
+                    <div class="contributor-name">${escapeHtml(story.contributor)}</div>
+                    <div class="contributor-role">${escapeHtml(story.role)}</div>
+                  </div>
+                </div>
+                <h3 class="showcase-title">${escapeHtml(story.title)}</h3>
+                <p class="showcase-story">${escapeHtml(story.story)}</p>
+                <div class="showcase-tags">
+                  ${story.tags
+                    .map((tag, index) => `<span class="tag ${index === 1 ? "saffron" : index === 2 ? "green" : ""}">${escapeHtml(tag)}</span>`)
+                    .join("")}
+                </div>
+                <div class="showcase-actions">
+                  <button class="showcase-action-btn" type="button" onclick="cheerStory(${story.id})">👏 ${story.likes}</button>
+                  <button class="showcase-action-btn" type="button" onclick="openCommentsModal(${story.id})">💬 ${story.comments.length}</button>
+                </div>
+              </div>
+            </article>
+          `
+        )
+        .join("");
+    }
+
+    function renderLeaders() {
+      document.getElementById("leaderboardGrid").innerHTML = state.leaders
+        .map(
+          (leader) => `
+            <article class="leader-card ${leader.cls}">
+              <div class="leader-rank">${leader.rank}</div>
+              <div class="leader-avatar" style="background:${leader.color}">${escapeHtml(leader.initials)}</div>
+              <div class="leader-name">${escapeHtml(leader.name)}</div>
+              <div class="leader-area"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(leader.area)}</div>
+              <div class="leader-score">⚡ ${leader.points} pts · ${leader.missions} ${state.lang === "hi" ? "अभियान" : "missions"}</div>
+              <div class="leader-badges">${leader.badges.map((badge) => `<span class="badge-emoji">${badge}</span>`).join("")}</div>
+              <button class="btn btn-primary" type="button" style="width:100%" onclick="openPassportModal(${leader.id})">
+                ${state.lang === "hi" ? "पासपोर्ट देखें" : "View Passport"}
+              </button>
+            </article>
+          `
+        )
+        .join("");
+    }
+
+    function renderSelectedMissionBox() {
+      const box = document.getElementById("selectedMissionBox");
+      if (!state.selectedMissionId) {
+        box.classList.add("hidden");
+        return;
+      }
+      const mission = state.missions.find((item) => item.id === state.selectedMissionId);
+      if (!mission) {
+        box.classList.add("hidden");
+        return;
+      }
+      document.getElementById("selectedMissionText").textContent = `${mission.title} · ${wardLabel(mission.ward)}`;
+      box.classList.remove("hidden");
+    }
+
+    function renderAdminStats() {
+      const totalFunds = state.funds.reduce((sum, fund) => sum + fund.raised, 0);
+      const items = [
+        { label: state.lang === "hi" ? "स्वयंसेवक" : "Volunteers", value: state.volunteers.length },
+        { label: state.lang === "hi" ? "अभियान" : "Missions", value: state.missions.length },
+        { label: state.lang === "hi" ? "कुल फंड" : "Funds Raised", value: `₹${formatCompact(totalFunds)}` },
+        { label: state.lang === "hi" ? "ग्राहक" : "Subscribers", value: state.newsletterSubs },
+        { label: state.lang === "hi" ? "प्रायोजक लीड्स" : "Sponsor Leads", value: state.sponsorLeads.length },
+        { label: state.lang === "hi" ? "घोषणाएँ" : "Announcements", value: state.announcements.length }
+      ];
+      document.getElementById("adminStatsGrid").innerHTML = items
+        .map((item) => `<div class="admin-stat"><div class="admin-stat-value">${escapeHtml(String(item.value))}</div><div class="admin-stat-label">${escapeHtml(item.label)}</div></div>`)
+        .join("");
+    }
+
+    function renderVolunteerTable() {
+      const tbody = document.getElementById("volunteersTableBody");
+      if (!state.volunteers.length) {
+        tbody.innerHTML = `<tr><td colspan="6">${state.lang === "hi" ? "अभी तक कोई स्वयंसेवक पंजीकृत नहीं है।" : "No volunteers have registered yet."}</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = state.volunteers
+        .map((volunteer) => `
+          <tr>
+            <td>${escapeHtml(volunteer.name)}</td>
+            <td>${escapeHtml(volunteer.phone)}</td>
+            <td>${escapeHtml(volunteer.area)}</td>
+            <td>${escapeHtml(volunteer.skills.join(", ") || "-")}</td>
+            <td>${escapeHtml(volunteer.mission || (state.lang === "hi" ? "सामान्य स्वयंसेवक" : "General volunteer"))}</td>
+            <td>${escapeHtml(volunteer.date)}</td>
+          </tr>
+        `)
+        .join("");
+    }
+
+    function renderAnnouncementList() {
+      document.getElementById("announcementList").innerHTML = state.announcements
+        .map((item) => `<div class="message-card"><div class="message-name">${state.lang === "hi" ? "घोषणा" : "Announcement"}</div><div class="message-text">${escapeHtml(item)}</div></div>`)
+        .join("");
+    }
+
+    function renderSponsorLeadList() {
+      const container = document.getElementById("sponsorLeadList");
+      if (!state.sponsorLeads.length) {
+        container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "अभी तक कोई प्रायोजक लीड प्राप्त नहीं हुई है।" : "No sponsor leads have been collected yet."}</div></div>`;
+        return;
+      }
+      container.innerHTML = state.sponsorLeads
+        .slice(0, 6)
+        .map((lead) => `
+          <div class="message-card">
+            <div class="message-name">${escapeHtml(lead.company)} · ${escapeHtml(lead.tier)}</div>
+            <div class="message-text">${escapeHtml(lead.contact)} · ${escapeHtml(lead.phone)} · ${escapeHtml(lead.email)}</div>
+            <div class="message-time">${escapeHtml(lead.date)}</div>
+          </div>
+        `)
+        .join("");
+    }
+
+    function renderRecentVolunteerList() {
+      const container = document.getElementById("recentVolunteerList");
+      if (!state.volunteers.length) {
+        container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "अभी तक कोई स्वयंसेवक पंजीकृत नहीं हुआ है।" : "No volunteer registrations yet."}</div></div>`;
+        return;
+      }
+      container.innerHTML = state.volunteers
+        .slice(0, 6)
+        .map((volunteer) => `
+          <div class="message-card">
+            <div class="message-name">${escapeHtml(volunteer.name)} · ${escapeHtml(volunteer.area || "-")}</div>
+            <div class="message-text">${escapeHtml(volunteer.mission || (state.lang === "hi" ? "सामान्य स्वयंसेवक" : "General volunteer"))}</div>
+            <div class="message-time">${escapeHtml(volunteer.date)}</div>
+          </div>
+        `)
+        .join("");
+    }
+
+    function renderSubscriberList() {
+      const container = document.getElementById("subscriberList");
+      if (!state.newsletterSignups.length) {
+        container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "हाल के ईमेल साइनअप अभी उपलब्ध नहीं हैं।" : "No recent email signups yet."}</div></div>`;
+        return;
+      }
+      container.innerHTML = state.newsletterSignups
+        .slice(0, 8)
+        .map((item) => `
+          <div class="message-card">
+            <div class="message-name">${escapeHtml(item.email)}</div>
+            <div class="message-time">${escapeHtml(item.date)}</div>
+          </div>
+        `)
+        .join("");
+    }
+
+    function renderNewsletterPreview() {
+      const subjectInput = document.getElementById("newsletterSubject");
+      const bodyInput = document.getElementById("newsletterBody");
+      const subject = subjectInput.value.trim() || (state.lang === "hi" ? "जिला अपडेट" : "District Update");
+      const body = bodyInput.value.trim() || (state.lang === "hi" ? "यहाँ आपका न्यूज़लेटर पूर्वावलोकन दिखेगा।" : "Write your newsletter body to preview it here.");
+      document.getElementById("newsletterPreviewSubject").textContent = subject;
+      document.getElementById("newsletterPreviewBody").textContent = body;
+      document.getElementById("newsletterPreviewFoot").textContent =
+        state.lang === "hi"
+          ? `${state.newsletterSubs} ग्राहकों को भेजने के लिए तैयार।`
+          : `Ready to send to ${state.newsletterSubs} subscribers.`;
+      state.newsletterDraft = {
+        subject: subjectInput.value,
+        body: bodyInput.value
+      };
+      persistState();
+    }
+
+    function renderMissionModal() {
+      const mission = state.missions.find((item) => item.id === state.activeMissionId);
+      if (!mission) return;
+      document.getElementById("missionModalTag").textContent = `${categoryLabel(mission.category)} · ${wardLabel(mission.ward)}`;
+      document.getElementById("missionModalTitle").textContent = mission.title;
+      document.getElementById("missionModalSubtitle").textContent = mission.location;
+      const banner = document.getElementById("missionModalBanner");
+      banner.style.background = mission.bg;
+      banner.textContent = mission.emoji;
+
+      document.querySelectorAll("[data-mission-tab]").forEach((button) => {
+        button.classList.toggle("active", button.getAttribute("data-mission-tab") === state.activeMissionTab);
+      });
+
+      const detailsPane = document.getElementById("missionDetailsPane");
+      const discussionPane = document.getElementById("missionDiscussionPane");
+      detailsPane.classList.toggle("hidden", state.activeMissionTab !== "details");
+      discussionPane.classList.toggle("hidden", state.activeMissionTab !== "discussion");
+
+      detailsPane.innerHTML = `
+        <p class="showcase-story" style="font-size:15px;margin-bottom:22px">${escapeHtml(mission.desc)}</p>
+        <div class="detail-grid">
+          <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "तारीख" : "Date"}</div><div class="detail-value">${escapeHtml(mission.date)}</div></div>
+          <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "स्थान" : "Location"}</div><div class="detail-value">${escapeHtml(mission.location)}</div></div>
+          <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "समन्वयक" : "Coordinator"}</div><div class="detail-value">${escapeHtml(mission.coordinator)}</div></div>
+          <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "अवधि" : "Duration"}</div><div class="detail-value">${escapeHtml(mission.duration)}</div></div>
+          <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "स्वयंसेवक" : "Volunteers"}</div><div class="detail-value">${mission.volunteers} / ${mission.total}</div></div>
+          <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "आयु" : "Age"}</div><div class="detail-value">${escapeHtml(mission.age)}</div></div>
+          <div class="detail-card" style="grid-column:1/-1"><div class="detail-label">${state.lang === "hi" ? "प्रभाव" : "Impact"}</div><div class="detail-value">${escapeHtml(mission.impact)}</div></div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-primary" type="button" onclick="registerForMissionFromModal()">${state.lang === "hi" ? "इस अभियान के लिए पंजीकरण करें" : "Sign Up for This Mission"}</button>
+          <button class="btn btn-green" type="button" onclick="shareMission(${mission.id})"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+        </div>
+      `;
+
+      discussionPane.innerHTML = `
+        <div class="discussion-stream">
+          ${mission.discussion
+            .map(
+              (entry) => `
+                <div class="message-card">
+                  <div class="message-name">${escapeHtml(entry.name)}</div>
+                  <div class="message-text">${escapeHtml(entry.text)}</div>
+                  <div class="message-time">${escapeHtml(entry.time)}</div>
+                </div>
+              `
+            )
+            .join("")}
+        </div>
+        <form id="discussionForm">
+          <div class="form-group">
+            <label for="discussionName">${state.lang === "hi" ? "आपका नाम" : "Your Name"}</label>
+            <input id="discussionName" type="text" required />
+          </div>
+          <div class="form-group">
+            <label for="discussionText">${state.lang === "hi" ? "संदेश" : "Message"}</label>
+            <textarea id="discussionText" required></textarea>
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%">${state.lang === "hi" ? "चर्चा पोस्ट करें" : "Post to Discussion"}</button>
+        </form>
+      `;
+
+      document.getElementById("discussionForm").addEventListener("submit", submitDiscussionForm);
+    }
+
+    function renderCommentsModal() {
+      const story = state.stories.find((item) => item.id === state.activeStoryId);
+      if (!story) return;
+      document.getElementById("commentsModalTitle").textContent =
+        state.lang === "hi" ? `टिप्पणियाँ - ${story.title}` : `Comments - ${story.title}`;
+      document.getElementById("commentsStream").innerHTML = story.comments.length
+        ? story.comments
+            .map(
+              (comment) => `
+                <div class="message-card">
+                  <div class="message-name">${escapeHtml(comment.name)}</div>
+                  <div class="message-text">${escapeHtml(comment.text)}</div>
+                  <div class="message-time">${escapeHtml(comment.time)}</div>
+                </div>
+              `
+            )
+            .join("")
+        : `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "अभी तक कोई टिप्पणी नहीं।" : "No comments yet."}</div></div>`;
+    }
+
+    function renderPassportModal() {
+      const leader = state.leaders.find((item) => item.id === state.activeLeaderId);
+      if (!leader) return;
+      document.getElementById("passportAvatar").textContent = leader.initials;
+      document.getElementById("passportAvatar").style.background = leader.color;
+      document.getElementById("passportName").textContent = leader.name;
+      document.getElementById("passportArea").textContent = leader.area;
+      document.getElementById("passportPoints").textContent = leader.points;
+      document.getElementById("passportMissions").textContent = leader.missions;
+      document.getElementById("passportBadges").innerHTML = leader.badges.map((badge) => `<span class="badge-emoji">${badge}</span>`).join("");
+      document.getElementById("passportTimeline").innerHTML = leader.attended
+        .map((mission) => `<div class="timeline-item">${escapeHtml(mission)}</div>`)
+        .join("");
+    }
+
+    function renderAll() {
+      applyTranslations();
+      renderTicker();
+      renderHeroStats();
+      if (state.statsAnimated) {
+        setStatText();
+      }
+      renderCategorySelectOptions();
+      renderWardSelectOptions();
+      renderAvailabilityOptions();
+      renderSkills();
+      renderCategoryFilters();
+      renderWardFilters();
+      renderMissions();
+      renderFundCards();
+      renderSponsorCards();
+      renderWardGrid();
+      renderStories();
+      renderLeaders();
+      renderSelectedMissionBox();
+      renderAdminStats();
+      renderVolunteerTable();
+      renderAnnouncementList();
+      renderNewsletterPreview();
+      renderSponsorLeadList();
+      renderRecentVolunteerList();
+      renderSubscriberList();
+      if (state.activeMissionId) renderMissionModal();
+      if (state.activeStoryId) renderCommentsModal();
+      if (state.activeLeaderId) renderPassportModal();
+    }
+
+    function varValue(variable) {
+      return getComputedStyle(document.body).getPropertyValue(variable).trim();
+    }
+
+    function setCategoryFilter(value) {
+      state.currentCategory = value;
+      renderCategoryFilters();
+      renderMissions();
+    }
+
+    function setWardFilter(value) {
+      state.currentWard = value;
+      renderWardFilters();
+      renderMissions();
+    }
+
+    function focusWard(ward) {
+      state.currentWard = ward;
+      renderWardFilters();
+      renderMissions();
+      document.getElementById("missions").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add("active");
+      document.body.classList.add("modal-open");
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove("active");
+      if (![...document.querySelectorAll(".modal-overlay.active")].length) {
+        document.body.classList.remove("modal-open");
+      }
+    }
+
+    function showToast(message, icon = "✅") {
+      const toast = document.getElementById("toast");
+      document.getElementById("toastText").textContent = message;
+      document.getElementById("toastIcon").textContent = icon;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 3600);
+    }
+
+    function handleRequestError(error) {
+      if (error?.status === 401) {
+        clearAdminToken();
+        state.adminLoggedIn = false;
+        closeModal("adminPanelModal");
+      }
+      showToast(error?.message || (state.lang === "hi" ? "कुछ गलत हो गया।" : "Something went wrong."), "⚠️");
+    }
+
+    function shareMission(missionId) {
+      const mission = state.missions.find((item) => item.id === missionId);
+      if (!mission) return;
+      const text =
+        state.lang === "hi"
+          ? `मेरे साथ जुड़िए: ${mission.title} | ${mission.date} | ${mission.location} | Prayas`
+          : `Join me at ${mission.title} | ${mission.date} | ${mission.location} | Prayas`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+    }
+
+    function openMissionModal(missionId) {
+      state.activeMissionId = missionId;
+      state.activeMissionTab = "details";
+      renderMissionModal();
+      openModal("missionModal");
+    }
+
+    function registerForMissionFromModal() {
+      const mission = state.missions.find((item) => item.id === state.activeMissionId);
+      if (!mission) return;
+      state.selectedMissionId = mission.id;
+      renderSelectedMissionBox();
+      closeModal("missionModal");
+      document.getElementById("volunteer").scrollIntoView({ behavior: "smooth", block: "start" });
+      showToast(
+        state.lang === "hi"
+          ? `${mission.title} स्वयंसेवक फॉर्म से जुड़ गया है।`
+          : `${mission.title} has been linked to the volunteer form.`,
+        "🎯"
+      );
+    }
+
+    async function submitDiscussionForm(event) {
+      event.preventDefault();
+      const mission = state.missions.find((item) => item.id === state.activeMissionId);
+      if (!mission) return;
+      try {
+        await apiRequest(`/api/missions/${mission.id}/discussion`, {
+          method: "POST",
+          body: JSON.stringify({
+            name: document.getElementById("discussionName").value.trim(),
+            text: document.getElementById("discussionText").value.trim()
+          })
+        });
+        document.getElementById("discussionForm").reset();
+        await refreshPortalData();
+        renderMissionModal();
+        showToast(state.lang === "hi" ? "चर्चा जोड़ दी गई।" : "Discussion message posted.", "💬");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function clearSelectedMission() {
+      state.selectedMissionId = null;
+      renderSelectedMissionBox();
+    }
+
+    async function submitVolunteerForm(event) {
+      event.preventDefault();
+      const form = event.target;
+      const formData = new FormData(form);
+      const skills = formData.getAll("skills");
+      const selectedMission = state.missions.find((mission) => mission.id === state.selectedMissionId) || null;
+      const volunteerName = String(formData.get("volName") || document.getElementById("volName").value || "").trim();
+      try {
+        await apiRequest("/api/volunteers", {
+          method: "POST",
+          body: JSON.stringify({
+            missionId: selectedMission ? selectedMission.id : null,
+            name: volunteerName,
+            phone: String(formData.get("volPhone") || document.getElementById("volPhone").value || "").trim(),
+            email: String(document.getElementById("volEmail").value || "").trim(),
+            area: document.getElementById("volWard").value || (state.lang === "hi" ? "अनिर्दिष्ट" : "Unspecified"),
+            occupation: String(document.getElementById("volOccupation").value || "").trim(),
+            availability: document.getElementById("volAvailability").value || "",
+            message: String(document.getElementById("volMessage").value || "").trim(),
+            skills
+          })
+        });
+        form.reset();
+        state.selectedMissionId = null;
+        await refreshPortalData();
+        renderSelectedMissionBox();
+        showToast(
+          state.lang === "hi"
+            ? `${volunteerName} अब Prayas के स्वयंसेवक हैं।`
+            : `${volunteerName} is now registered on Prayas.`,
+          "🎉"
+        );
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function submitNewsletterForm(event) {
+      event.preventDefault();
+      const input = document.getElementById("newsletterEmail");
+      const email = input.value.trim().toLowerCase();
+      if (!email.includes("@")) {
+        showToast(state.lang === "hi" ? "कृपया वैध ईमेल दर्ज करें।" : "Please enter a valid email address.", "⚠️");
+        return;
+      }
+      try {
+        await apiRequest("/api/newsletter/subscribe", {
+          method: "POST",
+          body: JSON.stringify({ email })
+        });
+        input.value = "";
+        await refreshPortalData();
+        showToast(
+          state.lang === "hi"
+            ? "आपको जिला अपडेट मिलते रहेंगे।"
+            : "You are now subscribed to district updates.",
+          "📩"
+        );
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function toggleStoryForm() {
+      document.getElementById("storyFormCard").classList.toggle("hidden");
+    }
+
+    async function submitStoryForm(event) {
+      event.preventDefault();
+      try {
+        const file = document.getElementById("storyPhoto").files[0];
+        const category = document.getElementById("storyCategory").value;
+        await apiRequest("/api/stories", {
+          method: "POST",
+          body: JSON.stringify({
+            contributor: document.getElementById("storyName").value.trim(),
+            role: document.getElementById("storyRole").value.trim(),
+            category,
+            title: document.getElementById("storyHeadline").value.trim(),
+            story: document.getElementById("storyText").value.trim(),
+            imageUrl: await toDataUrl(file)
+          })
+        });
+        event.target.reset();
+        await refreshPortalData();
+        showToast(state.lang === "hi" ? "आपकी कहानी प्रकाशित हो गई।" : "Your story has been published.", "📸");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function cheerStory(storyId) {
+      try {
+        await apiRequest(`/api/stories/${storyId}/cheer`, { method: "POST" });
+        await refreshPortalData();
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function openCommentsModal(storyId) {
+      state.activeStoryId = storyId;
+      renderCommentsModal();
+      openModal("commentsModal");
+    }
+
+    async function submitCommentForm(event) {
+      event.preventDefault();
+      const story = state.stories.find((item) => item.id === state.activeStoryId);
+      if (!story) return;
+      try {
+        await apiRequest(`/api/stories/${story.id}/comments`, {
+          method: "POST",
+          body: JSON.stringify({
+            name: document.getElementById("commentName").value.trim(),
+            text: document.getElementById("commentText").value.trim()
+          })
+        });
+        document.getElementById("commentForm").reset();
+        await refreshPortalData();
+        renderCommentsModal();
+        showToast(state.lang === "hi" ? "टिप्पणी जोड़ दी गई।" : "Comment posted.", "💬");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function openPassportModal(leaderId) {
+      state.activeLeaderId = leaderId;
+      renderPassportModal();
+      openModal("passportModal");
+    }
+
+    function downloadCertificate() {
+      const leader = state.leaders.find((item) => item.id === state.activeLeaderId);
+      if (!leader) return;
+      const canvas = document.createElement("canvas");
+      canvas.width = 900;
+      canvas.height = 600;
+      const ctx = canvas.getContext("2d");
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, 900, 600);
+
+      ctx.fillStyle = "#FF9933";
+      ctx.fillRect(0, 0, 900, 10);
+      ctx.fillStyle = "#1B3A6B";
+      ctx.fillRect(0, 0, 10, 600);
+      ctx.fillRect(890, 0, 10, 600);
+      ctx.fillStyle = "#138808";
+      ctx.fillRect(0, 590, 900, 10);
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#FF9933";
+      ctx.font = "48px serif";
+      ctx.fillText("☸", 450, 86);
+
+      ctx.fillStyle = "#1B3A6B";
+      ctx.font = "700 28px Georgia";
+      ctx.fillText("CERTIFICATE OF APPRECIATION", 450, 150);
+
+      ctx.fillStyle = "#6B7280";
+      ctx.font = "16px Georgia";
+      ctx.fillText("This certifies that", 450, 214);
+
+      ctx.fillStyle = "#1B3A6B";
+      ctx.font = "700 34px Georgia";
+      ctx.fillText(leader.name, 450, 276);
+
+      ctx.fillStyle = "#4B5563";
+      ctx.font = "17px Georgia";
+      ctx.fillText("has contributed to the Prayas District Initiative", 450, 328);
+
+      ctx.fillStyle = "#FF9933";
+      ctx.font = "700 20px Georgia";
+      ctx.fillText(leader.attended[0] || "Community Mission", 450, 370);
+
+      ctx.fillStyle = "#6B7280";
+      ctx.font = "14px Georgia";
+      ctx.fillText(`Issued on ${formatDate(new Date(), "en")} · District Administration`, 450, 446);
+
+      ctx.strokeStyle = "#1B3A6B";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(620, 500);
+      ctx.lineTo(770, 500);
+      ctx.stroke();
+      ctx.fillText("District Officer", 695, 524);
+
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = `${leader.name.replace(/\s+/g, "_")}_certificate.png`;
+      link.click();
+      showToast(state.lang === "hi" ? "प्रमाणपत्र डाउनलोड हो गया।" : "Certificate downloaded.", "🏅");
+    }
+
+    function openDonationModal(fundId) {
+      state.activeFundId = fundId;
+      state.paymentMethod = "upi";
+      const fund = state.funds.find((item) => item.id === fundId);
+      if (!fund) return;
+      document.getElementById("donationModalTitle").textContent =
+        state.lang === "hi" ? `${fund.title} के लिए दान` : `Donate to ${fund.title}`;
+      document.getElementById("customAmount").value = "";
+      document.getElementById("donorName").value = "";
+      document.getElementById("anonymousDonation").checked = false;
+      document.getElementById("donorNameGroup").classList.remove("hidden");
+      renderAmountPills();
+      setPaymentMethod("upi");
+      openModal("donationModal");
+    }
+
+    function renderAmountPills(selected = 0) {
+      const values = [50, 100, 250, 500, 1000];
+      document.getElementById("amountPills").innerHTML = values
+        .map(
+          (amount) => `
+            <button class="amount-pill ${selected === amount ? "active" : ""}" type="button" onclick="selectAmount(${amount})">
+              ₹${amount}
+            </button>
+          `
+        )
+        .join("");
+    }
+
+    function selectAmount(amount) {
+      document.getElementById("customAmount").value = amount;
+      renderAmountPills(amount);
+    }
+
+    function setPaymentMethod(method) {
+      state.paymentMethod = method;
+      document.querySelectorAll(".payment-tab").forEach((button) => {
+        button.classList.toggle("active", button.getAttribute("data-payment-method") === method);
+      });
+      document.getElementById("paymentUpiPane").classList.toggle("hidden", method !== "upi");
+      document.getElementById("paymentBankPane").classList.toggle("hidden", method !== "bank");
+    }
+
+    async function submitDonationForm(event) {
+      event.preventDefault();
+      const amount = Number(document.getElementById("customAmount").value || 0);
+      if (!amount) {
+        showToast(state.lang === "hi" ? "दान राशि दर्ज करें।" : "Please enter a donation amount.", "⚠️");
+        return;
+      }
+      const fund = state.funds.find((item) => item.id === state.activeFundId);
+      if (!fund) return;
+      const donor =
+        document.getElementById("anonymousDonation").checked
+          ? state.lang === "hi" ? "एक दयालु नागरिक" : "A kind citizen"
+          : document.getElementById("donorName").value.trim() || (state.lang === "hi" ? "दाता" : "Donor");
+      try {
+        await apiRequest("/api/donations", {
+          method: "POST",
+          body: JSON.stringify({
+            fundId: fund.id,
+            amount,
+            donor,
+            anonymous: document.getElementById("anonymousDonation").checked
+          })
+        });
+        closeModal("donationModal");
+        await refreshPortalData();
+        showToast(
+          state.lang === "hi" ? `${donor} द्वारा ₹${amount} का दान प्राप्त हुआ।` : `₹${amount} donation received from ${donor}.`,
+          "💰"
+        );
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function openSponsorModal(tier) {
+      document.getElementById("sponsorTier").value = tier;
+      openModal("sponsorModal");
+    }
+
+    async function submitSponsorForm(event) {
+      event.preventDefault();
+      const company = document.getElementById("sponsorCompany").value.trim();
+      try {
+        await apiRequest("/api/sponsors", {
+          method: "POST",
+          body: JSON.stringify({
+            company,
+            contact: document.getElementById("sponsorContact").value.trim(),
+            phone: document.getElementById("sponsorPhone").value.trim(),
+            email: document.getElementById("sponsorEmail").value.trim(),
+            tier: document.getElementById("sponsorTier").value.trim(),
+            message: document.getElementById("sponsorMessage").value.trim()
+          })
+        });
+        closeModal("sponsorModal");
+        event.target.reset();
+        await refreshPortalData();
+        showToast(
+          state.lang === "hi"
+            ? `${company} की प्रायोजन रुचि प्राप्त हुई।`
+            : `Sponsorship interest received from ${company}.`,
+          "🏢"
+        );
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function openAdminLogin() {
+      if (getAdminToken()) {
+        state.adminLoggedIn = true;
+        openModal("adminPanelModal");
+        return;
+      }
+      document.getElementById("adminPassword").value = "";
+      openModal("adminLoginModal");
+    }
+
+    async function submitAdminLogin(event) {
+      event.preventDefault();
+      try {
+        const payload = await apiRequest("/api/admin/login", {
+          method: "POST",
+          body: JSON.stringify({
+            password: document.getElementById("adminPassword").value
+          })
+        });
+        setAdminToken(payload.token);
+        state.adminLoggedIn = true;
+        closeModal("adminLoginModal");
+        switchAdminTab("overview");
+        await refreshPortalData();
+        openModal("adminPanelModal");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function switchAdminTab(tab) {
+      state.currentAdminTab = tab;
+      document.querySelectorAll("[data-admin-tab]").forEach((button) => {
+        button.classList.toggle("active", button.getAttribute("data-admin-tab") === tab);
+      });
+      const map = {
+        overview: "adminPaneOverview",
+        post: "adminPanePost",
+        volunteers: "adminPaneVolunteers",
+        announcements: "adminPaneAnnouncements",
+        newsletter: "adminPaneNewsletter"
+      };
+      Object.values(map).forEach((id) => document.getElementById(id).classList.remove("active"));
+      document.getElementById(map[tab]).classList.add("active");
+    }
+
+    async function submitPostMissionForm(event) {
+      event.preventDefault();
+      const category = document.getElementById("pmCategory").value;
+      const slots = Number(document.getElementById("pmSlots").value || 50);
+      try {
+        await apiRequest("/api/admin/missions", {
+          method: "POST",
+          body: JSON.stringify({
+            category,
+            ward: document.getElementById("pmWard").value,
+            title: document.getElementById("pmTitle").value.trim(),
+            desc: document.getElementById("pmDescription").value.trim(),
+            date: document.getElementById("pmDate").value.trim(),
+            location: document.getElementById("pmLocation").value.trim(),
+            coordinator: document.getElementById("pmCoordinator").value.trim(),
+            duration: document.getElementById("pmDuration").value.trim(),
+            total: slots,
+            age: "16+",
+            impact: state.lang === "hi" ? "अभी शुरू हुआ" : "Just launched"
+          })
+        });
+        event.target.reset();
+        await refreshPortalData();
+        switchAdminTab("overview");
+        showToast(state.lang === "hi" ? "नया अभियान पोस्ट हो गया।" : "New mission posted successfully.", "🚀");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function exportVolunteersCsv() {
+      const rows = [
+        ["Name", "Phone", "Email", "Area", "Occupation", "Availability", "Skills", "Mission", "Registered"]
+      ];
+      state.volunteers.forEach((volunteer) => {
+        rows.push([
+          volunteer.name,
+          volunteer.phone,
+          volunteer.email,
+          volunteer.area,
+          volunteer.occupation,
+          volunteer.availability,
+          volunteer.skills.join("; "),
+          volunteer.mission,
+          volunteer.date
+        ]);
+      });
+      const csv = rows
+        .map((row) => row.map((cell) => `"${String(cell || "").replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "prayas_volunteers.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+      showToast(state.lang === "hi" ? "CSV निर्यात हो गया।" : "Volunteer CSV exported.", "📄");
+    }
+
+    async function postAnnouncement() {
+      const textarea = document.getElementById("announcementText");
+      const value = textarea.value.trim();
+      if (!value) {
+        showToast(state.lang === "hi" ? "घोषणा पाठ खाली है।" : "Announcement text is empty.", "⚠️");
+        return;
+      }
+      try {
+        await apiRequest("/api/admin/announcements", {
+          method: "POST",
+          body: JSON.stringify({ text: value })
+        });
+        textarea.value = "";
+        await refreshPortalData();
+        showToast(state.lang === "hi" ? "घोषणा जोड़ दी गई।" : "Announcement added to ticker.", "📢");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function sendNewsletter() {
+      const subject = document.getElementById("newsletterSubject").value.trim();
+      const body = document.getElementById("newsletterBody").value.trim();
+      if (!subject || !body) {
+        showToast(state.lang === "hi" ? "विषय और बॉडी दोनों भरें।" : "Please fill both subject and body.", "⚠️");
+        return;
+      }
+      try {
+        await apiRequest("/api/admin/newsletter", {
+          method: "POST",
+          body: JSON.stringify({ subject, body })
+        });
+        await refreshPortalData();
+        showToast(
+          state.lang === "hi"
+            ? `${state.newsletterSubs} ग्राहकों के लिए न्यूज़लेटर ड्राफ्ट सेव हो गया।`
+            : `Newsletter draft saved for ${state.newsletterSubs} subscribers.`,
+          "📨"
+        );
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function closeMobileMenu() {
+      document.getElementById("mobileMenu").classList.remove("open");
+      document.getElementById("mobileMenuBtn").textContent = "☰";
+    }
+
+    function toggleTheme() {
+      state.theme = state.theme === "light" ? "dark" : "light";
+      document.body.setAttribute("data-theme", state.theme);
+      applyTranslations();
+      renderWardGrid();
+      persistState();
+    }
+
+    function setFontScale(size) {
+      state.fontScale = size;
+      const values = { normal: 1, large: 1.13, xlarge: 1.28 };
+      document.documentElement.style.setProperty("--font-scale", values[size] || 1);
+      document.querySelectorAll(".size-btn").forEach((button) => {
+        button.classList.toggle("active", button.getAttribute("data-size") === size);
+      });
+      persistState();
+    }
+
+    function toggleLanguage() {
+      state.lang = state.lang === "en" ? "hi" : "en";
+      renderAll();
+      persistState();
+    }
+
+    function buildQrSvg() {
+      const squares = [
+        [0, 0], [1, 0], [2, 0], [4, 0], [6, 0], [7, 0], [8, 0],
+        [0, 1], [2, 1], [4, 1], [6, 1], [8, 1],
+        [0, 2], [1, 2], [2, 2], [5, 2], [6, 2], [7, 2], [8, 2],
+        [3, 3], [4, 3], [7, 3],
+        [0, 4], [1, 4], [3, 4], [5, 4], [7, 4], [8, 4],
+        [1, 5], [2, 5], [4, 5], [6, 5],
+        [0, 6], [2, 6], [3, 6], [5, 6], [6, 6], [8, 6],
+        [0, 7], [4, 7], [5, 7], [8, 7],
+        [0, 8], [1, 8], [2, 8], [6, 8], [7, 8], [8, 8]
+      ];
+      const rects = squares
+        .map(([x, y]) => `<rect x="${x * 12}" y="${y * 12}" width="12" height="12" fill="#1B3A6B"/>`)
+        .join("");
+      document.getElementById("qrBlock").innerHTML =
+        `<svg viewBox="0 0 108 108" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect width="108" height="108" fill="#fff"/>${rects}</svg>`;
+    }
+
+    function attachEvents() {
+      document.getElementById("langToggle").addEventListener("click", toggleLanguage);
+      document.getElementById("themeToggle").addEventListener("click", toggleTheme);
+      document.getElementById("adminOpenBtn").addEventListener("click", openAdminLogin);
+      document.getElementById("mobileMenuBtn").addEventListener("click", () => {
+        const menu = document.getElementById("mobileMenu");
+        menu.classList.toggle("open");
+        document.getElementById("mobileMenuBtn").textContent = menu.classList.contains("open") ? "✕" : "☰";
+      });
+
+      document.querySelectorAll(".size-btn").forEach((button) => {
+        button.addEventListener("click", () => setFontScale(button.getAttribute("data-size")));
+      });
+
+      document.querySelectorAll(".modal-overlay").forEach((overlay) => {
+        overlay.addEventListener("click", (event) => {
+          if (event.target === overlay) {
+            overlay.classList.remove("active");
+            if (![...document.querySelectorAll(".modal-overlay.active")].length) {
+              document.body.classList.remove("modal-open");
+            }
+          }
+        });
+      });
+
+      document.querySelectorAll("[data-close-modal]").forEach((button) => {
+        button.addEventListener("click", () => closeModal(button.getAttribute("data-close-modal")));
+      });
+
+      document.querySelectorAll("[data-mission-tab]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.activeMissionTab = button.getAttribute("data-mission-tab");
+          renderMissionModal();
+        });
+      });
+
+      document.querySelectorAll(".payment-tab").forEach((button) => {
+        button.addEventListener("click", () => setPaymentMethod(button.getAttribute("data-payment-method")));
+      });
+
+      document.getElementById("anonymousDonation").addEventListener("change", (event) => {
+        document.getElementById("donorNameGroup").classList.toggle("hidden", event.target.checked);
+      });
+
+      document.getElementById("volunteerForm").addEventListener("submit", submitVolunteerForm);
+      document.getElementById("newsletterForm").addEventListener("submit", submitNewsletterForm);
+      document.getElementById("storyToggleBtn").addEventListener("click", toggleStoryForm);
+      document.getElementById("storyForm").addEventListener("submit", submitStoryForm);
+      document.getElementById("commentForm").addEventListener("submit", submitCommentForm);
+      document.getElementById("donationForm").addEventListener("submit", submitDonationForm);
+      document.getElementById("sponsorForm").addEventListener("submit", submitSponsorForm);
+      document.getElementById("adminLoginForm").addEventListener("submit", submitAdminLogin);
+      document.getElementById("postMissionForm").addEventListener("submit", submitPostMissionForm);
+      document.getElementById("exportVolunteersBtn").addEventListener("click", exportVolunteersCsv);
+      document.getElementById("postAnnouncementBtn").addEventListener("click", postAnnouncement);
+      document.getElementById("newsletterSubject").addEventListener("input", renderNewsletterPreview);
+      document.getElementById("newsletterBody").addEventListener("input", renderNewsletterPreview);
+      document.getElementById("sendNewsletterBtn").addEventListener("click", sendNewsletter);
+      document.getElementById("downloadCertificateBtn").addEventListener("click", downloadCertificate);
+
+      document.querySelectorAll("[data-admin-tab]").forEach((button) => {
+        button.addEventListener("click", () => switchAdminTab(button.getAttribute("data-admin-tab")));
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          document.querySelectorAll(".modal-overlay.active").forEach((overlay) => overlay.classList.remove("active"));
+          document.body.classList.remove("modal-open");
+          closeMobileMenu();
+        }
+      });
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) animateStats();
+        });
+      }, { threshold: 0.3 });
+      observer.observe(document.getElementById("statsBar"));
+    }
+
+    async function init() {
+      buildQrSvg();
+      document.body.setAttribute("data-theme", state.theme);
+      document.getElementById("newsletterSubject").value = state.newsletterDraft.subject || "";
+      document.getElementById("newsletterBody").value = state.newsletterDraft.body || "";
+      attachEvents();
+      setFontScale(state.fontScale || "normal");
+      renderAll();
+      setStatText();
+      try {
+        await refreshPortalData();
+      } catch (error) {
+        console.warn("Unable to load live portal data:", error);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
