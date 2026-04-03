@@ -164,6 +164,7 @@
       font-weight: 600;
       padding: 9px 14px;
       border-radius: 10px;
+      white-space: nowrap;
       transition: all 0.2s ease;
     }
 
@@ -1975,6 +1976,19 @@
       flex-shrink: 0;
     }
 
+    @media (max-width: 1180px) {
+      .nav-links,
+      .nav-tools .join-btn {
+        display: none;
+      }
+
+      .hamburger { display: block; }
+
+      .nav-tools {
+        margin-left: auto;
+      }
+    }
+
     @media (max-width: 1140px) {
       .hero-inner,
       .volunteer-split,
@@ -1994,17 +2008,6 @@
     }
 
     @media (max-width: 860px) {
-      .nav-links,
-      .nav-tools .join-btn {
-        display: none;
-      }
-
-      .hamburger { display: block; }
-
-      .nav-tools {
-        margin-left: auto;
-      }
-
       .hero {
         padding: 64px 24px 86px;
       }
@@ -2041,6 +2044,10 @@
     @media (max-width: 560px) {
       .navbar-inner { padding-inline: 16px; }
       .mobile-menu { padding-inline: 16px; }
+      .size-group,
+      #adminOpenBtn {
+        display: none;
+      }
       .section,
       .hero,
       .cta-banner,
