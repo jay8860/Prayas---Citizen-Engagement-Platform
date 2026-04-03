@@ -271,6 +271,14 @@
       transform: translateY(-1px);
     }
 
+    .btn:disabled,
+    .btn[disabled] {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
     .hamburger {
       display: none;
       margin-left: auto;
@@ -663,6 +671,7 @@
     .status-open { background: var(--green-light); color: var(--green); }
     .status-upcoming { background: var(--saffron-light); color: var(--saffron-dark); }
     .status-full { background: var(--danger-light); color: var(--danger); }
+    .status-completed { background: #EDE9FE; color: #6D28D9; }
 
     .mission-body { padding: 22px; }
 
@@ -1688,6 +1697,18 @@
       font-weight: 600;
     }
 
+    .message-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .message-actions .btn {
+      padding: 9px 14px;
+      font-size: 12px;
+    }
+
     .amount-pills {
       display: flex;
       flex-wrap: wrap;
@@ -2485,9 +2506,10 @@
                 </div>
                 <div class="form-group">
                   <label for="volWard" data-i18n="vol-area-label">Area / Ward</label>
-                  <select id="volWard"></select>
+                  <input id="volWard" type="text" list="locationSuggestions" data-i18n-placeholder="vol-area-placeholder" placeholder="Ward, gram panchayat, town, colony or village" />
                 </div>
               </div>
+              <datalist id="locationSuggestions"></datalist>
 
               <div class="form-group full">
                 <label for="volOccupation" data-i18n="vol-occupation-label">Profession / Occupation</label>
@@ -2661,7 +2683,18 @@
               <div class="bank-row"><span data-i18n="bank-branch">Branch</span><strong>Civil Lines</strong></div>
             </div>
           </div>
-          <button class="btn btn-primary" type="submit" style="width:100%;margin-top:18px" data-i18n="donation-submit">Donate Now</button>
+          <div class="form-group" style="margin-top:18px">
+            <label for="donationTxnRef" data-i18n="donation-reference-label">Payment Reference / UTR Number</label>
+            <input id="donationTxnRef" type="text" required data-i18n-placeholder="donation-reference-placeholder" placeholder="Enter transaction reference after payment" />
+          </div>
+          <div class="form-group">
+            <label for="donationNote" data-i18n="donation-note-label">Note for Admin (Optional)</label>
+            <textarea id="donationNote" data-i18n-placeholder="donation-note-placeholder" placeholder="Any note to help reconcile this payment"></textarea>
+          </div>
+          <div class="message-card" style="margin-top:6px">
+            <div class="message-text" data-i18n="donation-note-copy">This portal records the contribution request and payment reference. Crowdfunding totals are updated after admin verification.</div>
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%;margin-top:18px" data-i18n="donation-submit">Submit Contribution for Verification</button>
         </form>
       </div>
     </div>
@@ -2771,6 +2804,10 @@
           <h3 class="form-card-title" style="font-size:18px;margin:18px 0 12px" data-i18n="passport-timeline">Missions Attended</h3>
           <div class="timeline" id="passportTimeline"></div>
         </div>
+        <div class="message-card" style="margin-top:18px">
+          <div class="message-name" data-i18n="passport-completion-title">Certificate Eligibility</div>
+          <div class="message-text" id="passportEligibilityText"></div>
+        </div>
         <button class="btn btn-saffron" id="downloadCertificateBtn" type="button" style="width:100%;margin-top:18px" data-i18n="passport-download">Download Certificate</button>
       </div>
     </div>
@@ -2781,7 +2818,7 @@
       <div class="modal-header">
         <div>
           <h2 class="modal-title" data-i18n="admin-login-title">Admin Login</h2>
-          <p class="modal-subtitle" data-i18n="admin-login-subtitle">Enter the portal password to open the control panel.</p>
+          <p class="modal-subtitle" data-i18n="admin-login-subtitle">Enter any password during this testing phase to open the control panel.</p>
         </div>
         <button class="modal-close" type="button" data-close-modal="adminLoginModal">✕</button>
       </div>
@@ -2829,24 +2866,36 @@
               <div class="announcement-stream" id="recentVolunteerList"></div>
             </div>
           </div>
+          <div class="admin-two-col" style="margin-top:20px">
+            <div class="panel-card">
+              <h3 data-i18n="admin-overview-donations-title">Contribution Verification Queue</h3>
+              <p data-i18n="admin-overview-donations-subtitle">Verify payment references before they are counted in crowdfunding totals.</p>
+              <div class="announcement-stream" id="donationQueueList"></div>
+            </div>
+            <div class="panel-card">
+              <h3 data-i18n="admin-overview-status-title">Activity Status Board</h3>
+              <p data-i18n="admin-overview-status-subtitle">Mark activities as completed so certificates unlock only after real completion.</p>
+              <div class="announcement-stream" id="missionStatusList"></div>
+            </div>
+          </div>
         </div>
 
         <div class="admin-pane" id="adminPanePost">
           <form id="postMissionForm">
             <div class="form-row">
               <div class="form-group">
-                <label for="pmTitle" data-i18n="pm-title-label">Mission Title</label>
-                <input id="pmTitle" type="text" required />
+                <label for="pmTemplate" data-i18n="pm-template-label">Activity Type Template</label>
+                <select id="pmTemplate"></select>
               </div>
               <div class="form-group">
-                <label for="pmCategory" data-i18n="pm-category-label">Category</label>
-                <select id="pmCategory" required></select>
+                <label for="pmTitle" data-i18n="pm-title-label">Mission Title</label>
+                <input id="pmTitle" type="text" required />
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label for="pmWard" data-i18n="pm-ward-label">Ward</label>
-                <select id="pmWard" required></select>
+                <input id="pmWard" type="text" list="locationSuggestions" required data-i18n-placeholder="pm-area-placeholder" placeholder="Enter ward, gram panchayat, city, town or village" />
               </div>
               <div class="form-group">
                 <label for="pmDate" data-i18n="pm-date-label">Date / Schedule</label>
@@ -2865,6 +2914,10 @@
             </div>
             <div class="form-row">
               <div class="form-group">
+                <label for="pmCategory" data-i18n="pm-category-label">Category</label>
+                <select id="pmCategory" required></select>
+              </div>
+              <div class="form-group">
                 <label for="pmSlots" data-i18n="pm-slots-label">Volunteer Slots</label>
                 <input id="pmSlots" type="number" min="1" value="50" required />
               </div>
@@ -2872,6 +2925,10 @@
                 <label for="pmDuration" data-i18n="pm-duration-label">Duration</label>
                 <input id="pmDuration" type="text" required />
               </div>
+            </div>
+            <div class="form-group">
+              <label for="pmImpact" data-i18n="pm-impact-label">Expected Impact</label>
+              <input id="pmImpact" type="text" data-i18n-placeholder="pm-impact-placeholder" placeholder="Expected outcome or result" />
             </div>
             <div class="form-group">
               <label for="pmDescription" data-i18n="pm-description-label">Description</label>
@@ -2999,7 +3056,7 @@
         location: "Civil Lines Market",
         volunteers: 48,
         total: 60,
-        status: "open",
+        status: "completed",
         coordinator: "Anita Mishra (Municipal Officer)",
         duration: "3 hours",
         age: "16+",
@@ -3022,7 +3079,7 @@
         location: "MG Road and Station Road",
         volunteers: 72,
         total: 80,
-        status: "open",
+        status: "completed",
         coordinator: "Rahul Gupta (Culture Department)",
         duration: "1 full day",
         age: "All ages",
@@ -3318,7 +3375,7 @@
       "logo-tag": { en: "Citizen Action Platform", hi: "नागरिक कार्रवाई मंच" },
       "nav-missions": { en: "Missions", hi: "अभियान" },
       "nav-funding": { en: "Crowdfund", hi: "क्राउडफंड" },
-      "nav-map": { en: "District Map", hi: "वार्ड दृश्य" },
+      "nav-map": { en: "District Map", hi: "जिला दृश्य" },
       "nav-showcase": { en: "Showcase", hi: "प्रदर्शनी" },
       "nav-leaders": { en: "Leaders", hi: "लीडर्स" },
       "nav-volunteer": { en: "Volunteer", hi: "स्वयंसेवक" },
@@ -3347,15 +3404,15 @@
       "sponsor-title": { en: "Sponsor a mission. Build a legacy.", hi: "एक अभियान प्रायोजित करें। विरासत बनाएं।" },
       "sponsor-subtitle": { en: "Bring businesses, institutions, alumni groups, and civic organisations into district transformation.", hi: "व्यवसाय, संस्थान, पूर्व छात्र समूह और सामाजिक संगठनों को जिला परिवर्तन से जोड़ें।" },
       "map-badge": { en: "District Overview", hi: "जिला अवलोकन" },
-      "map-title": { en: "Missions across your district", hi: "आपके जिले के विभिन्न वार्डों में अभियान" },
-      "map-subtitle": { en: "Track which wards are already active, where volunteer energy is concentrated, and where new missions are needed.", hi: "देखें कौन से वार्ड सक्रिय हैं, स्वयंसेवी ऊर्जा कहाँ केंद्रित है, और कहाँ नए अभियानों की जरूरत है।" },
+      "map-title": { en: "Missions across your district", hi: "आपके जिले के विभिन्न इलाकों में अभियान" },
+      "map-subtitle": { en: "Track which areas are already active, where volunteer energy is concentrated, and where new missions are needed.", hi: "देखें कौन से इलाके सक्रिय हैं, स्वयंसेवी ऊर्जा कहाँ केंद्रित है, और कहाँ नए अभियानों की जरूरत है।" },
       "how-badge": { en: "Simple Process", hi: "सरल प्रक्रिया" },
       "how-title": { en: "How Prayas works", hi: "प्रयास कैसे काम करता है" },
       "how-subtitle": { en: "Register once, explore mission opportunities, contribute on-ground, and get recognised publicly for civic action.", hi: "एक बार पंजीकरण करें, अभियान चुनें, ज़मीन पर योगदान दें और सार्वजनिक पहचान पाएँ।" },
       "how-step-1-title": { en: "Register Free", hi: "निःशुल्क पंजीकरण" },
       "how-step-1-text": { en: "Sign up with your area, skills, and availability. It takes under two minutes and keeps you mission-ready.", hi: "अपने क्षेत्र, कौशल और उपलब्धता के साथ जुड़ें। इसमें दो मिनट से भी कम समय लगता है।" },
       "how-step-2-title": { en: "Choose a Mission", hi: "अभियान चुनें" },
-      "how-step-2-text": { en: "Browse campaigns by ward, mission type, time requirement, and current volunteer demand.", hi: "वार्ड, श्रेणी, समय और स्वयंसेवक आवश्यकता के अनुसार अभियान देखें।" },
+      "how-step-2-text": { en: "Browse campaigns by area, mission type, time requirement, and current volunteer demand.", hi: "इलाके, श्रेणी, समय और स्वयंसेवक आवश्यकता के अनुसार अभियान देखें।" },
       "how-step-3-title": { en: "Contribute", hi: "योगदान दें" },
       "how-step-3-text": { en: "Show up, participate, donate, mentor, coordinate, or spread awareness using your strongest skills.", hi: "आएँ, भाग लें, दान करें, मार्गदर्शन दें, समन्वय करें या जागरूकता फैलाएँ।" },
       "how-step-4-title": { en: "Get Recognised", hi: "मान्यता पाएं" },
@@ -3397,7 +3454,8 @@
       "vol-name-label": { en: "Full Name *", hi: "पूरा नाम *" },
       "vol-phone-label": { en: "Mobile Number *", hi: "मोबाइल नंबर *" },
       "vol-email-label": { en: "Email Address", hi: "ईमेल पता" },
-      "vol-area-label": { en: "Area / Ward", hi: "क्षेत्र / वार्ड" },
+      "vol-area-label": { en: "Area / Gram Panchayat / Ward", hi: "क्षेत्र / ग्राम पंचायत / वार्ड" },
+      "vol-area-placeholder": { en: "Ward, gram panchayat, town, colony or village", hi: "वार्ड, ग्राम पंचायत, कस्बा, कॉलोनी या गांव" },
       "vol-occupation-label": { en: "Profession / Occupation", hi: "पेशा / व्यवसाय" },
       "vol-occupation-placeholder": { en: "Teacher, engineer, student, homemaker, retired officer", hi: "शिक्षक, इंजीनियर, छात्र, गृहिणी, सेवानिवृत्त अधिकारी" },
       "vol-skills-label": { en: "Your Skills - select all that apply", hi: "आपके कौशल - सभी लागू विकल्प चुनें" },
@@ -3419,18 +3477,23 @@
       "footer-admin": { en: "Administration", hi: "प्रशासन" },
       "footer-sponsor-link": { en: "Sponsor a Mission", hi: "अभियान प्रायोजित करें" },
       "footer-admin-link": { en: "Open Admin Panel", hi: "एडमिन पैनल खोलें" },
-      "footer-wards-link": { en: "Ward Overview", hi: "वार्ड अवलोकन" },
+      "footer-wards-link": { en: "Location Overview", hi: "स्थान अवलोकन" },
       "footer-donate-link": { en: "Contribute Funds", hi: "फंड योगदान" },
       "footer-copy": { en: "© 2026 Prayas Citizen Platform · An initiative of the District Administration · Built with public service in mind.", hi: "© 2026 प्रयास नागरिक मंच · जिला प्रशासन की पहल · सार्वजनिक सेवा के उद्देश्य से निर्मित।" },
       "mission-tab-details": { en: "Details", hi: "विवरण" },
       "mission-tab-discussion": { en: "Discussion", hi: "चर्चा" },
-      "donation-subtitle": { en: "Support a mission with a direct contribution.", hi: "सीधे योगदान के साथ किसी अभियान का समर्थन करें।" },
+      "donation-subtitle": { en: "Support a mission and submit your payment reference for admin verification.", hi: "किसी अभियान का समर्थन करें और एडमिन सत्यापन के लिए भुगतान संदर्भ साझा करें।" },
       "donation-amount-label": { en: "Select amount or enter a custom amount (₹)", hi: "राशि चुनें या कस्टम राशि दर्ज करें (₹)" },
       "donation-anonymous": { en: "Donate anonymously", hi: "गुमनाम दान करें" },
       "donation-name-label": { en: "Your name", hi: "आपका नाम" },
       "donation-method-label": { en: "Choose payment method", hi: "भुगतान विधि चुनें" },
       "donation-upi-copy": { en: "Scan the QR code or use the UPI ID below.", hi: "QR कोड स्कैन करें या नीचे दिया गया UPI आईडी प्रयोग करें।" },
-      "donation-submit": { en: "Donate Now", hi: "अभी दान करें" },
+      "donation-reference-label": { en: "Payment Reference / UTR Number", hi: "भुगतान संदर्भ / यूटीआर नंबर" },
+      "donation-reference-placeholder": { en: "Enter transaction reference after payment", hi: "भुगतान के बाद लेनदेन संदर्भ दर्ज करें" },
+      "donation-note-label": { en: "Optional Note", hi: "वैकल्पिक टिप्पणी" },
+      "donation-note-placeholder": { en: "Share payer details, branch note, or purpose", hi: "भुगतानकर्ता विवरण, शाखा नोट या उद्देश्य लिखें" },
+      "donation-note-copy": { en: "Contributions are added to the live total after admin verifies the payment reference.", hi: "भुगतान संदर्भ सत्यापित होने के बाद ही योगदान लाइव कुल राशि में जुड़ता है।" },
+      "donation-submit": { en: "Submit Contribution for Verification", hi: "सत्यापन हेतु योगदान भेजें" },
       "bank-holder": { en: "Account Holder", hi: "खाता धारक" },
       "bank-number": { en: "Account Number", hi: "खाता संख्या" },
       "bank-ifsc": { en: "IFSC Code", hi: "आईएफएससी कोड" },
@@ -3457,9 +3520,10 @@
       "passport-missions": { en: "Missions", hi: "अभियान" },
       "passport-badges": { en: "Badges Earned", hi: "अर्जित बैज" },
       "passport-timeline": { en: "Missions Attended", hi: "शामिल अभियान" },
+      "passport-completion-title": { en: "Certificate Eligibility", hi: "प्रमाणपत्र पात्रता" },
       "passport-download": { en: "Download Certificate", hi: "प्रमाणपत्र डाउनलोड करें" },
       "admin-login-title": { en: "Admin Login", hi: "प्रशासक लॉगिन" },
-      "admin-login-subtitle": { en: "Enter the portal password to open the control panel.", hi: "कंट्रोल पैनल खोलने के लिए पोर्टल पासवर्ड दर्ज करें।" },
+      "admin-login-subtitle": { en: "Enter any password during this testing phase to open the control panel.", hi: "टेस्टिंग चरण में कंट्रोल पैनल खोलने के लिए कोई भी पासवर्ड दर्ज करें।" },
       "admin-password-label": { en: "Password", hi: "पासवर्ड" },
       "admin-login-submit": { en: "Login", hi: "लॉगिन" },
       "admin-panel-title": { en: "Admin Control Panel", hi: "प्रशासक नियंत्रण पैनल" },
@@ -3469,14 +3533,18 @@
       "admin-tab-volunteers": { en: "Volunteers", hi: "स्वयंसेवक" },
       "admin-tab-announcements": { en: "Announcements", hi: "घोषणाएँ" },
       "admin-tab-newsletter": { en: "Newsletter", hi: "न्यूज़लेटर" },
+      "pm-template-label": { en: "Activity Type Template", hi: "गतिविधि प्रकार टेम्पलेट" },
       "pm-title-label": { en: "Mission Title", hi: "अभियान शीर्षक" },
       "pm-category-label": { en: "Category", hi: "श्रेणी" },
-      "pm-ward-label": { en: "Ward", hi: "वार्ड" },
+      "pm-ward-label": { en: "Area / Gram Panchayat / Ward", hi: "क्षेत्र / ग्राम पंचायत / वार्ड" },
+      "pm-area-placeholder": { en: "Enter ward, gram panchayat, city, town or village", hi: "वार्ड, ग्राम पंचायत, शहर, कस्बा या गांव दर्ज करें" },
       "pm-date-label": { en: "Date / Schedule", hi: "तारीख / शेड्यूल" },
       "pm-location-label": { en: "Location", hi: "स्थान" },
       "pm-coordinator-label": { en: "Coordinator", hi: "समन्वयक" },
       "pm-slots-label": { en: "Volunteer Slots", hi: "स्वयंसेवक स्थान" },
       "pm-duration-label": { en: "Duration", hi: "अवधि" },
+      "pm-impact-label": { en: "Expected Impact", hi: "अपेक्षित प्रभाव" },
+      "pm-impact-placeholder": { en: "Expected output or citizen impact", hi: "अपेक्षित परिणाम या नागरिक प्रभाव" },
       "pm-description-label": { en: "Description", hi: "विवरण" },
       "pm-submit": { en: "Post Mission", hi: "अभियान पोस्ट करें" },
       "admin-volunteers-title": { en: "Registered Volunteers", hi: "पंजीकृत स्वयंसेवक" },
@@ -3498,6 +3566,10 @@
       "admin-overview-sponsors-subtitle": { en: "Organisations that have expressed interest in supporting district missions.", hi: "वे संस्थाएँ जिन्होंने जिला अभियानों को समर्थन देने में रुचि दिखाई है।" },
       "admin-overview-volunteers-title": { en: "Latest Volunteers", hi: "नवीनतम स्वयंसेवक" },
       "admin-overview-volunteers-subtitle": { en: "Newest citizen registrations captured from the volunteer form.", hi: "स्वयंसेवक फॉर्म से प्राप्त नवीनतम नागरिक पंजीकरण।" },
+      "admin-overview-donations-title": { en: "Donation Verification Queue", hi: "दान सत्यापन कतार" },
+      "admin-overview-donations-subtitle": { en: "Verify payment references before contributions are reflected in live totals.", hi: "लाइव कुल राशि में जोड़ने से पहले भुगतान संदर्भ सत्यापित करें।" },
+      "admin-overview-status-title": { en: "Activity Status Control", hi: "गतिविधि स्थिति नियंत्रण" },
+      "admin-overview-status-subtitle": { en: "Mark activities as completed so certificates unlock only after real completion.", hi: "गतिविधियों को पूर्ण चिह्नित करें ताकि प्रमाणपत्र केवल वास्तविक पूर्णता के बाद ही खुले।" },
       "admin-newsletter-title": { en: "Newsletter Builder", hi: "न्यूज़लेटर बिल्डर" },
       "admin-newsletter-subtitle": { en: "Prepare a district message and preview how it will read.", hi: "जिला संदेश तैयार करें और उसका पूर्वावलोकन देखें।" },
       "admin-newsletter-subject-label": { en: "Subject", hi: "विषय" },
@@ -3516,6 +3588,107 @@
       arts: { en: "Arts & Culture", hi: "कला व संस्कृति", emoji: "🎨", dot: "#9333EA" },
       education: { en: "Education", hi: "शिक्षा", emoji: "📚", dot: "#2563EB" }
     };
+
+    const activityTemplates = [
+      {
+        key: "sanitation-drive",
+        labelEn: "Sanitation Drive",
+        labelHi: "स्वच्छता अभियान",
+        category: "sanitation",
+        titleEn: "Sanitation Drive",
+        titleHi: "स्वच्छता अभियान",
+        duration: "3 hours",
+        slots: 60,
+        impactEn: "Cleaner public spaces and higher citizen participation",
+        impactHi: "स्वच्छ सार्वजनिक स्थान और अधिक नागरिक भागीदारी",
+        descriptionEn: "Mobilise citizens for cleanliness, waste segregation, sweeping, and public-space restoration with local support teams.",
+        descriptionHi: "नागरिकों को स्वच्छता, कचरा पृथक्करण, सफाई और सार्वजनिक स्थान सुधार के लिए स्थानीय टीमों के साथ जोड़ें।"
+      },
+      {
+        key: "blood-donation",
+        labelEn: "Blood Donation Drive",
+        labelHi: "रक्तदान शिविर",
+        category: "awareness",
+        titleEn: "Blood Donation Drive",
+        titleHi: "रक्तदान शिविर",
+        duration: "4 hours",
+        slots: 80,
+        impactEn: "Improved emergency blood availability",
+        impactHi: "आपातकालीन रक्त उपलब्धता में सुधार",
+        descriptionEn: "Coordinate hospitals, blood banks, donor registration, awareness messaging, and volunteer support for a structured blood donation camp.",
+        descriptionHi: "रक्तदान शिविर के लिए अस्पताल, ब्लड बैंक, दाता पंजीकरण, जागरूकता संदेश और स्वयंसेवी सहायता का समन्वय करें।"
+      },
+      {
+        key: "wall-painting",
+        labelEn: "Wall Painting / Public Art",
+        labelHi: "वॉल पेंटिंग / सार्वजनिक कला",
+        category: "arts",
+        titleEn: "Wall Painting Drive",
+        titleHi: "वॉल पेंटिंग अभियान",
+        duration: "1 full day",
+        slots: 50,
+        impactEn: "Beautified public areas and civic messaging",
+        impactHi: "सार्वजनिक क्षेत्रों का सौंदर्यीकरण और नागरिक संदेश",
+        descriptionEn: "Organise artists, students, paint logistics, design approvals, and theme-based public murals for civic engagement.",
+        descriptionHi: "नागरिक सहभागिता के लिए कलाकारों, छात्रों, पेंट सामग्री, डिज़ाइन अनुमोदन और थीम-आधारित भित्ति चित्रों का आयोजन करें।"
+      },
+      {
+        key: "awareness-drive",
+        labelEn: "Awareness Drive / Rally",
+        labelHi: "जागरूकता अभियान / रैली",
+        category: "awareness",
+        titleEn: "Awareness Drive",
+        titleHi: "जागरूकता अभियान",
+        duration: "2.5 hours",
+        slots: 100,
+        impactEn: "Higher citizen awareness and visibility",
+        impactHi: "अधिक नागरिक जागरूकता और दृश्यता",
+        descriptionEn: "Plan route, marshals, messaging material, public announcements, and institution participation for a focused awareness drive.",
+        descriptionHi: "एक केंद्रित जागरूकता अभियान के लिए मार्ग, मार्शल, संदेश सामग्री, सार्वजनिक घोषणाएँ और संस्थागत भागीदारी की योजना बनाएं।"
+      },
+      {
+        key: "tree-plantation",
+        labelEn: "Tree Plantation Drive",
+        labelHi: "वृक्षारोपण अभियान",
+        category: "environment",
+        titleEn: "Tree Plantation Drive",
+        titleHi: "वृक्षारोपण अभियान",
+        duration: "Half day",
+        slots: 120,
+        impactEn: "Improved green cover and long-term stewardship",
+        impactHi: "हरित आवरण में सुधार और दीर्घकालिक संरक्षण",
+        descriptionEn: "Coordinate saplings, pit preparation, watering teams, school participation, and survival tracking for plantation sites.",
+        descriptionHi: "वृक्षारोपण स्थलों के लिए पौधे, गड्ढा तैयारी, सिंचाई टीम, स्कूल भागीदारी और संरक्षण ट्रैकिंग का समन्वय करें।"
+      },
+      {
+        key: "teaching-camp",
+        labelEn: "Teaching / Learning Camp",
+        labelHi: "शिक्षण / अध्ययन शिविर",
+        category: "education",
+        titleEn: "Teaching Support Camp",
+        titleHi: "शिक्षण सहायता शिविर",
+        duration: "2 hours",
+        slots: 30,
+        impactEn: "Improved learner attendance and support",
+        impactHi: "सीखने वालों की उपस्थिति और सहायता में सुधार",
+        descriptionEn: "Bring volunteers together for teaching support, reading sessions, remedial help, and activity-based learning.",
+        descriptionHi: "स्वयंसेवकों को शिक्षण सहायता, पठन सत्र, सुधारात्मक मदद और गतिविधि-आधारित सीखने के लिए साथ लाएं।"
+      },
+      {
+        key: "health-camp",
+        labelEn: "Health Camp",
+        labelHi: "स्वास्थ्य शिविर",
+        category: "awareness",
+        titleEn: "Community Health Camp",
+        titleHi: "सामुदायिक स्वास्थ्य शिविर",
+        duration: "5 hours",
+        slots: 45,
+        impactEn: "Improved public health outreach and screening",
+        impactHi: "सार्वजनिक स्वास्थ्य पहुंच और स्क्रीनिंग में सुधार",
+        descriptionEn: "Support registrations, patient queues, awareness desks, follow-up coordination, and local medical partners for a health camp.",
+        descriptionHi: "स्वास्थ्य शिविर के लिए पंजीकरण, कतार प्रबंधन, जागरूकता डेस्क, फॉलो-अप समन्वय और चिकित्सा साझेदारों को समर्थन दें।"
+      }
+    ];
 
     const UI_STORAGE_KEY = "prayas-portal-ui-v2";
     const ADMIN_TOKEN_KEY = "prayas-admin-token-v1";
@@ -3544,6 +3717,7 @@
         stories: deepClone(initialStories),
         leaders: deepClone(leaders),
         volunteers: [],
+        donations: [],
         newsletterSubs: 847,
         newsletterSignups: [],
         newsletterDraft: { subject: "", body: "" },
@@ -3648,6 +3822,7 @@
       state.leaders = Array.isArray(payload.leaders) ? payload.leaders : deepClone(leaders);
       state.volunteers = Array.isArray(payload.volunteers) ? payload.volunteers : [];
       state.sponsorLeads = Array.isArray(payload.sponsorLeads) ? payload.sponsorLeads : [];
+      state.donations = Array.isArray(payload.donations) ? payload.donations : [];
       state.newsletterSignups = Array.isArray(payload.newsletterSignups) ? payload.newsletterSignups : [];
       state.newsletterSubs = Number(payload.newsletterSubs || 0);
       if (payload.newsletterDraft && typeof payload.newsletterDraft === "object") {
@@ -3716,19 +3891,53 @@
       const labels = {
         open: { en: "Open", hi: "खुला" },
         upcoming: { en: "Upcoming", hi: "आगामी" },
-        full: { en: "Full", hi: "पूर्ण" }
+        full: { en: "Full", hi: "पूर्ण" },
+        completed: { en: "Completed", hi: "पूर्ण हुआ" }
       };
       return labels[status]?.[state.lang] || status;
     }
 
     function wardLabel(value) {
-      return state.lang === "hi" ? value.replace("Ward", "वार्ड") : value;
+      return state.lang === "hi" ? String(value || "").replace("Ward", "वार्ड") : String(value || "");
+    }
+
+    function missionArea(mission) {
+      return String(mission?.ward || mission?.area || "").trim();
+    }
+
+    function uniqueAreas() {
+      return [...new Set(state.missions.map((mission) => missionArea(mission)).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, "en-IN", { sensitivity: "base" })
+      );
+    }
+
+    function areaOverviewLabel() {
+      return state.lang === "hi" ? "सभी स्थान" : "All Locations";
+    }
+
+    function renderLocationSuggestions() {
+      const suggestions = uniqueAreas();
+      document.getElementById("locationSuggestions").innerHTML = suggestions
+        .map((area) => `<option value="${escapeHtml(area)}"></option>`)
+        .join("");
+    }
+
+    function templateLabel(template) {
+      return state.lang === "hi" ? template.labelHi : template.labelEn;
+    }
+
+    function renderActivityTemplateOptions() {
+      const options = activityTemplates
+        .map((template) => `<option value="${template.key}">${escapeHtml(templateLabel(template))}</option>`)
+        .join("");
+      document.getElementById("pmTemplate").innerHTML =
+        `<option value="">${state.lang === "hi" ? "टेम्पलेट चुनें" : "Select template"}</option>${options}`;
     }
 
     function getStats() {
       const volunteerBase = 2400 + state.volunteers.length;
       const activeMissions = state.missions.length;
-      const completed = 156;
+      const completed = 150 + state.missions.filter((mission) => mission.status === "completed").length;
       const lives = 18000 + state.stories.length * 75 + state.volunteers.length * 3;
       return { volunteerBase, activeMissions, completed, lives };
     }
@@ -3737,7 +3946,7 @@
       const stats = getStats();
       document.getElementById("heroVolunteerCount").textContent = `${formatCompact(stats.volunteerBase)}+`;
       document.getElementById("heroImpactTrees").textContent = "840";
-      document.getElementById("heroImpactDrives").textContent = "156";
+      document.getElementById("heroImpactDrives").textContent = String(stats.completed);
     }
 
     function setStatText() {
@@ -3786,15 +3995,11 @@
         .map((key) => `<option value="${key}">${categoryEmoji(key)} ${categoryLabel(key)}</option>`)
         .join("");
       document.getElementById("storyCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें" : "Select Category"}</option>${options}`;
-      document.getElementById("pmCategory").innerHTML = options;
+      document.getElementById("pmCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें" : "Select Category"}</option>${options}`;
     }
 
     function renderWardSelectOptions() {
-      const wardOptions = Array.from({ length: 5 }, (_, i) => `Ward ${i + 1}`)
-        .map((ward) => `<option value="${ward}">${wardLabel(ward)}</option>`)
-        .join("");
-      document.getElementById("volWard").innerHTML = `<option value="">${state.lang === "hi" ? "वार्ड चुनें" : "Select ward"}</option>${wardOptions}`;
-      document.getElementById("pmWard").innerHTML = wardOptions;
+      renderLocationSuggestions();
     }
 
     function renderAvailabilityOptions() {
@@ -3849,9 +4054,13 @@
     }
 
     function renderWardFilters() {
+      const areas = uniqueAreas();
+      if (state.currentWard !== "all" && !areas.includes(state.currentWard)) {
+        state.currentWard = "all";
+      }
       const items = [
-        { value: "all", label: state.lang === "hi" ? "सभी वार्ड" : "All Wards" },
-        ...Array.from({ length: 5 }, (_, index) => ({ value: `Ward ${index + 1}`, label: wardLabel(`Ward ${index + 1}`) }))
+        { value: "all", label: areaOverviewLabel() },
+        ...areas.map((area) => ({ value: area, label: wardLabel(area) }))
       ];
       document.getElementById("wardFilters").innerHTML = items
         .map(
@@ -3867,7 +4076,7 @@
     function filteredMissions() {
       return state.missions.filter((mission) => {
         const categoryOk = state.currentCategory === "all" || mission.category === state.currentCategory;
-        const wardOk = state.currentWard === "all" || mission.ward === state.currentWard;
+        const wardOk = state.currentWard === "all" || missionArea(mission) === state.currentWard;
         return categoryOk && wardOk;
       });
     }
@@ -3901,7 +4110,7 @@
                 ${mission.emoji}
                 <span class="mission-tag">${escapeHtml(categoryLabel(mission.category))}</span>
                 <span class="mission-status status-${mission.status}">${escapeHtml(statusLabel(mission.status))}</span>
-                <span class="mission-ward-chip">${escapeHtml(wardLabel(mission.ward))}</span>
+                <span class="mission-ward-chip">${escapeHtml(wardLabel(missionArea(mission)))}</span>
               </div>
               <div class="mission-body">
                 <h3 class="mission-title">${escapeHtml(mission.title)}</h3>
@@ -3981,9 +4190,9 @@
     }
 
     function renderWardGrid() {
-      const wards = Array.from({ length: 9 }, (_, index) => `Ward ${index + 1}`);
-      const cards = wards.map((ward, index) => {
-        const missions = state.missions.filter((mission) => mission.ward === ward);
+      const areas = uniqueAreas();
+      const cards = areas.map((ward, index) => {
+        const missions = state.missions.filter((mission) => missionArea(mission) === ward);
         const categories = [...new Set(missions.map((mission) => mission.category))];
         const borderColors = [varValue("--saffron"), varValue("--navy"), varValue("--green")];
         const borderColor = borderColors[index % borderColors.length];
@@ -4005,15 +4214,20 @@
           </article>
         `;
       });
-      document.getElementById("wardGrid").innerHTML = cards.join("");
+      document.getElementById("wardGrid").innerHTML = cards.length
+        ? cards.join("")
+        : `<div class="mission-card" style="grid-column:1/-1;padding:32px;text-align:center">
+            <h3 class="mission-title">${state.lang === "hi" ? "अभी तक कोई स्थान नहीं जोड़ा गया है।" : "No locations have been added yet."}</h3>
+            <p class="mission-desc" style="display:block">${state.lang === "hi" ? "एडमिन पैनल से पहली गतिविधि जोड़ें।" : "Add the first activity from the admin panel."}</p>
+          </div>`;
 
-      const activeWards = new Set(state.missions.map((mission) => mission.ward)).size;
+      const activeWards = new Set(state.missions.map((mission) => missionArea(mission)).filter(Boolean)).size;
       const categories = new Set(state.missions.map((mission) => mission.category)).size;
       const volunteers = state.missions.reduce((sum, mission) => sum + mission.volunteers, 0);
       document.getElementById("mapSummary").textContent =
         state.lang === "hi"
-          ? `${state.missions.length} सक्रिय अभियान · ${activeWards} वार्ड · ${categories} श्रेणियाँ · ${volunteers.toLocaleString("en-IN")} स्वयंसेवक सक्रिय`
-          : `${state.missions.length} active missions across ${activeWards} wards · ${categories} categories · ${volunteers.toLocaleString("en-IN")} volunteers engaged`;
+          ? `${state.missions.length} सक्रिय अभियान · ${activeWards} स्थान · ${categories} श्रेणियाँ · ${volunteers.toLocaleString("en-IN")} स्वयंसेवक सक्रिय`
+          : `${state.missions.length} active missions across ${activeWards} locations · ${categories} categories · ${volunteers.toLocaleString("en-IN")} volunteers engaged`;
     }
 
     function storyCardMedia(story) {
@@ -4086,22 +4300,71 @@
         box.classList.add("hidden");
         return;
       }
-      document.getElementById("selectedMissionText").textContent = `${mission.title} · ${wardLabel(mission.ward)}`;
+      document.getElementById("selectedMissionText").textContent = `${mission.title} · ${wardLabel(missionArea(mission))}`;
       box.classList.remove("hidden");
     }
 
     function renderAdminStats() {
       const totalFunds = state.funds.reduce((sum, fund) => sum + fund.raised, 0);
+      const pendingDonations = state.donations.filter((donation) => donation.status !== "verified").length;
+      const completedMissions = state.missions.filter((mission) => mission.status === "completed").length;
       const items = [
         { label: state.lang === "hi" ? "स्वयंसेवक" : "Volunteers", value: state.volunteers.length },
         { label: state.lang === "hi" ? "अभियान" : "Missions", value: state.missions.length },
         { label: state.lang === "hi" ? "कुल फंड" : "Funds Raised", value: `₹${formatCompact(totalFunds)}` },
+        { label: state.lang === "hi" ? "लंबित दान" : "Pending Donations", value: pendingDonations },
+        { label: state.lang === "hi" ? "पूर्ण गतिविधियाँ" : "Completed Activities", value: completedMissions },
         { label: state.lang === "hi" ? "ग्राहक" : "Subscribers", value: state.newsletterSubs },
-        { label: state.lang === "hi" ? "प्रायोजक लीड्स" : "Sponsor Leads", value: state.sponsorLeads.length },
-        { label: state.lang === "hi" ? "घोषणाएँ" : "Announcements", value: state.announcements.length }
+        { label: state.lang === "hi" ? "प्रायोजक लीड्स" : "Sponsor Leads", value: state.sponsorLeads.length }
       ];
       document.getElementById("adminStatsGrid").innerHTML = items
         .map((item) => `<div class="admin-stat"><div class="admin-stat-value">${escapeHtml(String(item.value))}</div><div class="admin-stat-label">${escapeHtml(item.label)}</div></div>`)
+        .join("");
+    }
+
+    function renderDonationQueue() {
+      const container = document.getElementById("donationQueueList");
+      const pending = state.donations.filter((donation) => donation.status !== "verified");
+      if (!pending.length) {
+        container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "सत्यापन के लिए कोई लंबित भुगतान नहीं है।" : "No pending contributions awaiting verification."}</div></div>`;
+        return;
+      }
+      container.innerHTML = pending
+        .slice(0, 8)
+        .map((donation) => `
+          <div class="message-card">
+            <div class="message-name">₹${donation.amount.toLocaleString("en-IN")} · ${escapeHtml(donation.fundTitle)}</div>
+            <div class="message-text">${escapeHtml(donation.anonymous ? (state.lang === "hi" ? "गुमनाम नागरिक" : "Anonymous citizen") : donation.donorName)}</div>
+            <div class="message-text">${escapeHtml((donation.paymentMethod || "").toUpperCase())} · ${escapeHtml(donation.transactionReference)}</div>
+            ${donation.note ? `<div class="message-text">${escapeHtml(donation.note)}</div>` : ""}
+            <div class="message-time">${escapeHtml(donation.date)}</div>
+            <div class="message-actions">
+              <button class="btn btn-primary" type="button" onclick="verifyDonation(${donation.id})">${state.lang === "hi" ? "सत्यापित करें" : "Verify Payment"}</button>
+            </div>
+          </div>
+        `)
+        .join("");
+    }
+
+    function renderMissionStatusList() {
+      const container = document.getElementById("missionStatusList");
+      if (!state.missions.length) {
+        container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "कोई गतिविधि उपलब्ध नहीं है।" : "No activities available yet."}</div></div>`;
+        return;
+      }
+      container.innerHTML = state.missions
+        .slice(0, 8)
+        .map((mission) => `
+          <div class="message-card">
+            <div class="message-name">${escapeHtml(mission.title)}</div>
+            <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.date)}</div>
+            <div class="message-time">${escapeHtml(statusLabel(mission.status))}</div>
+            <div class="message-actions">
+              ${mission.status !== "completed" ? `<button class="btn btn-primary" type="button" onclick="updateMissionStatus(${mission.id}, 'completed')">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>` : ""}
+              ${mission.status !== "open" ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>` : ""}
+            </div>
+          </div>
+        `)
         .join("");
     }
 
@@ -4205,7 +4468,8 @@
     function renderMissionModal() {
       const mission = state.missions.find((item) => item.id === state.activeMissionId);
       if (!mission) return;
-      document.getElementById("missionModalTag").textContent = `${categoryLabel(mission.category)} · ${wardLabel(mission.ward)}`;
+      const locationLabel = wardLabel(missionArea(mission));
+      document.getElementById("missionModalTag").textContent = `${categoryLabel(mission.category)} · ${locationLabel}`;
       document.getElementById("missionModalTitle").textContent = mission.title;
       document.getElementById("missionModalSubtitle").textContent = mission.location;
       const banner = document.getElementById("missionModalBanner");
@@ -4221,11 +4485,14 @@
       detailsPane.classList.toggle("hidden", state.activeMissionTab !== "details");
       discussionPane.classList.toggle("hidden", state.activeMissionTab !== "discussion");
 
+      const isCompleted = mission.status === "completed";
+      const isFull = mission.status === "full";
       detailsPane.innerHTML = `
         <p class="showcase-story" style="font-size:15px;margin-bottom:22px">${escapeHtml(mission.desc)}</p>
         <div class="detail-grid">
           <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "तारीख" : "Date"}</div><div class="detail-value">${escapeHtml(mission.date)}</div></div>
           <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "स्थान" : "Location"}</div><div class="detail-value">${escapeHtml(mission.location)}</div></div>
+          <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "क्षेत्र" : "Area"}</div><div class="detail-value">${escapeHtml(locationLabel)}</div></div>
           <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "समन्वयक" : "Coordinator"}</div><div class="detail-value">${escapeHtml(mission.coordinator)}</div></div>
           <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "अवधि" : "Duration"}</div><div class="detail-value">${escapeHtml(mission.duration)}</div></div>
           <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "स्वयंसेवक" : "Volunteers"}</div><div class="detail-value">${mission.volunteers} / ${mission.total}</div></div>
@@ -4233,7 +4500,7 @@
           <div class="detail-card" style="grid-column:1/-1"><div class="detail-label">${state.lang === "hi" ? "प्रभाव" : "Impact"}</div><div class="detail-value">${escapeHtml(mission.impact)}</div></div>
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <button class="btn btn-primary" type="button" onclick="registerForMissionFromModal()">${state.lang === "hi" ? "इस अभियान के लिए पंजीकरण करें" : "Sign Up for This Mission"}</button>
+          <button class="btn btn-primary" type="button" onclick="registerForMissionFromModal()" ${isCompleted || isFull ? "disabled" : ""}>${isCompleted ? (state.lang === "hi" ? "गतिविधि पूर्ण हो चुकी है" : "Activity Completed") : isFull ? (state.lang === "hi" ? "स्लॉट भर चुके हैं" : "Slots Filled") : state.lang === "hi" ? "इस अभियान के लिए पंजीकरण करें" : "Sign Up for This Mission"}</button>
           <button class="btn btn-green" type="button" onclick="shareMission(${mission.id})"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
         </div>
       `;
@@ -4291,6 +4558,9 @@
     function renderPassportModal() {
       const leader = state.leaders.find((item) => item.id === state.activeLeaderId);
       if (!leader) return;
+      const completedActivities = leader.attended.filter((title) =>
+        state.missions.some((mission) => mission.title.includes(title) && mission.status === "completed")
+      );
       document.getElementById("passportAvatar").textContent = leader.initials;
       document.getElementById("passportAvatar").style.background = leader.color;
       document.getElementById("passportName").textContent = leader.name;
@@ -4301,6 +4571,14 @@
       document.getElementById("passportTimeline").innerHTML = leader.attended
         .map((mission) => `<div class="timeline-item">${escapeHtml(mission)}</div>`)
         .join("");
+      document.getElementById("passportEligibilityText").textContent = completedActivities.length
+        ? state.lang === "hi"
+          ? `${completedActivities.length} पूर्ण गतिविधि सत्यापित है। प्रमाणपत्र डाउनलोड सक्षम है।`
+          : `${completedActivities.length} completed activity verified. Certificate download is enabled.`
+        : state.lang === "hi"
+          ? "प्रमाणपत्र तभी खुलेगा जब एडमिन किसी पूर्ण की गई गतिविधि को completed चिह्नित करेगा।"
+          : "Certificates unlock only after an admin marks at least one attended activity as completed.";
+      document.getElementById("downloadCertificateBtn").disabled = !completedActivities.length;
     }
 
     function renderAll() {
@@ -4311,6 +4589,7 @@
         setStatText();
       }
       renderCategorySelectOptions();
+      renderActivityTemplateOptions();
       renderWardSelectOptions();
       renderAvailabilityOptions();
       renderSkills();
@@ -4324,6 +4603,8 @@
       renderLeaders();
       renderSelectedMissionBox();
       renderAdminStats();
+      renderDonationQueue();
+      renderMissionStatusList();
       renderVolunteerTable();
       renderAnnouncementList();
       renderNewsletterPreview();
@@ -4408,6 +4689,14 @@
     function registerForMissionFromModal() {
       const mission = state.missions.find((item) => item.id === state.activeMissionId);
       if (!mission) return;
+      if (mission.status === "completed") {
+        showToast(state.lang === "hi" ? "यह गतिविधि पहले ही पूर्ण हो चुकी है।" : "This activity has already been completed.", "ℹ️");
+        return;
+      }
+      if (mission.status === "full") {
+        showToast(state.lang === "hi" ? "इस गतिविधि के स्लॉट भर चुके हैं।" : "This activity is already full.", "ℹ️");
+        return;
+      }
       state.selectedMissionId = mission.id;
       renderSelectedMissionBox();
       closeModal("missionModal");
@@ -4582,58 +4871,103 @@
     function downloadCertificate() {
       const leader = state.leaders.find((item) => item.id === state.activeLeaderId);
       if (!leader) return;
+      const completedActivities = leader.attended.filter((title) =>
+        state.missions.some((mission) => mission.title.includes(title) && mission.status === "completed")
+      );
+      if (!completedActivities.length) {
+        showToast(state.lang === "hi" ? "प्रमाणपत्र केवल पूर्ण गतिविधि के बाद उपलब्ध होगा।" : "Certificates unlock only after a completed activity is verified.", "ℹ️");
+        return;
+      }
       const canvas = document.createElement("canvas");
-      canvas.width = 900;
-      canvas.height = 600;
+      canvas.width = 1120;
+      canvas.height = 760;
       const ctx = canvas.getContext("2d");
+      const certificateId = `PRAYAS-${String(leader.id).padStart(3, "0")}-${new Date().getFullYear()}`;
+      const primaryActivity = completedActivities[0];
 
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(0, 0, 900, 600);
+      ctx.fillStyle = "#FDFBF7";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = "#FF9933";
-      ctx.fillRect(0, 0, 900, 10);
-      ctx.fillStyle = "#1B3A6B";
-      ctx.fillRect(0, 0, 10, 600);
-      ctx.fillRect(890, 0, 10, 600);
+      ctx.fillRect(0, 0, canvas.width, 18);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 18, canvas.width, 12);
       ctx.fillStyle = "#138808";
-      ctx.fillRect(0, 590, 900, 10);
+      ctx.fillRect(0, 30, canvas.width, 18);
+
+      ctx.strokeStyle = "#1B3A6B";
+      ctx.lineWidth = 7;
+      ctx.strokeRect(28, 28, canvas.width - 56, canvas.height - 56);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#C8A96A";
+      ctx.strokeRect(44, 44, canvas.width - 88, canvas.height - 88);
 
       ctx.textAlign = "center";
-      ctx.fillStyle = "#FF9933";
-      ctx.font = "48px serif";
-      ctx.fillText("☸", 450, 86);
-
       ctx.fillStyle = "#1B3A6B";
-      ctx.font = "700 28px Georgia";
-      ctx.fillText("CERTIFICATE OF APPRECIATION", 450, 150);
-
-      ctx.fillStyle = "#6B7280";
-      ctx.font = "16px Georgia";
-      ctx.fillText("This certifies that", 450, 214);
-
-      ctx.fillStyle = "#1B3A6B";
+      ctx.font = "700 18px Inter";
+      ctx.fillText("DISTRICT ADMINISTRATION", canvas.width / 2, 108);
       ctx.font = "700 34px Georgia";
-      ctx.fillText(leader.name, 450, 276);
-
-      ctx.fillStyle = "#4B5563";
-      ctx.font = "17px Georgia";
-      ctx.fillText("has contributed to the Prayas District Initiative", 450, 328);
-
-      ctx.fillStyle = "#FF9933";
-      ctx.font = "700 20px Georgia";
-      ctx.fillText(leader.attended[0] || "Community Mission", 450, 370);
+      ctx.fillText("Prayas Citizen Engagement Platform", canvas.width / 2, 152);
 
       ctx.fillStyle = "#6B7280";
-      ctx.font = "14px Georgia";
-      ctx.fillText(`Issued on ${formatDate(new Date(), "en")} · District Administration`, 450, 446);
+      ctx.font = "600 16px Inter";
+      ctx.fillText("Official Certificate of Civic Contribution", canvas.width / 2, 186);
+
+      ctx.fillStyle = "#FF9933";
+      ctx.beginPath();
+      ctx.arc(180, 146, 46, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "700 28px Georgia";
+      ctx.fillText("P", 180, 156);
+
+      ctx.fillStyle = "#138808";
+      ctx.beginPath();
+      ctx.arc(canvas.width - 180, 146, 46, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "700 18px Inter";
+      ctx.fillText("2026", canvas.width - 180, 153);
+
+      ctx.fillStyle = "#6B7280";
+      ctx.font = "18px Georgia";
+      ctx.fillText("This is to certify that", canvas.width / 2, 272);
+
+      ctx.fillStyle = "#1B3A6B";
+      ctx.font = "700 42px Georgia";
+      ctx.fillText(leader.name, canvas.width / 2, 334);
+
+      ctx.fillStyle = "#374151";
+      ctx.font = "18px Georgia";
+      ctx.fillText("has successfully contributed to a verified public service activity under Prayas.", canvas.width / 2, 388);
+
+      ctx.fillStyle = "#1B3A6B";
+      ctx.font = "700 24px Inter";
+      ctx.fillText(primaryActivity, canvas.width / 2, 438);
+
+      ctx.fillStyle = "#6B7280";
+      ctx.font = "16px Inter";
+      ctx.fillText(`Completed activity count: ${completedActivities.length}  |  Certificate No: ${certificateId}`, canvas.width / 2, 476);
+      ctx.fillText(`Issued on ${formatDate(new Date(), "en")}  |  Verified by District Administration Portal`, canvas.width / 2, 504);
 
       ctx.strokeStyle = "#1B3A6B";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(620, 500);
-      ctx.lineTo(770, 500);
+      ctx.moveTo(170, 620);
+      ctx.lineTo(370, 620);
+      ctx.moveTo(750, 620);
+      ctx.lineTo(950, 620);
       ctx.stroke();
-      ctx.fillText("District Officer", 695, 524);
+
+      ctx.fillStyle = "#1B3A6B";
+      ctx.font = "700 16px Inter";
+      ctx.fillText("Portal Verification Seal", 270, 646);
+      ctx.fillText("Authorised Signatory", 850, 646);
+
+      ctx.fillStyle = "#6B7280";
+      ctx.font = "14px Inter";
+      ctx.fillText("Prayas Citizen Engagement Platform", 270, 668);
+      ctx.fillText("District Civic Coordination Cell", 850, 668);
 
       const link = document.createElement("a");
       link.href = canvas.toDataURL("image/png");
@@ -4651,6 +4985,8 @@
         state.lang === "hi" ? `${fund.title} के लिए दान` : `Donate to ${fund.title}`;
       document.getElementById("customAmount").value = "";
       document.getElementById("donorName").value = "";
+      document.getElementById("donationTxnRef").value = "";
+      document.getElementById("donationNote").value = "";
       document.getElementById("anonymousDonation").checked = false;
       document.getElementById("donorNameGroup").classList.remove("hidden");
       renderAmountPills();
@@ -4688,8 +5024,13 @@
     async function submitDonationForm(event) {
       event.preventDefault();
       const amount = Number(document.getElementById("customAmount").value || 0);
+      const transactionReference = document.getElementById("donationTxnRef").value.trim();
       if (!amount) {
         showToast(state.lang === "hi" ? "दान राशि दर्ज करें।" : "Please enter a donation amount.", "⚠️");
+        return;
+      }
+      if (!transactionReference) {
+        showToast(state.lang === "hi" ? "भुगतान संदर्भ दर्ज करें।" : "Please enter the payment reference.", "⚠️");
         return;
       }
       const fund = state.funds.find((item) => item.id === state.activeFundId);
@@ -4705,14 +5046,46 @@
             fundId: fund.id,
             amount,
             donor,
-            anonymous: document.getElementById("anonymousDonation").checked
+            donorName: donor,
+            anonymous: document.getElementById("anonymousDonation").checked,
+            paymentMethod: state.paymentMethod,
+            transactionReference,
+            note: document.getElementById("donationNote").value.trim()
           })
         });
         closeModal("donationModal");
         await refreshPortalData();
         showToast(
-          state.lang === "hi" ? `${donor} द्वारा ₹${amount} का दान प्राप्त हुआ।` : `₹${amount} donation received from ${donor}.`,
+          state.lang === "hi" ? `₹${amount} का योगदान सत्यापन हेतु जमा हो गया।` : `₹${amount} contribution submitted for verification.`,
           "💰"
+        );
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function verifyDonation(donationId) {
+      try {
+        await apiRequest(`/api/admin/donations/${donationId}/verify`, { method: "POST" });
+        await refreshPortalData();
+        showToast(state.lang === "hi" ? "दान सत्यापित हो गया।" : "Contribution verified.", "✅");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function updateMissionStatus(missionId, status) {
+      try {
+        await apiRequest(`/api/admin/missions/${missionId}/status`, {
+          method: "POST",
+          body: JSON.stringify({ status })
+        });
+        await refreshPortalData();
+        showToast(
+          state.lang === "hi"
+            ? (status === "completed" ? "गतिविधि पूर्ण चिह्नित कर दी गई।" : "गतिविधि फिर से खोल दी गई।")
+            : (status === "completed" ? "Activity marked completed." : "Activity reopened."),
+          "🗂️"
         );
       } catch (error) {
         handleRequestError(error);
@@ -4799,6 +5172,17 @@
       document.getElementById(map[tab]).classList.add("active");
     }
 
+    function applyMissionTemplate(templateKey) {
+      const template = activityTemplates.find((item) => item.key === templateKey);
+      if (!template) return;
+      document.getElementById("pmCategory").value = template.category;
+      document.getElementById("pmTitle").value = state.lang === "hi" ? template.titleHi : template.titleEn;
+      document.getElementById("pmDuration").value = template.duration;
+      document.getElementById("pmSlots").value = template.slots;
+      document.getElementById("pmImpact").value = state.lang === "hi" ? template.impactHi : template.impactEn;
+      document.getElementById("pmDescription").value = state.lang === "hi" ? template.descriptionHi : template.descriptionEn;
+    }
+
     async function submitPostMissionForm(event) {
       event.preventDefault();
       const category = document.getElementById("pmCategory").value;
@@ -4808,7 +5192,7 @@
           method: "POST",
           body: JSON.stringify({
             category,
-            ward: document.getElementById("pmWard").value,
+            ward: document.getElementById("pmWard").value.trim(),
             title: document.getElementById("pmTitle").value.trim(),
             desc: document.getElementById("pmDescription").value.trim(),
             date: document.getElementById("pmDate").value.trim(),
@@ -4817,7 +5201,7 @@
             duration: document.getElementById("pmDuration").value.trim(),
             total: slots,
             age: "16+",
-            impact: state.lang === "hi" ? "अभी शुरू हुआ" : "Just launched"
+            impact: document.getElementById("pmImpact").value.trim() || (state.lang === "hi" ? "अभी शुरू हुआ" : "Just launched")
           })
         });
         event.target.reset();
@@ -4989,6 +5373,10 @@
 
       document.querySelectorAll(".payment-tab").forEach((button) => {
         button.addEventListener("click", () => setPaymentMethod(button.getAttribute("data-payment-method")));
+      });
+
+      document.getElementById("pmTemplate").addEventListener("change", (event) => {
+        applyMissionTemplate(event.target.value);
       });
 
       document.getElementById("anonymousDonation").addEventListener("change", (event) => {
