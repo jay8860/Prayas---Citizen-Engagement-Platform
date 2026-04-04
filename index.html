@@ -2421,7 +2421,7 @@
               </div>
               <div class="form-group">
                 <label for="hostMissionCategory" data-i18n="host-category-label">Category</label>
-                <select id="hostMissionCategory" required></select>
+                <select id="hostMissionCategory"></select>
               </div>
             </div>
             <div class="form-row">
@@ -3102,7 +3102,7 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="pmCategory" data-i18n="pm-category-label">Category</label>
-                <select id="pmCategory" required></select>
+                <select id="pmCategory"></select>
               </div>
               <div class="form-group">
                 <label for="pmSlots" data-i18n="pm-slots-label">Volunteer Slots</label>
@@ -3807,7 +3807,15 @@
       environment: { en: "Environment", hi: "पर्यावरण", emoji: "🌳", dot: "#16A34A" },
       awareness: { en: "Awareness", hi: "जागरूकता", emoji: "🚦", dot: "#0284C7" },
       arts: { en: "Arts & Culture", hi: "कला व संस्कृति", emoji: "🎨", dot: "#9333EA" },
-      education: { en: "Education", hi: "शिक्षा", emoji: "📚", dot: "#2563EB" }
+      education: { en: "Education", hi: "शिक्षा", emoji: "📚", dot: "#2563EB" },
+      health: { en: "Health", hi: "स्वास्थ्य", emoji: "🏥", dot: "#DC2626" },
+      sports: { en: "Sports", hi: "खेल", emoji: "🏅", dot: "#0F766E" },
+      welfare: { en: "Social Welfare", hi: "सामाजिक कल्याण", emoji: "🤝", dot: "#7C3AED" },
+      heritage: { en: "Heritage", hi: "विरासत", emoji: "🏛️", dot: "#92400E" },
+      digital: { en: "Digital Inclusion", hi: "डिजिटल समावेशन", emoji: "💻", dot: "#1D4ED8" },
+      youth: { en: "Youth Engagement", hi: "युवा सहभागिता", emoji: "⚡", dot: "#DB2777" },
+      governance: { en: "Public Governance", hi: "जन शासन", emoji: "📋", dot: "#475569" },
+      other: { en: "Other / Custom", hi: "अन्य / कस्टम", emoji: "✨", dot: "#64748B" }
     };
 
     const nodalDepartments = [
@@ -4241,8 +4249,8 @@
         .map((key) => `<option value="${key}">${categoryEmoji(key)} ${categoryLabel(key)}</option>`)
         .join("");
       document.getElementById("storyCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें" : "Select Category"}</option>${options}`;
-      document.getElementById("pmCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें" : "Select Category"}</option>${options}`;
-      document.getElementById("hostMissionCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें" : "Select Category"}</option>${options}`;
+      document.getElementById("pmCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें (वैकल्पिक)" : "Select Category (Optional)"}</option>${options}`;
+      document.getElementById("hostMissionCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें (वैकल्पिक)" : "Select Category (Optional)"}</option>${options}`;
     }
 
     function renderDepartmentOptions() {
@@ -4936,13 +4944,8 @@
       if (!missionId) return;
       const mission = state.missions.find((item) => item.id === missionId);
       if (!mission) return;
-      if (params.get("join") === "1") {
-        state.selectedMissionId = mission.id;
-        renderSelectedMissionBox();
-        document.getElementById("volunteer").scrollIntoView({ behavior: "smooth", block: "start" });
-      } else {
-        openMissionModal(mission.id);
-      }
+      document.getElementById("missions").scrollIntoView({ behavior: "smooth", block: "start" });
+      openMissionModal(mission.id);
     }
 
     function varValue(variable) {
@@ -5003,8 +5006,8 @@
       if (!mission) return;
       const text =
         state.lang === "hi"
-          ? `नया मिशन लाइव है: ${mission.title}\nस्थान: ${mission.location}\nसमय: ${mission.date}\nभाग लेने के लिए इस लिंक पर क्लिक करें: ${window.location.origin}${window.location.pathname}?mission=${mission.id}&join=1`
-          : `A new mission is now live: ${mission.title}\nLocation: ${mission.location}\nTime: ${mission.date}\nJoin from this link: ${window.location.origin}${window.location.pathname}?mission=${mission.id}&join=1`;
+          ? `नया मिशन लाइव है: ${mission.title}\nस्थान: ${mission.location}\nसमय: ${mission.date}\nमिशन देखने और जुड़ने के लिए इस लिंक पर क्लिक करें: ${window.location.origin}${window.location.pathname}?mission=${mission.id}`
+          : `A new mission is now live: ${mission.title}\nLocation: ${mission.location}\nTime: ${mission.date}\nOpen the mission and join from this link: ${window.location.origin}${window.location.pathname}?mission=${mission.id}`;
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
     }
 
@@ -5505,7 +5508,7 @@
           method: "POST",
           body: JSON.stringify({
             title: document.getElementById("hostMissionTitle").value.trim(),
-            category: document.getElementById("hostMissionCategory").value,
+            category: document.getElementById("hostMissionCategory").value || "other",
             ward: document.getElementById("hostMissionArea").value.trim(),
             location: document.getElementById("hostMissionLocation").value.trim(),
             date: document.getElementById("hostMissionDate").value.trim(),
@@ -5634,7 +5637,7 @@
 
     async function submitPostMissionForm(event) {
       event.preventDefault();
-      const category = document.getElementById("pmCategory").value;
+      const category = document.getElementById("pmCategory").value || "other";
       const slots = Number(document.getElementById("pmSlots").value || 50);
       const editMissionId = Number(document.getElementById("postMissionForm").dataset.editMissionId || 0);
       try {

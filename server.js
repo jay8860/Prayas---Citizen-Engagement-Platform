@@ -1280,7 +1280,7 @@ function recordSponsor(body) {
 }
 
 function createMission(body) {
-  const category = String(body.category || "").trim();
+  const category = String(body.category || "other").trim() || "other";
   const ward = String(body.ward || body.area || "").trim();
   const title = String(body.title || "").trim();
   const desc = String(body.desc || "").trim();
@@ -1323,7 +1323,7 @@ function createMission(body) {
 }
 
 function createCommunityMission(body) {
-  const category = String(body.category || "").trim();
+  const category = String(body.category || "other").trim() || "other";
   const ward = String(body.ward || body.area || "").trim();
   const title = String(body.title || "").trim();
   const desc = String(body.desc || "").trim();
@@ -1336,7 +1336,7 @@ function createCommunityMission(body) {
   const hostPhone = String(body.hostPhone || "").trim();
   const hostEmail = String(body.hostEmail || "").trim();
 
-  if (!category || !ward || !title || !desc || !date || !location || !coordinator || !duration || total <= 0 || !hostName || !hostPhone || !hostEmail) {
+  if (!ward || !title || !desc || !date || !location || !coordinator || !duration || total <= 0 || !hostName || !hostPhone || !hostEmail) {
     throw publicError(400, "All mission request fields are required, including phone and email.");
   }
 
