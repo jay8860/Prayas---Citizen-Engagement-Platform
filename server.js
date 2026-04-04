@@ -315,6 +315,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS announcements (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     text TEXT NOT NULL,
+    is_demo INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -331,6 +332,13 @@ db.exec(`
     volunteers INTEGER NOT NULL DEFAULT 0,
     total INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL,
+    source_type TEXT NOT NULL DEFAULT 'admin',
+    approval_status TEXT NOT NULL DEFAULT 'approved',
+    host_name TEXT NOT NULL DEFAULT '',
+    host_phone TEXT NOT NULL DEFAULT '',
+    host_email TEXT NOT NULL DEFAULT '',
+    nodal_department TEXT NOT NULL DEFAULT '',
+    is_demo INTEGER NOT NULL DEFAULT 0,
     coordinator TEXT NOT NULL,
     duration TEXT NOT NULL,
     age TEXT NOT NULL,
@@ -372,6 +380,7 @@ db.exec(`
     tags_json TEXT NOT NULL,
     likes INTEGER NOT NULL DEFAULT 0,
     image_url TEXT NOT NULL DEFAULT '',
+    is_demo INTEGER NOT NULL DEFAULT 0,
     date_label TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
@@ -396,7 +405,8 @@ db.exec(`
     rank_label TEXT NOT NULL,
     cls TEXT NOT NULL,
     badges_json TEXT NOT NULL,
-    attended_json TEXT NOT NULL
+    attended_json TEXT NOT NULL,
+    is_demo INTEGER NOT NULL DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS volunteers (
@@ -461,8 +471,39 @@ try {
 try {
   db.exec("ALTER TABLE donations ADD COLUMN preferred_mode TEXT NOT NULL DEFAULT 'cash'");
 } catch (error) {}
+try {
+  db.exec("ALTER TABLE announcements ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN source_type TEXT NOT NULL DEFAULT 'admin'");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN approval_status TEXT NOT NULL DEFAULT 'approved'");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN host_name TEXT NOT NULL DEFAULT ''");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN host_phone TEXT NOT NULL DEFAULT ''");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN host_email TEXT NOT NULL DEFAULT ''");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN nodal_department TEXT NOT NULL DEFAULT ''");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE stories ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE leaders ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0");
+} catch (error) {}
 
 seedDatabase();
+migrateLegacyDemoRecords();
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
@@ -493,6 +534,11 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/volunteers") {
       const body = await readJsonBody(req);
       return sendJson(res, 200, registerVolunteer(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/community-missions") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, createCommunityMission(body));
     }
 
     if (req.method === "POST" && url.pathname === "/api/newsletter/subscribe") {
@@ -555,6 +601,32 @@ const server = http.createServer(async (req, res) => {
       const body = await readJsonBody(req);
       const missionId = Number(url.pathname.split("/")[4]);
       return sendJson(res, 200, updateMissionStatus(missionId, body));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/review$/.test(url.pathname)) {
+      requireAdmin(req);
+      const body = await readJsonBody(req);
+      const missionId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, reviewMissionRequest(missionId, body));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/update$/.test(url.pathname)) {
+      requireAdmin(req);
+      const body = await readJsonBody(req);
+      const missionId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, updateMission(missionId, body));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/delete$/.test(url.pathname)) {
+      requireAdmin(req);
+      const missionId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, deleteMission(missionId));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/admin/data-mode") {
+      requireAdmin(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, setPortalDataMode(body));
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/newsletter") {
@@ -667,19 +739,20 @@ function seedDatabase() {
   const missionCount = db.prepare("SELECT COUNT(*) AS count FROM missions").get().count;
   if (missionCount > 0) return;
 
+  setSetting("portal_data_mode", "demo");
   setSetting("newsletter_subscriber_base", "847");
   setSetting("newsletter_draft_subject", "District Update");
   setSetting("newsletter_draft_body", "Write your newsletter body to preview it here.");
 
-  const insertAnnouncement = db.prepare("INSERT INTO announcements (text, created_at) VALUES (?, ?)");
+  const insertAnnouncement = db.prepare("INSERT INTO announcements (text, is_demo, created_at) VALUES (?, 1, ?)");
   seedAnnouncements.forEach((text, index) => {
     insertAnnouncement.run(text, new Date(Date.now() - index * 60_000).toISOString());
   });
 
   const insertMission = db.prepare(`
     INSERT INTO missions (
-      category, ward, emoji, bg, title, desc, date, location, volunteers, total, status, coordinator, duration, age, impact, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      category, ward, emoji, bg, title, desc, date, location, volunteers, total, status, source_type, approval_status, host_name, host_phone, host_email, nodal_department, is_demo, coordinator, duration, age, impact, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', 'approved', '', '', '', '', 1, ?, ?, ?, ?, ?)
   `);
   const insertDiscussion = db.prepare(`
     INSERT INTO mission_discussions (mission_id, name, text, time_label, created_at)
@@ -727,8 +800,8 @@ function seedDatabase() {
 
   const insertStory = db.prepare(`
     INSERT INTO stories (
-      contributor, initials, color, role, title, story, bg, emoji, tags_json, likes, image_url, date_label, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      contributor, initials, color, role, title, story, bg, emoji, tags_json, likes, image_url, is_demo, date_label, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
   `);
   const insertStoryComment = db.prepare(`
     INSERT INTO story_comments (story_id, name, text, time_label, created_at)
@@ -763,8 +836,8 @@ function seedDatabase() {
   });
 
   const insertLeader = db.prepare(`
-    INSERT INTO leaders (name, area, initials, color, points, missions, rank_label, cls, badges_json, attended_json)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO leaders (name, area, initials, color, points, missions, rank_label, cls, badges_json, attended_json, is_demo)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
   `);
   seedLeaders.forEach((leader) => {
     insertLeader.run(
@@ -779,6 +852,21 @@ function seedDatabase() {
       JSON.stringify(leader.badges),
       JSON.stringify(leader.attended)
     );
+  });
+}
+
+function migrateLegacyDemoRecords() {
+  seedAnnouncements.forEach((text) => {
+    db.prepare("UPDATE announcements SET is_demo = 1 WHERE text = ?").run(text);
+  });
+  seedMissions.forEach((mission) => {
+    db.prepare("UPDATE missions SET is_demo = 1, source_type = COALESCE(NULLIF(source_type, ''), 'admin'), approval_status = COALESCE(NULLIF(approval_status, ''), 'approved') WHERE title = ?").run(mission.title);
+  });
+  seedStories.forEach((story) => {
+    db.prepare("UPDATE stories SET is_demo = 1 WHERE title = ?").run(story.title);
+  });
+  seedLeaders.forEach((leader) => {
+    db.prepare("UPDATE leaders SET is_demo = 1 WHERE name = ?").run(leader.name);
   });
 }
 
@@ -828,21 +916,18 @@ function base64Url(value) {
 }
 
 function buildBootstrapPayload() {
-  const announcementRows = db.prepare("SELECT text FROM announcements ORDER BY id DESC").all();
-  const missionRows = db.prepare("SELECT * FROM missions ORDER BY id DESC").all();
+  const dataMode = getSetting("portal_data_mode", "demo") === "real" ? "real" : "demo";
+  const demoFlag = dataMode === "demo" ? 1 : 0;
+  const announcementRows = db.prepare("SELECT text FROM announcements WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
+  const missionRows = db.prepare("SELECT * FROM missions WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
   const discussionStmt = db.prepare("SELECT name, text, time_label FROM mission_discussions WHERE mission_id = ? ORDER BY id DESC");
-  const fundRows = db.prepare("SELECT * FROM funds ORDER BY id ASC").all();
-  const storyRows = db.prepare("SELECT * FROM stories ORDER BY id DESC").all();
+  const fundRows = [];
+  const storyRows = db.prepare("SELECT * FROM stories WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
   const storyCommentStmt = db.prepare("SELECT name, text, time_label FROM story_comments WHERE story_id = ? ORDER BY id ASC");
-  const leaderRows = db.prepare("SELECT * FROM leaders ORDER BY points DESC, id ASC").all();
+  const leaderRows = db.prepare("SELECT * FROM leaders WHERE is_demo = ? ORDER BY points DESC, id ASC").all(demoFlag);
   const volunteerRows = db.prepare("SELECT * FROM volunteers ORDER BY id DESC").all();
-  const sponsorRows = db.prepare("SELECT * FROM sponsors ORDER BY id DESC").all();
-  const donationRows = db.prepare(`
-    SELECT donations.*, funds.title AS fund_title
-    FROM donations
-    LEFT JOIN funds ON funds.id = donations.fund_id
-    ORDER BY donations.id DESC
-  `).all();
+  const sponsorRows = [];
+  const donationRows = [];
   const subscriberRows = db.prepare("SELECT email, date_label FROM newsletter_subscribers ORDER BY id DESC").all();
 
   const missions = missionRows.map((mission) => ({
@@ -858,6 +943,12 @@ function buildBootstrapPayload() {
     volunteers: mission.volunteers,
     total: mission.total,
     status: mission.status,
+    sourceType: mission.source_type || "admin",
+    approvalStatus: mission.approval_status || "approved",
+    hostName: mission.host_name || "",
+    hostPhone: mission.host_phone || "",
+    hostEmail: mission.host_email || "",
+    nodalDepartment: mission.nodal_department || "",
     coordinator: mission.coordinator,
     duration: mission.duration,
     age: mission.age,
@@ -966,6 +1057,7 @@ function buildBootstrapPayload() {
   const baseSubscribers = Number(getSetting("newsletter_subscriber_base", "847")) || 847;
 
   return {
+    dataMode,
     announcements: announcementRows.map((row) => row.text),
     missions,
     funds,
@@ -1004,8 +1096,8 @@ function registerVolunteer(body) {
     ? db.prepare("SELECT id, title, volunteers, total, status FROM missions WHERE id = ?").get(missionId)
     : null;
 
-  if (mission && (mission.status === "full" || mission.status === "completed")) {
-    throw publicError(409, mission.status === "completed" ? "This activity has already been completed." : "This mission is already full.");
+  if (mission && (mission.status === "full" || mission.status === "completed" || mission.status === "closed")) {
+    throw publicError(409, mission.status === "completed" ? "This activity has already been completed." : mission.status === "closed" ? "This mission is temporarily closed." : "This mission is already full.");
   }
 
   const dateLabel = displayDate();
@@ -1197,15 +1289,16 @@ function createMission(body) {
   const coordinator = String(body.coordinator || "").trim();
   const duration = String(body.duration || "").trim();
   const total = Number(body.total || 0);
+  const nodalDepartment = String(body.nodalDepartment || "").trim();
 
-  if (!category || !ward || !title || !desc || !date || !location || !coordinator || !duration || total <= 0) {
+  if (!category || !ward || !title || !desc || !date || !location || !coordinator || !duration || total <= 0 || !nodalDepartment) {
     throw publicError(400, "All mission fields are required.");
   }
 
   db.prepare(`
     INSERT INTO missions (
-      category, ward, emoji, bg, title, desc, date, location, volunteers, total, status, coordinator, duration, age, impact, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      category, ward, emoji, bg, title, desc, date, location, volunteers, total, status, source_type, approval_status, host_name, host_phone, host_email, nodal_department, is_demo, coordinator, duration, age, impact, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', 'approved', '', '', '', ?, 0, ?, ?, ?, ?, ?)
   `).run(
     category,
     ward,
@@ -1218,10 +1311,57 @@ function createMission(body) {
     0,
     total,
     "open",
+    nodalDepartment,
     coordinator,
     duration,
     String(body.age || "16+"),
     String(body.impact || "Just launched"),
+    isoNow()
+  );
+
+  return { ok: true };
+}
+
+function createCommunityMission(body) {
+  const category = String(body.category || "").trim();
+  const ward = String(body.ward || body.area || "").trim();
+  const title = String(body.title || "").trim();
+  const desc = String(body.desc || "").trim();
+  const date = String(body.date || "").trim();
+  const location = String(body.location || "").trim();
+  const coordinator = String(body.coordinator || body.hostName || "").trim();
+  const duration = String(body.duration || "").trim();
+  const total = Number(body.total || 0);
+  const hostName = String(body.hostName || "").trim();
+  const hostPhone = String(body.hostPhone || "").trim();
+  const hostEmail = String(body.hostEmail || "").trim();
+
+  if (!category || !ward || !title || !desc || !date || !location || !coordinator || !duration || total <= 0 || !hostName || !hostPhone || !hostEmail) {
+    throw publicError(400, "All mission request fields are required, including phone and email.");
+  }
+
+  db.prepare(`
+    INSERT INTO missions (
+      category, ward, emoji, bg, title, desc, date, location, volunteers, total, status, source_type, approval_status, host_name, host_phone, host_email, nodal_department, is_demo, coordinator, duration, age, impact, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', 'community', 'pending', ?, ?, ?, '', 0, ?, ?, ?, ?, ?)
+  `).run(
+    category,
+    ward,
+    categoryEmoji(category),
+    categoryGradient(category),
+    title,
+    desc,
+    date,
+    location,
+    0,
+    total,
+    hostName,
+    hostPhone,
+    hostEmail,
+    coordinator,
+    duration,
+    String(body.age || "16+"),
+    String(body.impact || "Awaiting admin review"),
     isoNow()
   );
 
@@ -1240,11 +1380,88 @@ function createAnnouncement(body) {
 function updateMissionStatus(missionId, body) {
   ensureRowExists("missions", missionId, "Mission not found.");
   const status = String(body.status || "").trim();
-  const allowed = new Set(["open", "upcoming", "full", "completed"]);
+  const allowed = new Set(["open", "upcoming", "full", "completed", "closed"]);
   if (!allowed.has(status)) {
     throw publicError(400, "Invalid activity status.");
   }
   db.prepare("UPDATE missions SET status = ? WHERE id = ?").run(status, missionId);
+  return { ok: true };
+}
+
+function reviewMissionRequest(missionId, body) {
+  ensureRowExists("missions", missionId, "Mission not found.");
+  const approvalStatus = String(body.approvalStatus || "").trim();
+  const nodalDepartment = String(body.nodalDepartment || "").trim();
+  const status = String(body.status || "open").trim();
+  const allowed = new Set(["approved", "rejected"]);
+  if (!allowed.has(approvalStatus)) {
+    throw publicError(400, "Invalid review action.");
+  }
+  if (approvalStatus === "approved" && !nodalDepartment) {
+    throw publicError(400, "Select a nodal department before approval.");
+  }
+  db.prepare("UPDATE missions SET approval_status = ?, nodal_department = ?, status = ? WHERE id = ?").run(
+    approvalStatus,
+    nodalDepartment,
+    approvalStatus === "approved" ? status : "upcoming",
+    missionId
+  );
+  return { ok: true };
+}
+
+function setPortalDataMode(body) {
+  const mode = String(body.mode || "").trim();
+  if (!["demo", "real"].includes(mode)) {
+    throw publicError(400, "Invalid portal data mode.");
+  }
+  setSetting("portal_data_mode", mode);
+  return { ok: true, mode };
+}
+
+function updateMission(missionId, body) {
+  ensureRowExists("missions", missionId, "Mission not found.");
+  const category = String(body.category || "").trim();
+  const ward = String(body.ward || body.area || "").trim();
+  const title = String(body.title || "").trim();
+  const desc = String(body.desc || "").trim();
+  const date = String(body.date || "").trim();
+  const location = String(body.location || "").trim();
+  const coordinator = String(body.coordinator || "").trim();
+  const duration = String(body.duration || "").trim();
+  const total = Number(body.total || 0);
+  const nodalDepartment = String(body.nodalDepartment || "").trim();
+  const status = String(body.status || "open").trim();
+  if (!category || !ward || !title || !desc || !date || !location || !coordinator || !duration || total <= 0 || !nodalDepartment) {
+    throw publicError(400, "All mission fields are required.");
+  }
+  db.prepare(`
+    UPDATE missions
+    SET category = ?, ward = ?, emoji = ?, bg = ?, title = ?, desc = ?, date = ?, location = ?, total = ?, status = ?, nodal_department = ?, coordinator = ?, duration = ?, age = ?, impact = ?, approval_status = 'approved'
+    WHERE id = ?
+  `).run(
+    category,
+    ward,
+    categoryEmoji(category),
+    categoryGradient(category),
+    title,
+    desc,
+    date,
+    location,
+    total,
+    status,
+    nodalDepartment,
+    coordinator,
+    duration,
+    String(body.age || "16+"),
+    String(body.impact || "Updated"),
+    missionId
+  );
+  return { ok: true };
+}
+
+function deleteMission(missionId) {
+  ensureRowExists("missions", missionId, "Mission not found.");
+  db.prepare("DELETE FROM missions WHERE id = ?").run(missionId);
   return { ok: true };
 }
 

@@ -2280,7 +2280,7 @@
       <nav>
         <ul class="nav-links">
           <li><a href="#missions" data-i18n="nav-missions">Missions</a></li>
-          <li><a href="#funding" data-i18n="nav-funding">Crowdfund</a></li>
+          <li><a href="#host-mission" data-i18n="nav-funding">Host Mission</a></li>
           <li><a href="#district-map" data-i18n="nav-map">District Map</a></li>
           <li><a href="#showcase" data-i18n="nav-showcase">Showcase</a></li>
           <li><a href="#leaderboard" data-i18n="nav-leaders">Leaders</a></li>
@@ -2300,7 +2300,7 @@
 
     <div class="mobile-menu" id="mobileMenu">
       <a href="#missions" data-i18n="nav-missions" onclick="closeMobileMenu()">Missions</a>
-      <a href="#funding" data-i18n="nav-funding" onclick="closeMobileMenu()">Crowdfund</a>
+      <a href="#host-mission" data-i18n="nav-funding" onclick="closeMobileMenu()">Host Mission</a>
       <a href="#district-map" data-i18n="nav-map" onclick="closeMobileMenu()">District Map</a>
       <a href="#showcase" data-i18n="nav-showcase" onclick="closeMobileMenu()">Showcase</a>
       <a href="#leaderboard" data-i18n="nav-leaders" onclick="closeMobileMenu()">Leaders</a>
@@ -2396,39 +2396,79 @@
       </div>
     </section>
 
-    <section class="section alt" id="funding">
+    <section class="section alt" id="host-mission">
       <div class="section-inner">
         <div class="section-top">
           <div>
             <div class="section-badge" style="background:var(--saffron-light);color:var(--saffron-dark)">
-              <i class="fa-solid fa-hand-holding-heart"></i>
-              <span data-i18n="funding-badge">Community Funding</span>
+              <i class="fa-solid fa-bullhorn"></i>
+              <span data-i18n="funding-badge">Host a Mission</span>
             </div>
-            <h2 class="section-title" data-i18n="funding-title">Fund the missions you believe in</h2>
+            <h2 class="section-title" data-i18n="funding-title">Launch a citizen-led mission in your own area</h2>
             <p class="section-subtitle" data-i18n="funding-subtitle">
-              Every rupee goes directly into mission execution, materials, training, outreach, and on-ground impact.
+              Citizens, groups, schools, and resident bodies can propose missions. Phone number and email are mandatory so the administration can coordinate and verify the request quickly.
             </p>
           </div>
         </div>
-        <div class="fund-grid" id="fundGrid"></div>
-      </div>
-    </section>
-
-    <section class="section" id="sponsors">
-      <div class="section-inner">
-        <div class="section-top center">
-          <div>
-            <div class="section-badge" style="background:var(--green-light);color:var(--green)">
-              <i class="fa-solid fa-building"></i>
-              <span data-i18n="sponsor-badge">Corporate Partners</span>
+        <div class="form-card">
+          <h3 class="form-card-title" data-i18n="host-form-title">Propose a Community Mission</h3>
+          <p class="form-card-subtitle" data-i18n="host-form-subtitle">Your request will appear in the admin dashboard for review, nodal department assignment, and publishing.</p>
+          <form id="hostMissionForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="hostMissionTitle" data-i18n="host-title-label">Mission Title</label>
+                <input id="hostMissionTitle" type="text" required />
+              </div>
+              <div class="form-group">
+                <label for="hostMissionCategory" data-i18n="host-category-label">Category</label>
+                <select id="hostMissionCategory" required></select>
+              </div>
             </div>
-            <h2 class="section-title" data-i18n="sponsor-title">Sponsor a mission. Build a legacy.</h2>
-            <p class="section-subtitle" data-i18n="sponsor-subtitle">
-              Bring businesses, institutions, alumni groups, and civic organisations into district transformation.
-            </p>
-          </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="hostMissionArea" data-i18n="host-area-label">Area / Village / Ward</label>
+                <input id="hostMissionArea" type="text" list="locationSuggestions" required />
+              </div>
+              <div class="form-group">
+                <label for="hostMissionLocation" data-i18n="host-location-label">Exact Location</label>
+                <input id="hostMissionLocation" type="text" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="hostMissionDate" data-i18n="host-date-label">Date / Time</label>
+                <input id="hostMissionDate" type="text" required />
+              </div>
+              <div class="form-group">
+                <label for="hostMissionDuration" data-i18n="host-duration-label">Duration</label>
+                <input id="hostMissionDuration" type="text" required />
+              </div>
+              <div class="form-group">
+                <label for="hostMissionSlots" data-i18n="host-slots-label">Volunteer Slots</label>
+                <input id="hostMissionSlots" type="number" min="1" value="25" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="hostMissionName" data-i18n="host-name-label">Host Name</label>
+                <input id="hostMissionName" type="text" required />
+              </div>
+              <div class="form-group">
+                <label for="hostMissionPhone" data-i18n="host-phone-label">Phone Number</label>
+                <input id="hostMissionPhone" type="tel" required />
+              </div>
+              <div class="form-group">
+                <label for="hostMissionEmail" data-i18n="host-email-label">Email ID</label>
+                <input id="hostMissionEmail" type="email" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="hostMissionDescription" data-i18n="host-description-label">Description</label>
+              <textarea id="hostMissionDescription" required></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit" data-i18n="host-submit">Send Mission Request</button>
+          </form>
         </div>
-        <div class="sponsor-grid" id="sponsorGrid"></div>
       </div>
     </section>
 
@@ -2711,7 +2751,7 @@
           <h4 data-i18n="footer-platform">Platform</h4>
           <ul>
             <li><a href="#missions" data-i18n="nav-missions">Missions</a></li>
-            <li><a href="#funding" data-i18n="nav-funding">Crowdfund</a></li>
+            <li><a href="#host-mission" data-i18n="nav-funding">Host Mission</a></li>
             <li><a href="#district-map" data-i18n="nav-map">District Map</a></li>
             <li><a href="#showcase" data-i18n="nav-showcase">Showcase</a></li>
             <li><a href="#leaderboard" data-i18n="nav-leaders">Leaders</a></li>
@@ -2736,7 +2776,7 @@
             <li><a href="#sponsors" data-i18n="footer-sponsor-link">Sponsor a Mission</a></li>
             <li><a href="#" onclick="openAdminLogin(); return false;" data-i18n="footer-admin-link">Open Admin Panel</a></li>
             <li><a href="#district-map" data-i18n="footer-wards-link">Ward Overview</a></li>
-            <li><a href="#funding" data-i18n="footer-donate-link">Contribute Funds</a></li>
+            <li><a href="#host-mission" data-i18n="footer-donate-link">Host a Mission</a></li>
           </ul>
         </div>
       </div>
@@ -2991,6 +3031,7 @@
           <button class="admin-tab-btn" type="button" data-admin-tab="post" data-i18n="admin-tab-post">Post Mission</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="volunteers" data-i18n="admin-tab-volunteers">Volunteers</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="announcements" data-i18n="admin-tab-announcements">Announcements</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="data" data-i18n="admin-tab-data">Data Mode</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="newsletter" data-i18n="admin-tab-newsletter">Newsletter</button>
         </div>
 
@@ -2998,9 +3039,9 @@
           <div class="admin-grid" id="adminStatsGrid"></div>
           <div class="admin-two-col" style="margin-top:20px">
             <div class="panel-card">
-              <h3 data-i18n="admin-overview-sponsors-title">Latest Sponsor Leads</h3>
-              <p data-i18n="admin-overview-sponsors-subtitle">Organisations that have expressed interest in supporting district missions.</p>
-              <div class="announcement-stream" id="sponsorLeadList"></div>
+              <h3 data-i18n="admin-overview-requests-title">Volunteer Mission Requests</h3>
+              <p data-i18n="admin-overview-requests-subtitle">Review citizen-created missions, assign nodal departments, and publish them to the portal.</p>
+              <div class="announcement-stream" id="missionRequestList"></div>
             </div>
             <div class="panel-card">
               <h3 data-i18n="admin-overview-volunteers-title">Latest Volunteers</h3>
@@ -3010,9 +3051,9 @@
           </div>
           <div class="admin-two-col" style="margin-top:20px">
             <div class="panel-card">
-              <h3 data-i18n="admin-overview-donations-title">Contribution Verification Queue</h3>
-              <p data-i18n="admin-overview-donations-subtitle">Verify payment references before they are counted in crowdfunding totals.</p>
-              <div class="announcement-stream" id="donationQueueList"></div>
+              <h3 data-i18n="admin-announcement-title">Current Announcements</h3>
+              <p data-i18n="admin-announcement-subtitle">These items power the live ticker above the portal.</p>
+              <div class="announcement-stream" id="announcementList"></div>
             </div>
             <div class="panel-card">
               <h3 data-i18n="admin-overview-status-title">Activity Status Board</h3>
@@ -3028,6 +3069,10 @@
               <div class="form-group">
                 <label for="pmTemplate" data-i18n="pm-template-label">Activity Type Template</label>
                 <select id="pmTemplate"></select>
+              </div>
+              <div class="form-group">
+                <label for="pmDepartment" data-i18n="pm-department-label">Nodal Department</label>
+                <select id="pmDepartment" required></select>
               </div>
               <div class="form-group">
                 <label for="pmTitle" data-i18n="pm-title-label">Mission Title</label>
@@ -3120,6 +3165,21 @@
                 <textarea id="announcementText"></textarea>
               </div>
               <button class="btn btn-primary" type="button" id="postAnnouncementBtn" data-i18n="admin-announcement-submit">Add Announcement</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-pane" id="adminPaneData">
+          <div class="panel-card">
+            <h3 data-i18n="admin-data-title">Deployment Data Mode</h3>
+            <p data-i18n="admin-data-subtitle">Use demo mode for presentations. Use real deploy mode to hide all dummy seeded records and show only actual field data.</p>
+            <div class="message-card" style="margin-bottom:16px">
+              <div class="message-name" id="dataModeLabel"></div>
+              <div class="message-text" id="dataModeCopy"></div>
+            </div>
+            <div class="message-actions">
+              <button class="btn btn-soft" type="button" onclick="setPortalDataMode('demo')">Demo Data</button>
+              <button class="btn btn-primary" type="button" onclick="setPortalDataMode('real')">Real Deploy Version</button>
             </div>
           </div>
         </div>
@@ -3516,7 +3576,7 @@
     const translations = {
       "logo-tag": { en: "Citizen Action Platform", hi: "नागरिक कार्रवाई मंच" },
       "nav-missions": { en: "Missions", hi: "अभियान" },
-      "nav-funding": { en: "Crowdfund", hi: "क्राउडफंड" },
+      "nav-funding": { en: "Host Mission", hi: "मिशन होस्ट करें" },
       "nav-map": { en: "District Map", hi: "जिला दृश्य" },
       "nav-showcase": { en: "Showcase", hi: "प्रदर्शनी" },
       "nav-leaders": { en: "Leaders", hi: "लीडर्स" },
@@ -3539,12 +3599,23 @@
       "missions-title": { en: "Choose your cause. Make your mark.", hi: "अपना उद्देश्य चुनें। अपनी पहचान बनाएं।" },
       "missions-subtitle": { en: "From cleanliness drives to district teaching programs, explore missions that match your time, location, and skills.", hi: "स्वच्छता अभियान से लेकर शिक्षण कार्यक्रम तक, अपने समय, स्थान और कौशल के अनुसार अभियान चुनें।" },
       "missions-post": { en: "Post a Mission", hi: "अभियान पोस्ट करें" },
-      "funding-badge": { en: "Community Funding", hi: "सामुदायिक निधि" },
-      "funding-title": { en: "Fund the missions you believe in", hi: "उन अभियानों को फंड करें जिन पर आप विश्वास करते हैं" },
-      "funding-subtitle": { en: "Every rupee goes directly into mission execution, materials, training, outreach, and on-ground impact.", hi: "हर रुपया सीधे अभियान क्रियान्वयन, सामग्री, प्रशिक्षण, जनसंपर्क और प्रभाव में लगता है।" },
-      "sponsor-badge": { en: "Corporate Partners", hi: "कॉर्पोरेट साझेदार" },
-      "sponsor-title": { en: "Sponsor a mission. Build a legacy.", hi: "एक अभियान प्रायोजित करें। विरासत बनाएं।" },
-      "sponsor-subtitle": { en: "Bring businesses, institutions, alumni groups, and civic organisations into district transformation.", hi: "व्यवसाय, संस्थान, पूर्व छात्र समूह और सामाजिक संगठनों को जिला परिवर्तन से जोड़ें।" },
+      "funding-badge": { en: "Host a Mission", hi: "मिशन होस्ट करें" },
+      "funding-title": { en: "Launch a citizen-led mission in your own area", hi: "अपने इलाके में नागरिक-नेतृत्व वाला मिशन शुरू करें" },
+      "funding-subtitle": { en: "Citizens, groups, schools, and resident bodies can propose missions. Phone number and email are mandatory so the administration can coordinate quickly.", hi: "नागरिक, समूह, स्कूल और स्थानीय संगठन मिशन प्रस्तावित कर सकते हैं। त्वरित समन्वय के लिए फोन और ईमेल अनिवार्य हैं।" },
+      "host-form-title": { en: "Propose a Community Mission", hi: "सामुदायिक मिशन प्रस्तावित करें" },
+      "host-form-subtitle": { en: "Your request appears in the admin dashboard for review, nodal department assignment, and publishing.", hi: "आपका अनुरोध एडमिन डैशबोर्ड में समीक्षा, नोडल विभाग चयन और प्रकाशन के लिए जाएगा।" },
+      "host-title-label": { en: "Mission Title", hi: "मिशन शीर्षक" },
+      "host-category-label": { en: "Category", hi: "श्रेणी" },
+      "host-area-label": { en: "Area / Village / Ward", hi: "क्षेत्र / गांव / वार्ड" },
+      "host-location-label": { en: "Exact Location", hi: "सटीक स्थान" },
+      "host-date-label": { en: "Date / Time", hi: "तारीख / समय" },
+      "host-duration-label": { en: "Duration", hi: "अवधि" },
+      "host-slots-label": { en: "Volunteer Slots", hi: "स्वयंसेवक स्लॉट" },
+      "host-name-label": { en: "Host Name", hi: "होस्ट का नाम" },
+      "host-phone-label": { en: "Phone Number", hi: "फोन नंबर" },
+      "host-email-label": { en: "Email ID", hi: "ईमेल आईडी" },
+      "host-description-label": { en: "Description", hi: "विवरण" },
+      "host-submit": { en: "Send Mission Request", hi: "मिशन अनुरोध भेजें" },
       "map-badge": { en: "District Overview", hi: "जिला अवलोकन" },
       "map-title": { en: "Missions across your district", hi: "आपके जिले के विभिन्न इलाकों में अभियान" },
       "map-subtitle": { en: "Track which areas are already active, where volunteer energy is concentrated, and where new missions are needed.", hi: "देखें कौन से इलाके सक्रिय हैं, स्वयंसेवी ऊर्जा कहाँ केंद्रित है, और कहाँ नए अभियानों की जरूरत है।" },
@@ -3617,10 +3688,10 @@
       "footer-platform": { en: "Platform", hi: "प्लेटफॉर्म" },
       "footer-categories": { en: "Categories", hi: "श्रेणियाँ" },
       "footer-admin": { en: "Administration", hi: "प्रशासन" },
-      "footer-sponsor-link": { en: "Sponsor a Mission", hi: "अभियान प्रायोजित करें" },
+      "footer-sponsor-link": { en: "Host a Mission", hi: "मिशन होस्ट करें" },
       "footer-admin-link": { en: "Open Admin Panel", hi: "एडमिन पैनल खोलें" },
       "footer-wards-link": { en: "Location Overview", hi: "स्थान अवलोकन" },
-      "footer-donate-link": { en: "Contribute Funds", hi: "फंड योगदान" },
+      "footer-donate-link": { en: "Host a Mission", hi: "मिशन होस्ट करें" },
       "footer-copy": { en: "© 2026 Prayas Citizen Platform · An initiative of the District Administration · Built with public service in mind.", hi: "© 2026 प्रयास नागरिक मंच · जिला प्रशासन की पहल · सार्वजनिक सेवा के उद्देश्य से निर्मित।" },
       "mission-tab-details": { en: "Details", hi: "विवरण" },
       "mission-tab-discussion": { en: "Discussion", hi: "चर्चा" },
@@ -3678,8 +3749,10 @@
       "admin-tab-post": { en: "Post Mission", hi: "अभियान पोस्ट करें" },
       "admin-tab-volunteers": { en: "Volunteers", hi: "स्वयंसेवक" },
       "admin-tab-announcements": { en: "Announcements", hi: "घोषणाएँ" },
+      "admin-tab-data": { en: "Data Mode", hi: "डेटा मोड" },
       "admin-tab-newsletter": { en: "Newsletter", hi: "न्यूज़लेटर" },
       "pm-template-label": { en: "Activity Type Template", hi: "गतिविधि प्रकार टेम्पलेट" },
+      "pm-department-label": { en: "Nodal Department", hi: "नोडल विभाग" },
       "pm-title-label": { en: "Mission Title", hi: "अभियान शीर्षक" },
       "pm-category-label": { en: "Category", hi: "श्रेणी" },
       "pm-ward-label": { en: "Area / Gram Panchayat / Ward", hi: "क्षेत्र / ग्राम पंचायत / वार्ड" },
@@ -3708,14 +3781,16 @@
       "admin-announcement-form-subtitle": { en: "Add a new alert, update, or call to action for citizens.", hi: "नया अलर्ट, अपडेट या नागरिक आह्वान जोड़ें।" },
       "admin-announcement-label": { en: "Announcement Text", hi: "घोषणा पाठ" },
       "admin-announcement-submit": { en: "Add Announcement", hi: "घोषणा जोड़ें" },
-      "admin-overview-sponsors-title": { en: "Latest Sponsor Leads", hi: "नवीनतम प्रायोजक लीड्स" },
-      "admin-overview-sponsors-subtitle": { en: "Organisations that have expressed interest in supporting district missions.", hi: "वे संस्थाएँ जिन्होंने जिला अभियानों को समर्थन देने में रुचि दिखाई है।" },
+      "admin-overview-requests-title": { en: "Volunteer Mission Requests", hi: "नागरिक मिशन अनुरोध" },
+      "admin-overview-requests-subtitle": { en: "Review citizen-created missions, assign nodal departments, and publish them to the portal.", hi: "नागरिकों द्वारा बनाए गए मिशनों की समीक्षा करें, नोडल विभाग चुनें और उन्हें पोर्टल पर प्रकाशित करें।" },
       "admin-overview-volunteers-title": { en: "Latest Volunteers", hi: "नवीनतम स्वयंसेवक" },
       "admin-overview-volunteers-subtitle": { en: "Newest citizen registrations captured from the volunteer form.", hi: "स्वयंसेवक फॉर्म से प्राप्त नवीनतम नागरिक पंजीकरण।" },
       "admin-overview-donations-title": { en: "Donation Verification Queue", hi: "दान सत्यापन कतार" },
       "admin-overview-donations-subtitle": { en: "Verify payment references before contributions are reflected in live totals.", hi: "लाइव कुल राशि में जोड़ने से पहले भुगतान संदर्भ सत्यापित करें।" },
       "admin-overview-status-title": { en: "Activity Status Control", hi: "गतिविधि स्थिति नियंत्रण" },
       "admin-overview-status-subtitle": { en: "Mark activities as completed so certificates unlock only after real completion.", hi: "गतिविधियों को पूर्ण चिह्नित करें ताकि प्रमाणपत्र केवल वास्तविक पूर्णता के बाद ही खुले।" },
+      "admin-data-title": { en: "Deployment Data Mode", hi: "डिप्लॉयमेंट डेटा मोड" },
+      "admin-data-subtitle": { en: "Use demo mode for presentations. Use real deploy mode to hide all dummy seeded records and show only actual field data.", hi: "प्रस्तुति के लिए डेमो मोड और वास्तविक उपयोग के लिए रियल डिप्लॉय मोड चुनें, जिसमें सभी डमी रिकॉर्ड छिपे रहें।" },
       "admin-newsletter-title": { en: "Newsletter Builder", hi: "न्यूज़लेटर बिल्डर" },
       "admin-newsletter-subtitle": { en: "Prepare a district message and preview how it will read.", hi: "जिला संदेश तैयार करें और उसका पूर्वावलोकन देखें।" },
       "admin-newsletter-subject-label": { en: "Subject", hi: "विषय" },
@@ -3734,6 +3809,17 @@
       arts: { en: "Arts & Culture", hi: "कला व संस्कृति", emoji: "🎨", dot: "#9333EA" },
       education: { en: "Education", hi: "शिक्षा", emoji: "📚", dot: "#2563EB" }
     };
+
+    const nodalDepartments = [
+      { en: "Municipal Administration", hi: "नगर प्रशासन" },
+      { en: "Rural Development", hi: "ग्रामीण विकास" },
+      { en: "Education Department", hi: "शिक्षा विभाग" },
+      { en: "Health Department", hi: "स्वास्थ्य विभाग" },
+      { en: "Women and Child Development", hi: "महिला एवं बाल विकास" },
+      { en: "Forest Department", hi: "वन विभाग" },
+      { en: "Police / Traffic", hi: "पुलिस / यातायात" },
+      { en: "Youth Affairs and Sports", hi: "युवा एवं खेल" }
+    ];
 
     const activityTemplates = [
       {
@@ -3833,7 +3919,21 @@
         impactHi: "सार्वजनिक स्वास्थ्य पहुंच और स्क्रीनिंग में सुधार",
         descriptionEn: "Support registrations, patient queues, awareness desks, follow-up coordination, and local medical partners for a health camp.",
         descriptionHi: "स्वास्थ्य शिविर के लिए पंजीकरण, कतार प्रबंधन, जागरूकता डेस्क, फॉलो-अप समन्वय और चिकित्सा साझेदारों को समर्थन दें।"
-      }
+      },
+      { key: "sports-event", labelEn: "Sports for Youth", labelHi: "युवा खेल कार्यक्रम", category: "awareness", titleEn: "Community Sports Event", titleHi: "सामुदायिक खेल कार्यक्रम", duration: "4 hours", slots: 60, impactEn: "Youth engagement and fitness", impactHi: "युवा जुड़ाव और फिटनेस", descriptionEn: "Organise neighbourhood sports events to engage youth and promote teamwork.", descriptionHi: "युवाओं को जोड़ने और टीम भावना बढ़ाने के लिए खेल कार्यक्रम आयोजित करें।" },
+      { key: "nutrition-drive", labelEn: "Nutrition Awareness", labelHi: "पोषण जागरूकता", category: "awareness", titleEn: "Nutrition Awareness Drive", titleHi: "पोषण जागरूकता अभियान", duration: "3 hours", slots: 45, impactEn: "Improved maternal and child health awareness", impactHi: "मातृ एवं बाल स्वास्थ्य जागरूकता में सुधार", descriptionEn: "Run outreach on nutrition, anemia prevention, and healthy household practices.", descriptionHi: "पोषण, एनीमिया रोकथाम और स्वस्थ घरेलू आदतों पर अभियान चलाएँ।" },
+      { key: "career-guidance", labelEn: "Career Guidance Camp", labelHi: "कैरियर मार्गदर्शन शिविर", category: "education", titleEn: "Career Guidance Camp", titleHi: "कैरियर मार्गदर्शन शिविर", duration: "2 hours", slots: 40, impactEn: "Better career awareness for students", impactHi: "छात्रों में बेहतर कैरियर जागरूकता", descriptionEn: "Invite mentors and professionals to guide students on opportunities and exams.", descriptionHi: "मेंटर्स और पेशेवरों को बुलाकर छात्रों को अवसरों और परीक्षाओं पर मार्गदर्शन दें।" },
+      { key: "library-drive", labelEn: "Library Setup Drive", labelHi: "पुस्तकालय स्थापना अभियान", category: "education", titleEn: "Library Setup Drive", titleHi: "पुस्तकालय स्थापना अभियान", duration: "1 day", slots: 35, impactEn: "Improved access to books and reading spaces", impactHi: "पुस्तकों और पठन स्थानों तक बेहतर पहुंच", descriptionEn: "Set up or refresh a school or community library with volunteers and book donors.", descriptionHi: "स्वयंसेवकों और पुस्तक दाताओं के साथ स्कूल या समुदाय पुस्तकालय तैयार करें।" },
+      { key: "plastic-free", labelEn: "Plastic-Free Campaign", labelHi: "प्लास्टिक मुक्त अभियान", category: "environment", titleEn: "Plastic-Free Campaign", titleHi: "प्लास्टिक मुक्त अभियान", duration: "3 hours", slots: 55, impactEn: "Cleaner public spaces and reduced plastic use", impactHi: "स्वच्छ सार्वजनिक स्थान और कम प्लास्टिक उपयोग", descriptionEn: "Conduct awareness and collection drives to reduce single-use plastic.", descriptionHi: "सिंगल-यूज प्लास्टिक कम करने के लिए जागरूकता और संग्रह अभियान चलाएँ।" },
+      { key: "waterbody-cleanup", labelEn: "Water Body Cleanup", labelHi: "जलाशय सफाई अभियान", category: "environment", titleEn: "Water Body Cleanup", titleHi: "जलाशय सफाई अभियान", duration: "Half day", slots: 70, impactEn: "Cleaner ponds, lakes, and river edges", impactHi: "तालाब, झील और नदी किनारे अधिक स्वच्छ", descriptionEn: "Mobilise citizens to clean local water bodies and surrounding zones.", descriptionHi: "स्थानीय जलाशयों और आसपास के क्षेत्रों की सफाई के लिए नागरिकों को जोड़ें।" },
+      { key: "public-hearing-support", labelEn: "Public Hearing Support", labelHi: "जन-सुनवाई सहायता", category: "awareness", titleEn: "Public Hearing Support Desk", titleHi: "जन-सुनवाई सहायता डेस्क", duration: "5 hours", slots: 20, impactEn: "Better grievance support and citizen guidance", impactHi: "शिकायत सहायता और नागरिक मार्गदर्शन में सुधार", descriptionEn: "Support queues, guidance desks, and documentation help during grievance camps.", descriptionHi: "शिकायत शिविरों के दौरान कतार, मार्गदर्शन और दस्तावेज़ सहायता दें।" },
+      { key: "digital-literacy", labelEn: "Digital Literacy Camp", labelHi: "डिजिटल साक्षरता शिविर", category: "education", titleEn: "Digital Literacy Camp", titleHi: "डिजिटल साक्षरता शिविर", duration: "3 hours", slots: 30, impactEn: "Better citizen access to digital services", impactHi: "डिजिटल सेवाओं तक नागरिक पहुंच में सुधार", descriptionEn: "Teach basic smartphone, internet, and digital service usage to citizens.", descriptionHi: "नागरिकों को स्मार्टफोन, इंटरनेट और डिजिटल सेवाओं का मूल उपयोग सिखाएँ।" },
+      { key: "women-safety", labelEn: "Women Safety Outreach", labelHi: "महिला सुरक्षा अभियान", category: "awareness", titleEn: "Women Safety Outreach", titleHi: "महिला सुरक्षा अभियान", duration: "2.5 hours", slots: 35, impactEn: "Safer public spaces and reporting awareness", impactHi: "अधिक सुरक्षित सार्वजनिक स्थान और रिपोर्टिंग जागरूकता", descriptionEn: "Run outreach on safety helplines, safe travel, and reporting support.", descriptionHi: "सुरक्षा हेल्पलाइन, सुरक्षित आवागमन और रिपोर्टिंग सहायता पर अभियान चलाएँ।" },
+      { key: "heritage-walk", labelEn: "Heritage Walk", labelHi: "विरासत भ्रमण", category: "arts", titleEn: "Heritage Walk", titleHi: "विरासत भ्रमण", duration: "2 hours", slots: 50, impactEn: "Better heritage awareness and local pride", impactHi: "विरासत जागरूकता और स्थानीय गौरव में सुधार", descriptionEn: "Organise guided community walks around important heritage or cultural sites.", descriptionHi: "महत्वपूर्ण विरासत या सांस्कृतिक स्थलों पर समुदाय भ्रमण आयोजित करें।" },
+      { key: "street-theatre", labelEn: "Street Theatre Campaign", labelHi: "नुक्कड़ नाटक अभियान", category: "arts", titleEn: "Street Theatre Campaign", titleHi: "नुक्कड़ नाटक अभियान", duration: "3 hours", slots: 25, impactEn: "Better awareness through creative public messaging", impactHi: "रचनात्मक सार्वजनिक संदेश से अधिक जागरूकता", descriptionEn: "Use theatre to raise awareness on health, sanitation, voting, or safety.", descriptionHi: "स्वास्थ्य, स्वच्छता, मतदान या सुरक्षा पर जागरूकता के लिए नाटक का उपयोग करें।" },
+      { key: "school-repair", labelEn: "School Repair Day", labelHi: "स्कूल मरम्मत दिवस", category: "sanitation", titleEn: "School Repair Day", titleHi: "स्कूल मरम्मत दिवस", duration: "1 day", slots: 40, impactEn: "Improved school infrastructure", impactHi: "स्कूल अवसंरचना में सुधार", descriptionEn: "Coordinate small repair and painting activities in public schools.", descriptionHi: "सरकारी स्कूलों में छोटी मरम्मत और पेंटिंग गतिविधियों का समन्वय करें।" },
+      { key: "traffic-awareness", labelEn: "Traffic Awareness Drive", labelHi: "यातायात जागरूकता अभियान", category: "awareness", titleEn: "Traffic Awareness Drive", titleHi: "यातायात जागरूकता अभियान", duration: "2 hours", slots: 50, impactEn: "Safer junction behavior", impactHi: "अधिक सुरक्षित यातायात व्यवहार", descriptionEn: "Run junction awareness activities for helmet, seatbelt, and lane discipline.", descriptionHi: "हेलमेट, सीटबेल्ट और लेन अनुशासन पर जागरूकता अभियान चलाएँ।" },
+      { key: "waste-segregation", labelEn: "Waste Segregation Drive", labelHi: "कचरा पृथक्करण अभियान", category: "sanitation", titleEn: "Waste Segregation Drive", titleHi: "कचरा पृथक्करण अभियान", duration: "3 hours", slots: 45, impactEn: "Better waste sorting and cleaner neighbourhoods", impactHi: "बेहतर कचरा पृथक्करण और स्वच्छ मोहल्ले", descriptionEn: "Train households and market areas on dry-wet waste segregation practices.", descriptionHi: "घरों और बाजार क्षेत्रों को सूखा-गीला कचरा पृथक्करण सिखाएँ।" }
     ];
 
     const UI_STORAGE_KEY = "prayas-portal-ui-v2";
@@ -3852,21 +3952,19 @@
         lang: "en",
         theme: "light",
         announcements: [
-          "Van Mahotsav registrations open - 500 spots available.",
-          "Wall Art Competition submissions close on 15 April.",
-          "Road Safety Corps waitlist now open.",
-          "Earth Day Jal Shakti March route updated."
+          "Prayas portal is ready for district deployment."
         ],
-        missions: deepClone(initialMissions),
-        funds: deepClone(initialFunds),
-        stories: deepClone(initialStories),
-        leaders: deepClone(leaders),
+        missions: [],
+        funds: [],
+        stories: [],
+        leaders: [],
         volunteers: [],
         donations: [],
         newsletterSubs: 847,
         newsletterSignups: [],
         newsletterDraft: { subject: "", body: "" },
         sponsorLeads: [],
+        dataMode: "real",
         currentCategory: "all",
         currentWard: "all",
         activeMissionId: null,
@@ -3878,7 +3976,8 @@
         paymentMethod: "upi",
         adminLoggedIn: Boolean(window.localStorage.getItem(ADMIN_TOKEN_KEY)),
         currentAdminTab: "overview",
-        statsAnimated: false
+        statsAnimated: false,
+        pendingMissionDepartment: {}
       };
     }
 
@@ -3960,6 +4059,7 @@
     }
 
     function applyBootstrapData(payload) {
+      state.dataMode = payload.dataMode || "real";
       state.announcements = Array.isArray(payload.announcements) ? payload.announcements : [];
       state.missions = Array.isArray(payload.missions) ? payload.missions : [];
       state.funds = Array.isArray(payload.funds) ? payload.funds : [];
@@ -4037,7 +4137,8 @@
         open: { en: "Open", hi: "खुला" },
         upcoming: { en: "Upcoming", hi: "आगामी" },
         full: { en: "Full", hi: "पूर्ण" },
-        completed: { en: "Completed", hi: "पूर्ण हुआ" }
+        completed: { en: "Completed", hi: "पूर्ण हुआ" },
+        closed: { en: "Closed", hi: "अस्थायी रूप से बंद" }
       };
       return labels[status]?.[state.lang] || status;
     }
@@ -4080,10 +4181,10 @@
     }
 
     function getStats() {
-      const volunteerBase = 2400 + state.volunteers.length;
-      const activeMissions = state.missions.length;
-      const completed = 150 + state.missions.filter((mission) => mission.status === "completed").length;
-      const lives = 18000 + state.stories.length * 75 + state.volunteers.length * 3;
+      const volunteerBase = state.volunteers.length;
+      const activeMissions = state.missions.filter((mission) => mission.approvalStatus !== "pending" && mission.approvalStatus !== "rejected").length;
+      const completed = state.missions.filter((mission) => mission.status === "completed").length;
+      const lives = state.stories.length * 75 + state.volunteers.length * 3;
       return { volunteerBase, activeMissions, completed, lives };
     }
 
@@ -4141,6 +4242,17 @@
         .join("");
       document.getElementById("storyCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें" : "Select Category"}</option>${options}`;
       document.getElementById("pmCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें" : "Select Category"}</option>${options}`;
+      document.getElementById("hostMissionCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें" : "Select Category"}</option>${options}`;
+    }
+
+    function renderDepartmentOptions() {
+      const options = nodalDepartments
+        .map((department) => {
+          const label = state.lang === "hi" ? department.hi : department.en;
+          return `<option value="${escapeHtml(department.en)}">${escapeHtml(label)}</option>`;
+        })
+        .join("");
+      document.getElementById("pmDepartment").innerHTML = `<option value="">${state.lang === "hi" ? "विभाग चुनें" : "Select Department"}</option>${options}`;
     }
 
     function renderWardSelectOptions() {
@@ -4220,9 +4332,10 @@
 
     function filteredMissions() {
       return state.missions.filter((mission) => {
+        const publicOk = mission.approvalStatus !== "pending" && mission.approvalStatus !== "rejected";
         const categoryOk = state.currentCategory === "all" || mission.category === state.currentCategory;
         const wardOk = state.currentWard === "all" || missionArea(mission) === state.currentWard;
-        return categoryOk && wardOk;
+        return publicOk && categoryOk && wardOk;
       });
     }
 
@@ -4383,6 +4496,10 @@
     }
 
     function renderStories() {
+      if (!state.stories.length) {
+        document.getElementById("showcaseGrid").innerHTML = `<div class="mission-card" style="grid-column:1/-1;padding:32px;text-align:center"><h3 class="mission-title">${state.lang === "hi" ? "अभी तक कोई सार्वजनिक कहानी नहीं है।" : "No public stories yet."}</h3><p class="mission-desc" style="display:block">${state.lang === "hi" ? "जैसे ही वास्तविक योगदान आने लगेंगे, यहाँ कहानियाँ दिखाई देंगी।" : "Stories will appear here as soon as real contributions come in."}</p></div>`;
+        return;
+      }
       document.getElementById("showcaseGrid").innerHTML = state.stories
         .map(
           (story) => `
@@ -4415,6 +4532,10 @@
     }
 
     function renderLeaders() {
+      if (!state.leaders.length) {
+        document.getElementById("leaderboardGrid").innerHTML = `<div class="mission-card" style="grid-column:1/-1;padding:32px;text-align:center"><h3 class="mission-title">${state.lang === "hi" ? "अभी तक कोई लीडरबोर्ड डेटा नहीं है।" : "No leaderboard data yet."}</h3><p class="mission-desc" style="display:block">${state.lang === "hi" ? "वास्तविक स्वयंसेवी भागीदारी आने पर यह स्वतः भर जाएगा।" : "This will populate automatically as real participation comes in."}</p></div>`;
+        return;
+      }
       document.getElementById("leaderboardGrid").innerHTML = state.leaders
         .map(
           (leader) => `
@@ -4453,14 +4574,14 @@
       const totalFunds = state.funds.reduce((sum, fund) => sum + fund.raised, 0);
       const pendingDonations = state.donations.filter((donation) => donation.status !== "verified").length;
       const completedMissions = state.missions.filter((mission) => mission.status === "completed").length;
+      const pendingRequests = state.missions.filter((mission) => mission.sourceType === "community" && mission.approvalStatus === "pending").length;
       const items = [
         { label: state.lang === "hi" ? "स्वयंसेवक" : "Volunteers", value: state.volunteers.length },
         { label: state.lang === "hi" ? "अभियान" : "Missions", value: state.missions.length },
-        { label: state.lang === "hi" ? "कुल फंड" : "Funds Raised", value: `₹${formatCompact(totalFunds)}` },
-        { label: state.lang === "hi" ? "लंबित दान" : "Pending Donations", value: pendingDonations },
+        { label: state.lang === "hi" ? "लंबित अनुरोध" : "Pending Requests", value: pendingRequests },
         { label: state.lang === "hi" ? "पूर्ण गतिविधियाँ" : "Completed Activities", value: completedMissions },
         { label: state.lang === "hi" ? "ग्राहक" : "Subscribers", value: state.newsletterSubs },
-        { label: state.lang === "hi" ? "प्रायोजक लीड्स" : "Sponsor Leads", value: state.sponsorLeads.length }
+        { label: state.lang === "hi" ? "डेटा मोड" : "Data Mode", value: state.dataMode === "demo" ? "Demo" : "Real" }
       ];
       document.getElementById("adminStatsGrid").innerHTML = items
         .map((item) => `<div class="admin-stat"><div class="admin-stat-value">${escapeHtml(String(item.value))}</div><div class="admin-stat-label">${escapeHtml(item.label)}</div></div>`)
@@ -4506,12 +4627,48 @@
             <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.date)}</div>
             <div class="message-time">${escapeHtml(statusLabel(mission.status))}</div>
             <div class="message-actions">
+              <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
               ${mission.status !== "completed" ? `<button class="btn btn-primary" type="button" onclick="updateMissionStatus(${mission.id}, 'completed')">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>` : ""}
-              ${mission.status !== "open" ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>` : ""}
+              ${mission.status !== "closed" ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'closed')">${state.lang === "hi" ? "अस्थायी बंद" : "Close Temporarily"}</button>` : `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>`}
+              <button class="btn btn-soft" type="button" onclick="deleteMission(${mission.id})">${state.lang === "hi" ? "हटाएँ" : "Delete"}</button>
             </div>
           </div>
         `)
         .join("");
+    }
+
+    function renderMissionRequestList() {
+      const container = document.getElementById("missionRequestList");
+      const pending = state.missions.filter((mission) => mission.sourceType === "community" && mission.approvalStatus === "pending");
+      if (!pending.length) {
+        container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "कोई लंबित नागरिक मिशन अनुरोध नहीं है।" : "No pending community mission requests."}</div></div>`;
+        return;
+      }
+      container.innerHTML = pending
+        .map((mission) => `
+          <div class="message-card">
+            <div class="message-name">${escapeHtml(mission.title)}</div>
+            <div class="message-text">${escapeHtml(mission.hostName)} · ${escapeHtml(mission.hostPhone)} · ${escapeHtml(mission.hostEmail)}</div>
+            <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.location)} · ${escapeHtml(mission.date)}</div>
+            <div class="form-group" style="margin-top:10px">
+              <select id="requestDept-${mission.id}">${document.getElementById("pmDepartment").innerHTML}</select>
+            </div>
+            <div class="message-actions">
+              <button class="btn btn-primary" type="button" onclick="reviewMissionRequest(${mission.id}, 'approved')">${state.lang === "hi" ? "स्वीकृत करें" : "Approve"}</button>
+              <button class="btn btn-soft" type="button" onclick="reviewMissionRequest(${mission.id}, 'rejected')">${state.lang === "hi" ? "अस्वीकृत करें" : "Reject"}</button>
+              <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
+            </div>
+          </div>
+        `)
+        .join("");
+    }
+
+    function renderDataModePanel() {
+      const isDemo = state.dataMode === "demo";
+      document.getElementById("dataModeLabel").textContent = isDemo ? "Demo Data Mode Active" : "Real Deploy Mode Active";
+      document.getElementById("dataModeCopy").textContent = isDemo
+        ? "Dummy seeded records are visible for presentation and walkthroughs."
+        : "Only real field data is visible. Dummy seeded content is hidden.";
     }
 
     function renderVolunteerTable() {
@@ -4633,12 +4790,14 @@
 
       const isCompleted = mission.status === "completed";
       const isFull = mission.status === "full";
+      const isClosed = mission.status === "closed";
       detailsPane.innerHTML = `
         <p class="showcase-story" style="font-size:15px;margin-bottom:22px">${escapeHtml(mission.desc)}</p>
         <div class="detail-grid">
           <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "तारीख" : "Date"}</div><div class="detail-value">${escapeHtml(mission.date)}</div></div>
           <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "स्थान" : "Location"}</div><div class="detail-value">${escapeHtml(mission.location)}</div></div>
           <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "क्षेत्र" : "Area"}</div><div class="detail-value">${escapeHtml(locationLabel)}</div></div>
+          <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "नोडल विभाग" : "Nodal Department"}</div><div class="detail-value">${escapeHtml(mission.nodalDepartment || (state.lang === "hi" ? "निर्धारित होना शेष" : "To be assigned"))}</div></div>
           <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "समन्वयक" : "Coordinator"}</div><div class="detail-value">${escapeHtml(mission.coordinator)}</div></div>
           <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "अवधि" : "Duration"}</div><div class="detail-value">${escapeHtml(mission.duration)}</div></div>
           <div class="detail-card"><div class="detail-label">${state.lang === "hi" ? "स्वयंसेवक" : "Volunteers"}</div><div class="detail-value">${mission.volunteers} / ${mission.total}</div></div>
@@ -4646,7 +4805,7 @@
           <div class="detail-card" style="grid-column:1/-1"><div class="detail-label">${state.lang === "hi" ? "प्रभाव" : "Impact"}</div><div class="detail-value">${escapeHtml(mission.impact)}</div></div>
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <button class="btn btn-primary" type="button" onclick="registerForMissionFromModal()" ${isCompleted || isFull ? "disabled" : ""}>${isCompleted ? (state.lang === "hi" ? "गतिविधि पूर्ण हो चुकी है" : "Activity Completed") : isFull ? (state.lang === "hi" ? "स्लॉट भर चुके हैं" : "Slots Filled") : state.lang === "hi" ? "इस अभियान के लिए पंजीकरण करें" : "Sign Up for This Mission"}</button>
+          <button class="btn btn-primary" type="button" onclick="registerForMissionFromModal()" ${isCompleted || isFull || isClosed ? "disabled" : ""}>${isCompleted ? (state.lang === "hi" ? "गतिविधि पूर्ण हो चुकी है" : "Activity Completed") : isFull ? (state.lang === "hi" ? "स्लॉट भर चुके हैं" : "Slots Filled") : isClosed ? (state.lang === "hi" ? "अस्थायी रूप से बंद" : "Temporarily Closed") : state.lang === "hi" ? "इस अभियान के लिए पंजीकरण करें" : "Sign Up for This Mission"}</button>
           <button class="btn btn-green" type="button" onclick="shareMission(${mission.id})"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
         </div>
       `;
@@ -4745,6 +4904,7 @@
         setStatText();
       }
       renderCategorySelectOptions();
+      renderDepartmentOptions();
       renderActivityTemplateOptions();
       renderWardSelectOptions();
       renderAvailabilityOptions();
@@ -4752,24 +4912,37 @@
       renderCategoryFilters();
       renderWardFilters();
       renderMissions();
-      renderFundCards();
-      renderSponsorCards();
       renderWardGrid();
       renderStories();
       renderLeaders();
       renderSelectedMissionBox();
       renderAdminStats();
-      renderDonationQueue();
+      renderMissionRequestList();
       renderMissionStatusList();
       renderVolunteerTable();
       renderAnnouncementList();
       renderNewsletterPreview();
-      renderSponsorLeadList();
       renderRecentVolunteerList();
       renderSubscriberList();
+      renderDataModePanel();
       if (state.activeMissionId) renderMissionModal();
       if (state.activeStoryId) renderCommentsModal();
       if (state.activeLeaderId) renderPassportModal();
+    }
+
+    function handleMissionDeepLink() {
+      const params = new URLSearchParams(window.location.search);
+      const missionId = Number(params.get("mission") || 0);
+      if (!missionId) return;
+      const mission = state.missions.find((item) => item.id === missionId);
+      if (!mission) return;
+      if (params.get("join") === "1") {
+        state.selectedMissionId = mission.id;
+        renderSelectedMissionBox();
+        document.getElementById("volunteer").scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        openMissionModal(mission.id);
+      }
     }
 
     function varValue(variable) {
@@ -4830,8 +5003,8 @@
       if (!mission) return;
       const text =
         state.lang === "hi"
-          ? `मेरे साथ जुड़िए: ${mission.title} | ${mission.date} | ${mission.location} | Prayas`
-          : `Join me at ${mission.title} | ${mission.date} | ${mission.location} | Prayas`;
+          ? `नया मिशन लाइव है: ${mission.title}\nस्थान: ${mission.location}\nसमय: ${mission.date}\nभाग लेने के लिए इस लिंक पर क्लिक करें: ${window.location.origin}${window.location.pathname}?mission=${mission.id}&join=1`
+          : `A new mission is now live: ${mission.title}\nLocation: ${mission.location}\nTime: ${mission.date}\nJoin from this link: ${window.location.origin}${window.location.pathname}?mission=${mission.id}&join=1`;
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
     }
 
@@ -4849,8 +5022,8 @@
         showToast(state.lang === "hi" ? "यह गतिविधि पहले ही पूर्ण हो चुकी है।" : "This activity has already been completed.", "ℹ️");
         return;
       }
-      if (mission.status === "full") {
-        showToast(state.lang === "hi" ? "इस गतिविधि के स्लॉट भर चुके हैं।" : "This activity is already full.", "ℹ️");
+      if (mission.status === "full" || mission.status === "closed") {
+        showToast(mission.status === "closed" ? (state.lang === "hi" ? "यह गतिविधि अभी अस्थायी रूप से बंद है।" : "This activity is temporarily closed.") : state.lang === "hi" ? "इस गतिविधि के स्लॉट भर चुके हैं।" : "This activity is already full.", "ℹ️");
         return;
       }
       state.selectedMissionId = mission.id;
@@ -5272,6 +5445,101 @@
       }
     }
 
+    async function deleteMission(missionId) {
+      try {
+        await apiRequest(`/api/admin/missions/${missionId}/delete`, { method: "POST" });
+        await refreshPortalData();
+        showToast(state.lang === "hi" ? "अभियान हटा दिया गया।" : "Mission deleted.", "🗑️");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function editMission(missionId) {
+      const mission = state.missions.find((item) => item.id === missionId);
+      if (!mission) return;
+      const form = document.getElementById("postMissionForm");
+      form.dataset.editMissionId = String(mission.id);
+      document.getElementById("pmTemplate").value = "";
+      document.getElementById("pmCategory").value = mission.category;
+      document.getElementById("pmDepartment").value = mission.nodalDepartment || "";
+      document.getElementById("pmTitle").value = mission.title;
+      document.getElementById("pmWard").value = mission.ward || mission.area || "";
+      document.getElementById("pmDate").value = mission.date;
+      document.getElementById("pmLocation").value = mission.location;
+      document.getElementById("pmCoordinator").value = mission.coordinator;
+      document.getElementById("pmSlots").value = mission.total;
+      document.getElementById("pmDuration").value = mission.duration;
+      document.getElementById("pmImpact").value = mission.impact;
+      document.getElementById("pmDescription").value = mission.desc;
+      switchAdminTab("post");
+    }
+
+    async function reviewMissionRequest(missionId, approvalStatus) {
+      const departmentSelect = document.getElementById(`requestDept-${missionId}`);
+      try {
+        await apiRequest(`/api/admin/missions/${missionId}/review`, {
+          method: "POST",
+          body: JSON.stringify({
+            approvalStatus,
+            nodalDepartment: departmentSelect ? departmentSelect.value : "",
+            status: "open"
+          })
+        });
+        await refreshPortalData();
+        showToast(
+          state.lang === "hi"
+            ? (approvalStatus === "approved" ? "नागरिक मिशन स्वीकृत हो गया।" : "नागरिक मिशन अस्वीकृत कर दिया गया।")
+            : (approvalStatus === "approved" ? "Community mission approved." : "Community mission rejected."),
+          "🗂️"
+        );
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function submitHostMissionForm(event) {
+      event.preventDefault();
+      try {
+        await apiRequest("/api/community-missions", {
+          method: "POST",
+          body: JSON.stringify({
+            title: document.getElementById("hostMissionTitle").value.trim(),
+            category: document.getElementById("hostMissionCategory").value,
+            ward: document.getElementById("hostMissionArea").value.trim(),
+            location: document.getElementById("hostMissionLocation").value.trim(),
+            date: document.getElementById("hostMissionDate").value.trim(),
+            duration: document.getElementById("hostMissionDuration").value.trim(),
+            total: Number(document.getElementById("hostMissionSlots").value || 0),
+            hostName: document.getElementById("hostMissionName").value.trim(),
+            hostPhone: document.getElementById("hostMissionPhone").value.trim(),
+            hostEmail: document.getElementById("hostMissionEmail").value.trim(),
+            coordinator: document.getElementById("hostMissionName").value.trim(),
+            desc: document.getElementById("hostMissionDescription").value.trim(),
+            impact: state.lang === "hi" ? "एडमिन समीक्षा लंबित" : "Pending admin review"
+          })
+        });
+        event.target.reset();
+        await refreshPortalData();
+        showToast(state.lang === "hi" ? "मिशन अनुरोध एडमिन समीक्षा के लिए भेज दिया गया।" : "Mission request sent for admin review.", "📨");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function setPortalDataMode(mode) {
+      try {
+        await apiRequest("/api/admin/data-mode", {
+          method: "POST",
+          body: JSON.stringify({ mode })
+        });
+        await refreshPortalData();
+        showToast(mode === "demo" ? "Demo data mode enabled." : "Real deploy mode enabled.", "🧭");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
     function openSponsorModal(tier) {
       document.getElementById("sponsorTier").value = tier;
       openModal("sponsorModal");
@@ -5346,6 +5614,7 @@
         post: "adminPanePost",
         volunteers: "adminPaneVolunteers",
         announcements: "adminPaneAnnouncements",
+        data: "adminPaneData",
         newsletter: "adminPaneNewsletter"
       };
       Object.values(map).forEach((id) => document.getElementById(id).classList.remove("active"));
@@ -5367,8 +5636,9 @@
       event.preventDefault();
       const category = document.getElementById("pmCategory").value;
       const slots = Number(document.getElementById("pmSlots").value || 50);
+      const editMissionId = Number(document.getElementById("postMissionForm").dataset.editMissionId || 0);
       try {
-        await apiRequest("/api/admin/missions", {
+        await apiRequest(editMissionId ? `/api/admin/missions/${editMissionId}/update` : "/api/admin/missions", {
           method: "POST",
           body: JSON.stringify({
             category,
@@ -5377,17 +5647,20 @@
             desc: document.getElementById("pmDescription").value.trim(),
             date: document.getElementById("pmDate").value.trim(),
             location: document.getElementById("pmLocation").value.trim(),
+            nodalDepartment: document.getElementById("pmDepartment").value.trim(),
             coordinator: document.getElementById("pmCoordinator").value.trim(),
             duration: document.getElementById("pmDuration").value.trim(),
             total: slots,
+            status: "open",
             age: "16+",
             impact: document.getElementById("pmImpact").value.trim() || (state.lang === "hi" ? "अभी शुरू हुआ" : "Just launched")
           })
         });
         event.target.reset();
+        delete event.target.dataset.editMissionId;
         await refreshPortalData();
         switchAdminTab("overview");
-        showToast(state.lang === "hi" ? "नया अभियान पोस्ट हो गया।" : "New mission posted successfully.", "🚀");
+        showToast(state.lang === "hi" ? (editMissionId ? "अभियान अपडेट हो गया।" : "नया अभियान पोस्ट हो गया।") : (editMissionId ? "Mission updated successfully." : "New mission posted successfully."), "🚀");
       } catch (error) {
         handleRequestError(error);
       }
@@ -5549,6 +5822,7 @@
       document.getElementById("newsletterForm").addEventListener("submit", submitNewsletterForm);
       document.getElementById("storyToggleBtn").addEventListener("click", toggleStoryForm);
       document.getElementById("storyForm").addEventListener("submit", submitStoryForm);
+      document.getElementById("hostMissionForm").addEventListener("submit", submitHostMissionForm);
       document.getElementById("commentForm").addEventListener("submit", submitCommentForm);
       document.getElementById("donationForm").addEventListener("submit", submitDonationForm);
       document.getElementById("sponsorForm").addEventListener("submit", submitSponsorForm);
@@ -5591,6 +5865,7 @@
       setStatText();
       try {
         await refreshPortalData();
+        handleMissionDeepLink();
       } catch (error) {
         console.warn("Unable to load live portal data:", error);
       }
