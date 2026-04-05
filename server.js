@@ -440,6 +440,16 @@ db.exec(`
     last_active_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS volunteer_participations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    volunteer_profile_id INTEGER NOT NULL REFERENCES volunteer_profiles(id) ON DELETE CASCADE,
+    mission_id INTEGER NOT NULL REFERENCES missions(id) ON DELETE CASCADE,
+    mission_title TEXT NOT NULL,
+    date_label TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(volunteer_profile_id, mission_id)
+  );
+
   CREATE TABLE IF NOT EXISTS sponsors (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     company TEXT NOT NULL,
@@ -520,6 +530,7 @@ try {
 
 seedDatabase();
 migrateLegacyDemoRecords();
+migrateVolunteerRegistry();
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
@@ -960,7 +971,13 @@ function buildBootstrapPayload() {
   const storyRows = db.prepare("SELECT * FROM stories WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
   const storyCommentStmt = db.prepare("SELECT name, text, time_label FROM story_comments WHERE story_id = ? ORDER BY id ASC");
   const leaderRows = db.prepare("SELECT * FROM leaders WHERE is_demo = ? ORDER BY points DESC, id ASC").all(demoFlag);
-  const volunteerRows = db.prepare("SELECT * FROM volunteers ORDER BY id DESC").all();
+  const volunteerProfileRows = db.prepare("SELECT * FROM volunteer_profiles ORDER BY last_active_at DESC, id DESC").all();
+  const volunteerParticipationRows = db.prepare(`
+    SELECT vp.id, vp.mission_id, vp.mission_title, vp.date_label, vp.created_at, p.name, p.phone, p.area
+    FROM volunteer_participations vp
+    JOIN volunteer_profiles p ON p.id = vp.volunteer_profile_id
+    ORDER BY vp.created_at DESC, vp.id DESC
+  `).all();
   const sponsorRows = [];
   const donationRows = [];
   const subscriberRows = db.prepare("SELECT email, date_label FROM newsletter_subscribers ORDER BY id DESC").all();
@@ -1042,7 +1059,7 @@ function buildBootstrapPayload() {
     attended: safeJsonArray(leader.attended_json)
   }));
 
-  const volunteers = volunteerRows.map((volunteer) => ({
+  const volunteers = volunteerProfileRows.map((volunteer) => ({
     id: volunteer.id,
     name: volunteer.name,
     phone: volunteer.phone,
@@ -1052,8 +1069,17 @@ function buildBootstrapPayload() {
     availability: volunteer.availability,
     message: volunteer.message,
     skills: safeJsonArray(volunteer.skills_json),
-    mission: volunteer.mission,
-    date: volunteer.date_label
+    mission: "",
+    date: formatDate(volunteer.last_active_at || volunteer.first_registered_at || new Date(), "en")
+  }));
+
+  const volunteerEvents = volunteerParticipationRows.map((entry) => ({
+    id: entry.id,
+    name: entry.name,
+    phone: entry.phone,
+    area: entry.area || "",
+    mission: entry.mission_title,
+    date: entry.date_label
   }));
 
   const sponsorLeads = sponsorRows.map((lead) => ({
@@ -1101,6 +1127,7 @@ function buildBootstrapPayload() {
     stories,
     leaders,
     volunteers,
+    volunteerEvents,
     sponsorLeads,
     donations,
     newsletterSubs: baseSubscribers + newsletterSignups.length,
@@ -1119,6 +1146,32 @@ function safeJsonArray(value) {
   } catch (error) {
     return [];
   }
+}
+
+function migrateVolunteerRegistry() {
+  const legacyRows = db.prepare("SELECT * FROM volunteers ORDER BY id ASC").all();
+  legacyRows.forEach((row) => {
+    const profileId = upsertVolunteerProfile({
+      name: row.name,
+      phone: row.phone,
+      email: row.email,
+      area: row.area,
+      occupation: row.occupation,
+      availability: row.availability,
+      message: row.message,
+      skills: safeJsonArray(row.skills_json)
+    });
+    if (!profileId) return;
+    const missionTitle = String(row.mission || "").trim();
+    if (!missionTitle || missionTitle === "General volunteer") return;
+    const mission = db.prepare("SELECT id, title FROM missions WHERE title = ? LIMIT 1").get(missionTitle);
+    if (!mission) return;
+    db.prepare(`
+      INSERT OR IGNORE INTO volunteer_participations (
+        volunteer_profile_id, mission_id, mission_title, date_label, created_at
+      ) VALUES (?, ?, ?, ?, ?)
+    `).run(profileId, mission.id, mission.title, row.date_label || displayDate(), row.created_at || isoNow());
+  });
 }
 
 function registerVolunteer(body) {
@@ -1147,24 +1200,7 @@ function registerVolunteer(body) {
   const resolvedSkills = incomingSkills.length ? incomingSkills : (existingProfile ? safeJsonArray(existingProfile.skills_json) : []);
 
   const dateLabel = displayDate();
-  db.prepare(`
-    INSERT INTO volunteers (name, phone, email, area, occupation, availability, message, skills_json, mission, date_label, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    name,
-    phone,
-    resolvedEmail,
-    resolvedArea,
-    resolvedOccupation,
-    resolvedAvailability,
-    resolvedMessage,
-    JSON.stringify(resolvedSkills),
-    mission ? mission.title : String(body.mission || "").trim(),
-    dateLabel,
-    isoNow()
-  );
-
-  upsertVolunteerProfile({
+  const profileId = upsertVolunteerProfile({
     name,
     phone,
     email: resolvedEmail,
@@ -1174,6 +1210,30 @@ function registerVolunteer(body) {
     message: resolvedMessage,
     skills: resolvedSkills
   });
+  const finalProfile = profileId
+    ? db.prepare("SELECT * FROM volunteer_profiles WHERE id = ?").get(profileId)
+    : existingProfile;
+
+  if (!mission && existingProfile) {
+    return { ok: true, returningVolunteer: true, alreadyRegistered: true };
+  }
+
+  if (mission && finalProfile) {
+    const existingParticipation = db.prepare(`
+      SELECT id
+      FROM volunteer_participations
+      WHERE volunteer_profile_id = ? AND mission_id = ?
+      LIMIT 1
+    `).get(finalProfile.id, mission.id);
+    if (existingParticipation) {
+      return { ok: true, returningVolunteer: true, alreadyJoinedMission: true };
+    }
+    db.prepare(`
+      INSERT INTO volunteer_participations (
+        volunteer_profile_id, mission_id, mission_title, date_label, created_at
+      ) VALUES (?, ?, ?, ?, ?)
+    `).run(finalProfile.id, mission.id, mission.title, dateLabel, isoNow());
+  }
 
   if (mission) {
     const nextVolunteers = Math.min(mission.total, mission.volunteers + 1);
@@ -1242,7 +1302,7 @@ function upsertVolunteerProfile(profile) {
       now,
       existing.id
     );
-    return;
+    return existing.id;
   }
 
   db.prepare(`
@@ -1263,6 +1323,7 @@ function upsertVolunteerProfile(profile) {
     now,
     now
   );
+  return Number(db.prepare("SELECT last_insert_rowid() AS id").get().id || 0);
 }
 
 function lookupVolunteerProfile(body) {

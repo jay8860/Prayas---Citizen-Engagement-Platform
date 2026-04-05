@@ -2944,6 +2944,14 @@
 
             <h3 class="form-card-title" data-i18n="volunteer-form-title">Register as a Volunteer</h3>
             <p class="form-card-subtitle" data-i18n="volunteer-form-subtitle">Free to join. Built for rapid district deployment.</p>
+            <div class="message-card hidden" id="missionJoinChoiceCard" style="margin-bottom:16px">
+              <div class="message-name" id="missionJoinChoiceTitle">How would you like to join this mission?</div>
+              <div class="message-text" id="missionJoinChoiceText">If you already registered on Prayas earlier, use your name and mobile number only. If you are new, open the full volunteer registration form.</div>
+              <div class="message-actions" style="margin-top:12px">
+                <button class="btn btn-primary" type="button" id="joinAsReturningBtn">Returning Volunteer</button>
+                <button class="btn btn-soft" type="button" id="joinAsNewBtn">New to Prayas</button>
+              </div>
+            </div>
             <div class="message-card hidden" id="returningVolunteerBanner" style="margin-bottom:16px">
               <div class="message-name" id="returningVolunteerTitle"></div>
               <div class="message-text" id="returningVolunteerText"></div>
@@ -4321,6 +4329,7 @@
         stories: [],
         leaders: [],
         volunteers: [],
+        volunteerEvents: [],
         donations: [],
         newsletterSubs: 847,
         newsletterSignups: [],
@@ -4342,7 +4351,8 @@
         currentAdminTab: "overview",
         statsAnimated: false,
         pendingMissionDepartment: {},
-        volunteerLookup: { found: false, checkedKey: "", profile: null }
+        volunteerLookup: { found: false, checkedKey: "", profile: null },
+        volunteerJoinMode: "general"
       };
     }
 
@@ -4433,6 +4443,7 @@
       state.stories = Array.isArray(payload.stories) ? payload.stories : [];
       state.leaders = Array.isArray(payload.leaders) ? payload.leaders : deepClone(leaders);
       state.volunteers = Array.isArray(payload.volunteers) ? payload.volunteers : [];
+      state.volunteerEvents = Array.isArray(payload.volunteerEvents) ? payload.volunteerEvents : [];
       state.sponsorLeads = Array.isArray(payload.sponsorLeads) ? payload.sponsorLeads : [];
       state.donations = Array.isArray(payload.donations) ? payload.donations : [];
       state.newsletterSignups = Array.isArray(payload.newsletterSignups) ? payload.newsletterSignups : [];
@@ -5335,16 +5346,29 @@
         tbody.innerHTML = `<tr><td colspan="6">${state.lang === "hi" ? "अभी तक कोई स्वयंसेवक पंजीकृत नहीं है।" : "No volunteers have registered yet."}</td></tr>`;
         return;
       }
+      const latestMissionByVolunteer = new Map();
+      (state.volunteerEvents || []).forEach((event) => {
+        const key = `${String(event.name || "").trim().toLowerCase()}::${String(event.phone || "").replace(/\D+/g, "").slice(-10)}`;
+        if (!latestMissionByVolunteer.has(key)) {
+          latestMissionByVolunteer.set(key, { mission: event.mission, date: event.date });
+        }
+      });
       tbody.innerHTML = state.volunteers
         .map((volunteer) => `
+          ${(() => {
+            const key = `${String(volunteer.name || "").trim().toLowerCase()}::${String(volunteer.phone || "").replace(/\D+/g, "").slice(-10)}`;
+            const latest = latestMissionByVolunteer.get(key);
+            return `
           <tr>
             <td>${escapeHtml(volunteer.name)}</td>
             <td>${escapeHtml(volunteer.phone)}</td>
             <td>${escapeHtml(volunteer.area)}</td>
             <td>${escapeHtml(volunteer.skills.join(", ") || "-")}</td>
-            <td>${escapeHtml(volunteer.mission || (state.lang === "hi" ? "सामान्य स्वयंसेवक" : "General volunteer"))}</td>
-            <td>${escapeHtml(volunteer.date)}</td>
+            <td>${escapeHtml(latest?.mission || (state.lang === "hi" ? "सामान्य स्वयंसेवक" : "General volunteer"))}</td>
+            <td>${escapeHtml(latest?.date || volunteer.date)}</td>
           </tr>
+            `;
+          })()}
         `)
         .join("");
     }
@@ -5375,11 +5399,11 @@
 
     function renderRecentVolunteerList() {
       const container = document.getElementById("recentVolunteerList");
-      if (!state.volunteers.length) {
+      if (!state.volunteerEvents.length) {
         container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "अभी तक कोई स्वयंसेवक पंजीकृत नहीं हुआ है।" : "No volunteer registrations yet."}</div></div>`;
         return;
       }
-      container.innerHTML = state.volunteers
+      container.innerHTML = state.volunteerEvents
         .slice(0, 6)
         .map((volunteer) => `
           <div class="message-card">
@@ -5686,6 +5710,7 @@
       }
       state.selectedMissionId = mission.id;
       state.volunteerLookup.checkedKey = "";
+      state.volunteerJoinMode = "returning";
       renderSelectedMissionBox();
       updateVolunteerFormMode();
       lookupReturningVolunteer();
@@ -5723,6 +5748,7 @@
     function clearSelectedMission() {
       state.selectedMissionId = null;
       state.volunteerLookup = { found: false, checkedKey: "", profile: null };
+      state.volunteerJoinMode = "general";
       renderSelectedMissionBox();
       updateVolunteerFormMode();
     }
@@ -5753,12 +5779,23 @@
     }
 
     function updateVolunteerFormMode() {
-      const returning = Boolean(state.selectedMissionId && state.volunteerLookup.found && state.volunteerLookup.profile);
+      const joinChoiceCard = document.getElementById("missionJoinChoiceCard");
+      const joinAsReturningBtn = document.getElementById("joinAsReturningBtn");
+      const joinAsNewBtn = document.getElementById("joinAsNewBtn");
+      const missionSelected = Boolean(state.selectedMissionId);
+      const joinMode = missionSelected ? state.volunteerJoinMode : "general";
+      const returning = Boolean(missionSelected && joinMode === "returning" && state.volunteerLookup.found && state.volunteerLookup.profile);
+      const forceCompact = Boolean(missionSelected && joinMode === "returning");
       const advancedIds = ["volEmailGroup", "volAreaGroup", "volOccupationGroup", "volSkillsGroup", "volAvailabilityGroup", "volMessageGroup"];
       advancedIds.forEach((id) => {
         const node = document.getElementById(id);
-        if (node) node.classList.toggle("hidden", returning);
+        if (node) node.classList.toggle("hidden", forceCompact);
       });
+      if (joinChoiceCard) {
+        joinChoiceCard.classList.toggle("hidden", !missionSelected);
+      }
+      if (joinAsReturningBtn) joinAsReturningBtn.classList.toggle("active", joinMode === "returning");
+      if (joinAsNewBtn) joinAsNewBtn.classList.toggle("active", joinMode === "new");
       const banner = document.getElementById("returningVolunteerBanner");
       const title = document.getElementById("returningVolunteerTitle");
       const text = document.getElementById("returningVolunteerText");
@@ -5770,9 +5807,18 @@
           : "Your volunteer profile is already saved. For this mission, name and mobile are enough to confirm participation.";
         banner.classList.remove("hidden");
         submitBtn.textContent = state.lang === "hi" ? "इस मिशन से जुड़ें" : "Join This Mission";
+      } else if (missionSelected && joinMode === "returning") {
+        title.textContent = state.lang === "hi" ? "पहले से पंजीकृत हैं?" : "Already registered earlier?";
+        text.textContent = state.lang === "hi"
+          ? "केवल वही नाम और मोबाइल नंबर दर्ज करें जो आपने पहले इस्तेमाल किया था। प्रोफाइल मिलते ही मिशन जॉइन हो जाएगा। यदि नहीं मिले, तो 'New to Prayas' चुनें।"
+          : "Enter the same name and mobile number you used earlier. Once your profile is found, mission join becomes one-step. If not, choose 'New to Prayas'.";
+        banner.classList.remove("hidden");
+        submitBtn.textContent = state.lang === "hi" ? "नाम और मोबाइल से जारी रखें" : "Continue with Name + Mobile";
       } else {
         banner.classList.add("hidden");
-        submitBtn.textContent = tr("vol-submit");
+        submitBtn.textContent = missionSelected && joinMode === "new"
+          ? (state.lang === "hi" ? "पंजीकरण करके मिशन जॉइन करें" : "Register and Join Mission")
+          : tr("vol-submit");
       }
     }
 
@@ -5780,6 +5826,10 @@
       const key = currentVolunteerLookupKey();
       if (!state.selectedMissionId) {
         state.volunteerLookup = { found: false, checkedKey: "", profile: null };
+        updateVolunteerFormMode();
+        return;
+      }
+      if (state.volunteerJoinMode !== "returning") {
         updateVolunteerFormMode();
         return;
       }
@@ -5823,8 +5873,17 @@
       const skills = formData.getAll("skills");
       const selectedMission = state.missions.find((mission) => mission.id === state.selectedMissionId) || null;
       const volunteerName = String(formData.get("volName") || document.getElementById("volName").value || "").trim();
+      if (selectedMission && state.volunteerJoinMode === "returning" && !state.volunteerLookup.found) {
+        showToast(
+          state.lang === "hi"
+            ? "इस नाम और मोबाइल से पुराना प्रोफाइल नहीं मिला। कृपया 'New to Prayas' चुनें।"
+            : "No saved profile was found with this name and mobile. Please choose 'New to Prayas'.",
+          "ℹ️"
+        );
+        return;
+      }
       try {
-        await apiRequest("/api/volunteers", {
+        const result = await apiRequest("/api/volunteers", {
           method: "POST",
           body: JSON.stringify({
             missionId: selectedMission ? selectedMission.id : null,
@@ -5841,9 +5900,28 @@
         form.reset();
         state.selectedMissionId = null;
         state.volunteerLookup = { found: false, checkedKey: "", profile: null };
+        state.volunteerJoinMode = "general";
         await refreshPortalData();
         renderSelectedMissionBox();
         updateVolunteerFormMode();
+        if (result.alreadyJoinedMission) {
+          showToast(
+            state.lang === "hi"
+              ? `${volunteerName} पहले ही इस मिशन से जुड़े हुए हैं।`
+              : `${volunteerName} has already joined this mission.`,
+            "ℹ️"
+          );
+          return;
+        }
+        if (result.alreadyRegistered) {
+          showToast(
+            state.lang === "hi"
+              ? `${volunteerName} पहले से Prayas पर पंजीकृत हैं।`
+              : `${volunteerName} is already registered on Prayas.`,
+            "ℹ️"
+          );
+          return;
+        }
         showToast(
           state.lang === "hi"
             ? (selectedMission ? `${volunteerName} इस मिशन से जुड़ गए हैं।` : `${volunteerName} अब Prayas के स्वयंसेवक हैं।`)
@@ -6621,6 +6699,16 @@
       });
 
       document.getElementById("volunteerForm").addEventListener("submit", submitVolunteerForm);
+      document.getElementById("joinAsReturningBtn").addEventListener("click", () => {
+        state.volunteerJoinMode = "returning";
+        state.volunteerLookup.checkedKey = "";
+        updateVolunteerFormMode();
+        lookupReturningVolunteer();
+      });
+      document.getElementById("joinAsNewBtn").addEventListener("click", () => {
+        state.volunteerJoinMode = "new";
+        updateVolunteerFormMode();
+      });
       document.getElementById("volName").addEventListener("blur", lookupReturningVolunteer);
       document.getElementById("volPhone").addEventListener("blur", lookupReturningVolunteer);
       document.getElementById("volName").addEventListener("input", () => {
