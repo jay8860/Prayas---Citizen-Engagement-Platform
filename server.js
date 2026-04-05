@@ -424,6 +424,22 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS volunteer_profiles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    normalized_name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    normalized_phone TEXT NOT NULL,
+    email TEXT NOT NULL DEFAULT '',
+    area TEXT NOT NULL DEFAULT '',
+    occupation TEXT NOT NULL DEFAULT '',
+    availability TEXT NOT NULL DEFAULT '',
+    message TEXT NOT NULL DEFAULT '',
+    skills_json TEXT NOT NULL,
+    first_registered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_active_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS sponsors (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     company TEXT NOT NULL,
@@ -534,6 +550,11 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/volunteers") {
       const body = await readJsonBody(req);
       return sendJson(res, 200, registerVolunteer(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/volunteers/lookup") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, lookupVolunteerProfile(body));
     }
 
     if (req.method === "POST" && url.pathname === "/api/community-missions") {
@@ -1116,6 +1137,15 @@ function registerVolunteer(body) {
     throw publicError(409, mission.status === "completed" ? "This activity has already been completed." : mission.status === "closed" ? "This mission is temporarily closed." : "This mission is already full.");
   }
 
+  const existingProfile = findVolunteerProfile(name, phone);
+  const resolvedEmail = String(body.email || "").trim() || existingProfile?.email || "";
+  const resolvedArea = String(body.area || "").trim() || existingProfile?.area || "";
+  const resolvedOccupation = String(body.occupation || "").trim() || existingProfile?.occupation || "";
+  const resolvedAvailability = String(body.availability || "").trim() || existingProfile?.availability || "";
+  const resolvedMessage = String(body.message || "").trim() || existingProfile?.message || "";
+  const incomingSkills = Array.isArray(body.skills) ? body.skills.map((item) => String(item || "").trim()).filter(Boolean) : [];
+  const resolvedSkills = incomingSkills.length ? incomingSkills : (existingProfile ? safeJsonArray(existingProfile.skills_json) : []);
+
   const dateLabel = displayDate();
   db.prepare(`
     INSERT INTO volunteers (name, phone, email, area, occupation, availability, message, skills_json, mission, date_label, created_at)
@@ -1123,16 +1153,27 @@ function registerVolunteer(body) {
   `).run(
     name,
     phone,
-    String(body.email || "").trim(),
-    String(body.area || "").trim(),
-    String(body.occupation || "").trim(),
-    String(body.availability || "").trim(),
-    String(body.message || "").trim(),
-    JSON.stringify(Array.isArray(body.skills) ? body.skills : []),
+    resolvedEmail,
+    resolvedArea,
+    resolvedOccupation,
+    resolvedAvailability,
+    resolvedMessage,
+    JSON.stringify(resolvedSkills),
     mission ? mission.title : String(body.mission || "").trim(),
     dateLabel,
     isoNow()
   );
+
+  upsertVolunteerProfile({
+    name,
+    phone,
+    email: resolvedEmail,
+    area: resolvedArea,
+    occupation: resolvedOccupation,
+    availability: resolvedAvailability,
+    message: resolvedMessage,
+    skills: resolvedSkills
+  });
 
   if (mission) {
     const nextVolunteers = Math.min(mission.total, mission.volunteers + 1);
@@ -1140,7 +1181,113 @@ function registerVolunteer(body) {
     db.prepare("UPDATE missions SET volunteers = ?, status = ? WHERE id = ?").run(nextVolunteers, nextStatus, mission.id);
   }
 
-  return { ok: true };
+  return { ok: true, returningVolunteer: Boolean(existingProfile) };
+}
+
+function normalizeVolunteerName(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function normalizeVolunteerPhone(value) {
+  const digits = String(value || "").replace(/\D+/g, "");
+  return digits.length > 10 ? digits.slice(-10) : digits;
+}
+
+function findVolunteerProfile(name, phone) {
+  const normalizedName = normalizeVolunteerName(name);
+  const normalizedPhone = normalizeVolunteerPhone(phone);
+  if (!normalizedName || !normalizedPhone) return null;
+  return db.prepare(`
+    SELECT *
+    FROM volunteer_profiles
+    WHERE normalized_name = ? AND normalized_phone = ?
+    ORDER BY id DESC
+    LIMIT 1
+  `).get(normalizedName, normalizedPhone) || null;
+}
+
+function upsertVolunteerProfile(profile) {
+  const name = String(profile.name || "").trim();
+  const phone = String(profile.phone || "").trim();
+  const normalizedName = normalizeVolunteerName(name);
+  const normalizedPhone = normalizeVolunteerPhone(phone);
+  if (!name || !phone || !normalizedName || !normalizedPhone) return;
+
+  const existing = findVolunteerProfile(name, phone);
+  const email = String(profile.email || "").trim();
+  const area = String(profile.area || "").trim();
+  const occupation = String(profile.occupation || "").trim();
+  const availability = String(profile.availability || "").trim();
+  const message = String(profile.message || "").trim();
+  const skillsJson = JSON.stringify(Array.isArray(profile.skills) ? profile.skills : []);
+  const now = isoNow();
+
+  if (existing) {
+    db.prepare(`
+      UPDATE volunteer_profiles
+      SET name = ?, phone = ?, email = ?, area = ?, occupation = ?, availability = ?, message = ?, skills_json = ?, last_active_at = ?
+      WHERE id = ?
+    `).run(
+      name,
+      phone,
+      email || existing.email || "",
+      area || existing.area || "",
+      occupation || existing.occupation || "",
+      availability || existing.availability || "",
+      message || existing.message || "",
+      Array.isArray(profile.skills) && profile.skills.length ? skillsJson : existing.skills_json,
+      now,
+      existing.id
+    );
+    return;
+  }
+
+  db.prepare(`
+    INSERT INTO volunteer_profiles (
+      name, normalized_name, phone, normalized_phone, email, area, occupation, availability, message, skills_json, first_registered_at, last_active_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    name,
+    normalizedName,
+    phone,
+    normalizedPhone,
+    email,
+    area,
+    occupation,
+    availability,
+    message,
+    skillsJson,
+    now,
+    now
+  );
+}
+
+function lookupVolunteerProfile(body) {
+  const name = String(body.name || "").trim();
+  const phone = String(body.phone || "").trim();
+  if (!name || !phone) {
+    throw publicError(400, "Name and mobile number are required.");
+  }
+  const profile = findVolunteerProfile(name, phone);
+  if (!profile) {
+    return { found: false };
+  }
+  return {
+    found: true,
+    profile: {
+      name: profile.name,
+      phone: profile.phone,
+      email: profile.email || "",
+      area: profile.area || "",
+      occupation: profile.occupation || "",
+      availability: profile.availability || "",
+      message: profile.message || "",
+      skills: safeJsonArray(profile.skills_json)
+    }
+  };
 }
 
 function subscribeNewsletter(body) {

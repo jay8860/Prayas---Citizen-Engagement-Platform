@@ -2944,6 +2944,10 @@
 
             <h3 class="form-card-title" data-i18n="volunteer-form-title">Register as a Volunteer</h3>
             <p class="form-card-subtitle" data-i18n="volunteer-form-subtitle">Free to join. Built for rapid district deployment.</p>
+            <div class="message-card hidden" id="returningVolunteerBanner" style="margin-bottom:16px">
+              <div class="message-name" id="returningVolunteerTitle"></div>
+              <div class="message-text" id="returningVolunteerText"></div>
+            </div>
 
             <form id="volunteerForm">
               <div class="form-row">
@@ -2958,38 +2962,38 @@
               </div>
 
               <div class="form-row">
-                <div class="form-group">
+                <div class="form-group" id="volEmailGroup">
                   <label for="volEmail" data-i18n="vol-email-label">Email Address</label>
                   <input id="volEmail" type="email" />
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="volAreaGroup">
                   <label for="volWard" data-i18n="vol-area-label">Area / Ward</label>
                   <input id="volWard" type="text" list="locationSuggestions" data-i18n-placeholder="vol-area-placeholder" placeholder="Ward, gram panchayat, town, colony or village" />
                 </div>
               </div>
               <datalist id="locationSuggestions"></datalist>
 
-              <div class="form-group full">
+              <div class="form-group full" id="volOccupationGroup">
                 <label for="volOccupation" data-i18n="vol-occupation-label">Profession / Occupation</label>
                 <input id="volOccupation" type="text" data-i18n-placeholder="vol-occupation-placeholder" placeholder="Teacher, engineer, student, homemaker, retired officer" />
               </div>
 
-              <div class="form-group full">
+              <div class="form-group full" id="volSkillsGroup">
                 <label data-i18n="vol-skills-label">Your Skills - select all that apply</label>
                 <div class="skills-grid" id="skillsGrid"></div>
               </div>
 
-              <div class="form-group full">
+              <div class="form-group full" id="volAvailabilityGroup">
                 <label for="volAvailability" data-i18n="vol-availability-label">Availability</label>
                 <select id="volAvailability"></select>
               </div>
 
-              <div class="form-group full">
+              <div class="form-group full" id="volMessageGroup">
                 <label for="volMessage" data-i18n="vol-message-label">Why do you want to contribute?</label>
                 <textarea id="volMessage" data-i18n-placeholder="vol-message-placeholder" placeholder="Tell us how you want to help your district."></textarea>
               </div>
 
-              <button class="btn btn-primary" type="submit" style="width:100%" data-i18n="vol-submit">Register as Volunteer</button>
+              <button class="btn btn-primary" type="submit" style="width:100%" id="volunteerSubmitBtn" data-i18n="vol-submit">Register as Volunteer</button>
             </form>
           </div>
         </div>
@@ -4337,7 +4341,8 @@
         adminLoggedIn: Boolean(window.localStorage.getItem(ADMIN_TOKEN_KEY)),
         currentAdminTab: "overview",
         statsAnimated: false,
-        pendingMissionDepartment: {}
+        pendingMissionDepartment: {},
+        volunteerLookup: { found: false, checkedKey: "", profile: null }
       };
     }
 
@@ -5206,15 +5211,18 @@
       const box = document.getElementById("selectedMissionBox");
       if (!state.selectedMissionId) {
         box.classList.add("hidden");
+        updateVolunteerFormMode();
         return;
       }
       const mission = state.missions.find((item) => item.id === state.selectedMissionId);
       if (!mission) {
         box.classList.add("hidden");
+        updateVolunteerFormMode();
         return;
       }
       document.getElementById("selectedMissionText").textContent = `${mission.title} · ${wardLabel(missionArea(mission))}`;
       box.classList.remove("hidden");
+      updateVolunteerFormMode();
     }
 
     function renderAdminStats() {
@@ -5569,6 +5577,7 @@
       renderRecentActivityFeed();
       renderRecentEventHistory();
       renderSelectedMissionBox();
+      updateVolunteerFormMode();
       renderAdminStats();
       renderMissionRequestList();
       renderMissionStatusList();
@@ -5676,7 +5685,10 @@
         return;
       }
       state.selectedMissionId = mission.id;
+      state.volunteerLookup.checkedKey = "";
       renderSelectedMissionBox();
+      updateVolunteerFormMode();
+      lookupReturningVolunteer();
       closeModal("missionModal");
       document.getElementById("volunteer").scrollIntoView({ behavior: "smooth", block: "start" });
       showToast(
@@ -5710,7 +5722,98 @@
 
     function clearSelectedMission() {
       state.selectedMissionId = null;
+      state.volunteerLookup = { found: false, checkedKey: "", profile: null };
       renderSelectedMissionBox();
+      updateVolunteerFormMode();
+    }
+
+    function normalizeVolunteerName(value) {
+      return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+    }
+
+    function normalizeVolunteerPhone(value) {
+      const digits = String(value || "").replace(/\D+/g, "");
+      return digits.length > 10 ? digits.slice(-10) : digits;
+    }
+
+    function currentVolunteerLookupKey() {
+      return `${normalizeVolunteerName(document.getElementById("volName")?.value || "")}::${normalizeVolunteerPhone(document.getElementById("volPhone")?.value || "")}`;
+    }
+
+    function applyVolunteerProfile(profile) {
+      if (!profile) return;
+      document.getElementById("volEmail").value = profile.email || "";
+      document.getElementById("volWard").value = profile.area || "";
+      document.getElementById("volOccupation").value = profile.occupation || "";
+      document.getElementById("volAvailability").value = profile.availability || "";
+      document.getElementById("volMessage").value = profile.message || "";
+      document.querySelectorAll('#skillsGrid input[name="skills"]').forEach((input) => {
+        input.checked = Array.isArray(profile.skills) && profile.skills.includes(input.value);
+      });
+    }
+
+    function updateVolunteerFormMode() {
+      const returning = Boolean(state.selectedMissionId && state.volunteerLookup.found && state.volunteerLookup.profile);
+      const advancedIds = ["volEmailGroup", "volAreaGroup", "volOccupationGroup", "volSkillsGroup", "volAvailabilityGroup", "volMessageGroup"];
+      advancedIds.forEach((id) => {
+        const node = document.getElementById(id);
+        if (node) node.classList.toggle("hidden", returning);
+      });
+      const banner = document.getElementById("returningVolunteerBanner");
+      const title = document.getElementById("returningVolunteerTitle");
+      const text = document.getElementById("returningVolunteerText");
+      const submitBtn = document.getElementById("volunteerSubmitBtn");
+      if (returning) {
+        title.textContent = state.lang === "hi" ? `वापसी पर स्वागत है, ${state.volunteerLookup.profile.name}` : `Welcome back, ${state.volunteerLookup.profile.name}`;
+        text.textContent = state.lang === "hi"
+          ? "आपकी प्रोफाइल पहले से सुरक्षित है। इस मिशन के लिए केवल नाम और मोबाइल से भागीदारी हो जाएगी।"
+          : "Your volunteer profile is already saved. For this mission, name and mobile are enough to confirm participation.";
+        banner.classList.remove("hidden");
+        submitBtn.textContent = state.lang === "hi" ? "इस मिशन से जुड़ें" : "Join This Mission";
+      } else {
+        banner.classList.add("hidden");
+        submitBtn.textContent = tr("vol-submit");
+      }
+    }
+
+    async function lookupReturningVolunteer() {
+      const key = currentVolunteerLookupKey();
+      if (!state.selectedMissionId) {
+        state.volunteerLookup = { found: false, checkedKey: "", profile: null };
+        updateVolunteerFormMode();
+        return;
+      }
+      const [normalizedName, normalizedPhone] = key.split("::");
+      if (!normalizedName || !normalizedPhone) {
+        state.volunteerLookup = { found: false, checkedKey: key, profile: null };
+        updateVolunteerFormMode();
+        return;
+      }
+      if (state.volunteerLookup.checkedKey === key) {
+        updateVolunteerFormMode();
+        return;
+      }
+      try {
+        const payload = await apiRequest("/api/volunteers/lookup", {
+          method: "POST",
+          body: JSON.stringify({
+            name: document.getElementById("volName").value.trim(),
+            phone: document.getElementById("volPhone").value.trim()
+          })
+        });
+        state.volunteerLookup = {
+          found: Boolean(payload.found),
+          checkedKey: key,
+          profile: payload.profile || null
+        };
+        if (payload.found && payload.profile) {
+          applyVolunteerProfile(payload.profile);
+        }
+        updateVolunteerFormMode();
+      } catch (error) {
+        state.volunteerLookup = { found: false, checkedKey: "", profile: null };
+        updateVolunteerFormMode();
+      }
     }
 
     async function submitVolunteerForm(event) {
@@ -5737,12 +5840,14 @@
         });
         form.reset();
         state.selectedMissionId = null;
+        state.volunteerLookup = { found: false, checkedKey: "", profile: null };
         await refreshPortalData();
         renderSelectedMissionBox();
+        updateVolunteerFormMode();
         showToast(
           state.lang === "hi"
-            ? `${volunteerName} अब Prayas के स्वयंसेवक हैं।`
-            : `${volunteerName} is now registered on Prayas.`,
+            ? (selectedMission ? `${volunteerName} इस मिशन से जुड़ गए हैं।` : `${volunteerName} अब Prayas के स्वयंसेवक हैं।`)
+            : (selectedMission ? `${volunteerName} has joined this mission.` : `${volunteerName} is now registered on Prayas.`),
           "🎉"
         );
       } catch (error) {
@@ -6516,6 +6621,16 @@
       });
 
       document.getElementById("volunteerForm").addEventListener("submit", submitVolunteerForm);
+      document.getElementById("volName").addEventListener("blur", lookupReturningVolunteer);
+      document.getElementById("volPhone").addEventListener("blur", lookupReturningVolunteer);
+      document.getElementById("volName").addEventListener("input", () => {
+        state.volunteerLookup.checkedKey = "";
+        updateVolunteerFormMode();
+      });
+      document.getElementById("volPhone").addEventListener("input", () => {
+        state.volunteerLookup.checkedKey = "";
+        updateVolunteerFormMode();
+      });
       document.getElementById("newsletterForm").addEventListener("submit", submitNewsletterForm);
       document.getElementById("storyToggleBtn").addEventListener("click", toggleStoryForm);
       document.getElementById("storyForm").addEventListener("submit", submitStoryForm);
