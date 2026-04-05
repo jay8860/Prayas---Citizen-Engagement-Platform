@@ -629,6 +629,18 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, setPortalDataMode(body));
     }
 
+    if (req.method === "POST" && url.pathname === "/api/admin/locations") {
+      requireAdmin(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, saveLocationCatalog(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/admin/departments") {
+      requireAdmin(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, saveDepartmentCatalog(body));
+    }
+
     if (req.method === "POST" && url.pathname === "/api/admin/newsletter") {
       requireAdmin(req);
       const body = await readJsonBody(req);
@@ -918,6 +930,8 @@ function base64Url(value) {
 function buildBootstrapPayload() {
   const dataMode = getSetting("portal_data_mode", "demo") === "real" ? "real" : "demo";
   const demoFlag = dataMode === "demo" ? 1 : 0;
+  const locations = safeJsonArray(getSetting("location_catalog_json", "[]"));
+  const departments = safeJsonArray(getSetting("department_catalog_json", "[]"));
   const announcementRows = db.prepare("SELECT text FROM announcements WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
   const missionRows = db.prepare("SELECT * FROM missions WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
   const discussionStmt = db.prepare("SELECT name, text, time_label FROM mission_discussions WHERE mission_id = ? ORDER BY id DESC");
@@ -1058,6 +1072,8 @@ function buildBootstrapPayload() {
 
   return {
     dataMode,
+    locations,
+    departments,
     announcements: announcementRows.map((row) => row.text),
     missions,
     funds,
@@ -1294,6 +1310,7 @@ function createMission(body) {
   if (!category || !ward || !title || !desc || !date || !location || !coordinator || !duration || total <= 0 || !nodalDepartment) {
     throw publicError(400, "All mission fields are required.");
   }
+  appendDepartmentCatalog(nodalDepartment);
 
   db.prepare(`
     INSERT INTO missions (
@@ -1400,6 +1417,7 @@ function reviewMissionRequest(missionId, body) {
   if (approvalStatus === "approved" && !nodalDepartment) {
     throw publicError(400, "Select a nodal department before approval.");
   }
+  appendDepartmentCatalog(nodalDepartment);
   db.prepare("UPDATE missions SET approval_status = ?, nodal_department = ?, status = ? WHERE id = ?").run(
     approvalStatus,
     nodalDepartment,
@@ -1418,6 +1436,28 @@ function setPortalDataMode(body) {
   return { ok: true, mode };
 }
 
+function saveLocationCatalog(body) {
+  const locations = Array.isArray(body.locations) ? body.locations : [];
+  const cleaned = [...new Set(locations.map((item) => String(item || "").trim()).filter(Boolean))];
+  setSetting("location_catalog_json", JSON.stringify(cleaned));
+  return { ok: true, count: cleaned.length };
+}
+
+function saveDepartmentCatalog(body) {
+  const departments = Array.isArray(body.departments) ? body.departments : [];
+  const cleaned = [...new Set(departments.map((item) => String(item || "").trim()).filter(Boolean))];
+  setSetting("department_catalog_json", JSON.stringify(cleaned));
+  return { ok: true, count: cleaned.length };
+}
+
+function appendDepartmentCatalog(departmentName) {
+  const value = String(departmentName || "").trim();
+  if (!value) return;
+  const existing = safeJsonArray(getSetting("department_catalog_json", "[]"));
+  if (existing.includes(value)) return;
+  setSetting("department_catalog_json", JSON.stringify([...existing, value]));
+}
+
 function updateMission(missionId, body) {
   ensureRowExists("missions", missionId, "Mission not found.");
   const category = String(body.category || "").trim();
@@ -1434,6 +1474,7 @@ function updateMission(missionId, body) {
   if (!category || !ward || !title || !desc || !date || !location || !coordinator || !duration || total <= 0 || !nodalDepartment) {
     throw publicError(400, "All mission fields are required.");
   }
+  appendDepartmentCatalog(nodalDepartment);
   db.prepare(`
     UPDATE missions
     SET category = ?, ward = ?, emoji = ?, bg = ?, title = ?, desc = ?, date = ?, location = ?, total = ?, status = ?, nodal_department = ?, coordinator = ?, duration = ?, age = ?, impact = ?, approval_status = 'approved'

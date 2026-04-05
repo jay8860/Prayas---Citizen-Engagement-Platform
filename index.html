@@ -16,6 +16,7 @@
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
   />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -3031,6 +3032,7 @@
           <button class="admin-tab-btn" type="button" data-admin-tab="post" data-i18n="admin-tab-post">Post Mission</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="volunteers" data-i18n="admin-tab-volunteers">Volunteers</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="announcements" data-i18n="admin-tab-announcements">Announcements</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="locations" data-i18n="admin-tab-locations">Locations</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="data" data-i18n="admin-tab-data">Data Mode</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="newsletter" data-i18n="admin-tab-newsletter">Newsletter</button>
         </div>
@@ -3073,6 +3075,10 @@
               <div class="form-group">
                 <label for="pmDepartment" data-i18n="pm-department-label">Nodal Department</label>
                 <select id="pmDepartment" required></select>
+              </div>
+              <div class="form-group hidden" id="pmDepartmentOtherGroup">
+                <label for="pmDepartmentOther" data-i18n="pm-department-other-label">Other Department Name</label>
+                <input id="pmDepartmentOther" type="text" data-i18n-placeholder="pm-department-other-placeholder" placeholder="Type custom nodal department" />
               </div>
               <div class="form-group">
                 <label for="pmTitle" data-i18n="pm-title-label">Mission Title</label>
@@ -3165,6 +3171,29 @@
                 <textarea id="announcementText"></textarea>
               </div>
               <button class="btn btn-primary" type="button" id="postAnnouncementBtn" data-i18n="admin-announcement-submit">Add Announcement</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-pane" id="adminPaneLocations">
+          <div class="admin-two-col">
+            <div class="panel-card">
+              <h3 data-i18n="admin-locations-title">Location Catalog</h3>
+              <p data-i18n="admin-locations-subtitle">Upload or paste gram panchayats, wards, villages, colonies, or any district-specific location list. These options will appear across the portal.</p>
+              <div class="form-group">
+                <label for="locationImportFile" data-i18n="admin-locations-file-label">Upload Excel / CSV</label>
+                <input id="locationImportFile" type="file" accept=".xlsx,.xls,.csv,.tsv" />
+              </div>
+              <div class="form-group">
+                <label for="locationManualInput" data-i18n="admin-locations-manual-label">Paste or Type Locations</label>
+                <textarea id="locationManualInput" data-i18n-placeholder="admin-locations-manual-placeholder" placeholder="One location per line or comma separated"></textarea>
+              </div>
+              <button class="btn btn-primary" type="button" id="saveLocationsBtn" data-i18n="admin-locations-save">Save Location Catalog</button>
+            </div>
+            <div class="panel-card">
+              <h3 data-i18n="admin-locations-current-title">Current Location Options</h3>
+              <p data-i18n="admin-locations-current-subtitle">These names feed the district location view, mission forms, and filters.</p>
+              <div class="announcement-stream" id="locationCatalogList"></div>
             </div>
           </div>
         </div>
@@ -3749,10 +3778,13 @@
       "admin-tab-post": { en: "Post Mission", hi: "अभियान पोस्ट करें" },
       "admin-tab-volunteers": { en: "Volunteers", hi: "स्वयंसेवक" },
       "admin-tab-announcements": { en: "Announcements", hi: "घोषणाएँ" },
+      "admin-tab-locations": { en: "Locations", hi: "स्थान" },
       "admin-tab-data": { en: "Data Mode", hi: "डेटा मोड" },
       "admin-tab-newsletter": { en: "Newsletter", hi: "न्यूज़लेटर" },
       "pm-template-label": { en: "Activity Type Template", hi: "गतिविधि प्रकार टेम्पलेट" },
       "pm-department-label": { en: "Nodal Department", hi: "नोडल विभाग" },
+      "pm-department-other-label": { en: "Other Department Name", hi: "अन्य विभाग का नाम" },
+      "pm-department-other-placeholder": { en: "Type custom nodal department", hi: "कस्टम नोडल विभाग लिखें" },
       "pm-title-label": { en: "Mission Title", hi: "अभियान शीर्षक" },
       "pm-category-label": { en: "Category", hi: "श्रेणी" },
       "pm-ward-label": { en: "Area / Gram Panchayat / Ward", hi: "क्षेत्र / ग्राम पंचायत / वार्ड" },
@@ -3791,6 +3823,14 @@
       "admin-overview-status-subtitle": { en: "Mark activities as completed so certificates unlock only after real completion.", hi: "गतिविधियों को पूर्ण चिह्नित करें ताकि प्रमाणपत्र केवल वास्तविक पूर्णता के बाद ही खुले।" },
       "admin-data-title": { en: "Deployment Data Mode", hi: "डिप्लॉयमेंट डेटा मोड" },
       "admin-data-subtitle": { en: "Use demo mode for presentations. Use real deploy mode to hide all dummy seeded records and show only actual field data.", hi: "प्रस्तुति के लिए डेमो मोड और वास्तविक उपयोग के लिए रियल डिप्लॉय मोड चुनें, जिसमें सभी डमी रिकॉर्ड छिपे रहें।" },
+      "admin-locations-title": { en: "Location Catalog", hi: "स्थान सूची" },
+      "admin-locations-subtitle": { en: "Upload or paste gram panchayats, wards, villages, colonies, or any district-specific location list. These options will appear across the portal.", hi: "ग्राम पंचायत, वार्ड, गांव, कॉलोनी या किसी भी जिला-विशिष्ट स्थान सूची को अपलोड या पेस्ट करें। ये विकल्प पूरे पोर्टल में दिखेंगे।" },
+      "admin-locations-file-label": { en: "Upload Excel / CSV", hi: "Excel / CSV अपलोड करें" },
+      "admin-locations-manual-label": { en: "Paste or Type Locations", hi: "स्थान पेस्ट करें या टाइप करें" },
+      "admin-locations-manual-placeholder": { en: "One location per line or comma separated", hi: "प्रत्येक पंक्ति में एक स्थान या कॉमा से अलग" },
+      "admin-locations-save": { en: "Save Location Catalog", hi: "स्थान सूची सहेजें" },
+      "admin-locations-current-title": { en: "Current Location Options", hi: "वर्तमान स्थान विकल्प" },
+      "admin-locations-current-subtitle": { en: "These names feed the district location view, mission forms, and filters.", hi: "ये नाम जिला दृश्य, मिशन फॉर्म और फ़िल्टर में उपयोग होंगे।" },
       "admin-newsletter-title": { en: "Newsletter Builder", hi: "न्यूज़लेटर बिल्डर" },
       "admin-newsletter-subtitle": { en: "Prepare a district message and preview how it will read.", hi: "जिला संदेश तैयार करें और उसका पूर्वावलोकन देखें।" },
       "admin-newsletter-subject-label": { en: "Subject", hi: "विषय" },
@@ -3826,7 +3866,8 @@
       { en: "Women and Child Development", hi: "महिला एवं बाल विकास" },
       { en: "Forest Department", hi: "वन विभाग" },
       { en: "Police / Traffic", hi: "पुलिस / यातायात" },
-      { en: "Youth Affairs and Sports", hi: "युवा एवं खेल" }
+      { en: "Youth Affairs and Sports", hi: "युवा एवं खेल" },
+      { en: "Other", hi: "अन्य" }
     ];
 
     const activityTemplates = [
@@ -3972,6 +4013,8 @@
         newsletterSignups: [],
         newsletterDraft: { subject: "", body: "" },
         sponsorLeads: [],
+        locations: [],
+        departments: [],
         dataMode: "real",
         currentCategory: "all",
         currentWard: "all",
@@ -4068,6 +4111,8 @@
 
     function applyBootstrapData(payload) {
       state.dataMode = payload.dataMode || "real";
+      state.locations = Array.isArray(payload.locations) ? payload.locations : [];
+      state.departments = Array.isArray(payload.departments) ? payload.departments : [];
       state.announcements = Array.isArray(payload.announcements) ? payload.announcements : [];
       state.missions = Array.isArray(payload.missions) ? payload.missions : [];
       state.funds = Array.isArray(payload.funds) ? payload.funds : [];
@@ -4160,7 +4205,9 @@
     }
 
     function uniqueAreas() {
-      return [...new Set(state.missions.map((mission) => missionArea(mission)).filter(Boolean))].sort((a, b) =>
+      const configured = Array.isArray(state.locations) ? state.locations : [];
+      const fromMissions = state.missions.map((mission) => missionArea(mission)).filter(Boolean);
+      return [...new Set([...configured, ...fromMissions].map((item) => String(item || "").trim()).filter(Boolean))].sort((a, b) =>
         a.localeCompare(b, "en-IN", { sensitivity: "base" })
       );
     }
@@ -4174,6 +4221,17 @@
       document.getElementById("locationSuggestions").innerHTML = suggestions
         .map((area) => `<option value="${escapeHtml(area)}"></option>`)
         .join("");
+    }
+
+    function departmentOptions() {
+      const configured = Array.isArray(state.departments) ? state.departments : [];
+      const existing = state.missions.map((mission) => String(mission.nodalDepartment || "").trim()).filter(Boolean);
+      return [...new Set([
+        ...nodalDepartments.map((department) => department.en),
+        ...configured,
+        ...existing,
+        "Other"
+      ])].filter(Boolean);
     }
 
     function templateLabel(template) {
@@ -4254,13 +4312,100 @@
     }
 
     function renderDepartmentOptions() {
-      const options = nodalDepartments
+      const options = departmentOptions()
         .map((department) => {
-          const label = state.lang === "hi" ? department.hi : department.en;
-          return `<option value="${escapeHtml(department.en)}">${escapeHtml(label)}</option>`;
+          const preset = nodalDepartments.find((item) => item.en === department);
+          const label = preset ? (state.lang === "hi" ? preset.hi : preset.en) : department;
+          return `<option value="${escapeHtml(department)}">${escapeHtml(label)}</option>`;
         })
         .join("");
       document.getElementById("pmDepartment").innerHTML = `<option value="">${state.lang === "hi" ? "विभाग चुनें" : "Select Department"}</option>${options}`;
+    }
+
+    function toggleDepartmentOtherField(selectId, groupId, inputId, explicitValue = null) {
+      const select = document.getElementById(selectId);
+      const group = document.getElementById(groupId);
+      const input = document.getElementById(inputId);
+      if (!select || !group || !input) return "";
+      const value = explicitValue ?? select.value;
+      const isOther = value === "Other";
+      group.classList.toggle("hidden", !isOther);
+      if (!isOther && explicitValue === null) {
+        input.value = "";
+      }
+      return isOther ? input.value.trim() : select.value.trim();
+    }
+
+    function setDepartmentFieldValue(selectId, groupId, inputId, departmentValue) {
+      const normalized = String(departmentValue || "").trim();
+      const select = document.getElementById(selectId);
+      const input = document.getElementById(inputId);
+      if (!select || !input) return;
+      if (!normalized) {
+        select.value = "";
+        input.value = "";
+      } else if (Array.from(select.options).some((option) => option.value === normalized)) {
+        select.value = normalized;
+        input.value = "";
+      } else {
+        select.value = "Other";
+        input.value = normalized;
+      }
+      toggleDepartmentOtherField(selectId, groupId, inputId, select.value);
+    }
+
+    function parseLocationText(rawText) {
+      return [...new Set(
+        String(rawText || "")
+          .split(/[\n,;|\t]+/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+      )];
+    }
+
+    async function parseLocationFile(file) {
+      if (!file) return [];
+      const fileName = String(file.name || "").toLowerCase();
+      if (fileName.endsWith(".csv") || fileName.endsWith(".tsv")) {
+        return parseLocationText(await file.text());
+      }
+      if ((fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) && window.XLSX) {
+        const buffer = await file.arrayBuffer();
+        const workbook = window.XLSX.read(buffer, { type: "array" });
+        const values = [];
+        workbook.SheetNames.forEach((sheetName) => {
+          const rows = window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false });
+          rows.forEach((row) => row.forEach((cell) => {
+            const value = String(cell || "").trim();
+            if (value) values.push(value);
+          }));
+        });
+        return [...new Set(values)];
+      }
+      throw new Error(state.lang === "hi" ? "यह फ़ाइल फ़ॉर्मेट अभी समर्थित नहीं है।" : "This file format is not supported yet.");
+    }
+
+    function mergeLocationsIntoTextarea(locations) {
+      const textarea = document.getElementById("locationManualInput");
+      if (!textarea) return;
+      const merged = [...new Set([...parseLocationText(textarea.value), ...locations])];
+      textarea.value = merged.join("\n");
+    }
+
+    function renderLocationCatalogPanel() {
+      const list = document.getElementById("locationCatalogList");
+      const textarea = document.getElementById("locationManualInput");
+      if (textarea && document.activeElement !== textarea) {
+        textarea.value = state.locations.join("\n");
+      }
+      if (!list) return;
+      if (!state.locations.length) {
+        list.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "अभी तक कोई जिला-विशिष्ट स्थान सूची सेव नहीं हुई है।" : "No district-specific location catalog has been saved yet."}</div></div>`;
+        return;
+      }
+      list.innerHTML = state.locations
+        .map((location) => `<div class="message-card"><div class="message-name">${escapeHtml(location)}</div></div>`)
+        .join("");
     }
 
     function renderWardSelectOptions() {
@@ -4458,7 +4603,9 @@
     function renderWardGrid() {
       const areas = uniqueAreas();
       const cards = areas.map((ward, index) => {
-        const missions = state.missions.filter((mission) => missionArea(mission) === ward);
+        const missions = state.missions.filter((mission) =>
+          missionArea(mission) === ward && mission.approvalStatus !== "pending" && mission.approvalStatus !== "rejected"
+        );
         const categories = [...new Set(missions.map((mission) => mission.category))];
         const borderColors = [varValue("--saffron"), varValue("--navy"), varValue("--green")];
         const borderColor = borderColors[index % borderColors.length];
@@ -4487,13 +4634,14 @@
             <p class="mission-desc" style="display:block">${state.lang === "hi" ? "एडमिन पैनल से पहली गतिविधि जोड़ें।" : "Add the first activity from the admin panel."}</p>
           </div>`;
 
-      const activeWards = new Set(state.missions.map((mission) => missionArea(mission)).filter(Boolean)).size;
-      const categories = new Set(state.missions.map((mission) => mission.category)).size;
-      const volunteers = state.missions.reduce((sum, mission) => sum + mission.volunteers, 0);
+      const publicMissions = state.missions.filter((mission) => mission.approvalStatus !== "pending" && mission.approvalStatus !== "rejected");
+      const activeWards = new Set(publicMissions.map((mission) => missionArea(mission)).filter(Boolean)).size;
+      const categories = new Set(publicMissions.map((mission) => mission.category)).size;
+      const volunteers = publicMissions.reduce((sum, mission) => sum + mission.volunteers, 0);
       document.getElementById("mapSummary").textContent =
         state.lang === "hi"
-          ? `${state.missions.length} सक्रिय अभियान · ${activeWards} स्थान · ${categories} श्रेणियाँ · ${volunteers.toLocaleString("en-IN")} स्वयंसेवक सक्रिय`
-          : `${state.missions.length} active missions across ${activeWards} locations · ${categories} categories · ${volunteers.toLocaleString("en-IN")} volunteers engaged`;
+          ? `${publicMissions.length} सक्रिय अभियान · ${activeWards} स्थान · ${categories} श्रेणियाँ · ${volunteers.toLocaleString("en-IN")} स्वयंसेवक सक्रिय`
+          : `${publicMissions.length} active missions across ${activeWards} locations · ${categories} categories · ${volunteers.toLocaleString("en-IN")} volunteers engaged`;
     }
 
     function storyCardMedia(story) {
@@ -4659,7 +4807,10 @@
             <div class="message-text">${escapeHtml(mission.hostName)} · ${escapeHtml(mission.hostPhone)} · ${escapeHtml(mission.hostEmail)}</div>
             <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.location)} · ${escapeHtml(mission.date)}</div>
             <div class="form-group" style="margin-top:10px">
-              <select id="requestDept-${mission.id}">${document.getElementById("pmDepartment").innerHTML}</select>
+              <select id="requestDept-${mission.id}" onchange="toggleDepartmentOtherField('requestDept-${mission.id}', 'requestDeptOtherGroup-${mission.id}', 'requestDeptOther-${mission.id}')">${document.getElementById("pmDepartment").innerHTML}</select>
+            </div>
+            <div class="form-group hidden" id="requestDeptOtherGroup-${mission.id}">
+              <input id="requestDeptOther-${mission.id}" type="text" placeholder="${escapeHtml(state.lang === "hi" ? "कस्टम नोडल विभाग लिखें" : "Type custom nodal department")}" />
             </div>
             <div class="message-actions">
               <button class="btn btn-primary" type="button" onclick="reviewMissionRequest(${mission.id}, 'approved')">${state.lang === "hi" ? "स्वीकृत करें" : "Approve"}</button>
@@ -4932,6 +5083,7 @@
       renderNewsletterPreview();
       renderRecentVolunteerList();
       renderSubscriberList();
+      renderLocationCatalogPanel();
       renderDataModePanel();
       if (state.activeMissionId) renderMissionModal();
       if (state.activeStoryId) renderCommentsModal();
@@ -5465,7 +5617,7 @@
       form.dataset.editMissionId = String(mission.id);
       document.getElementById("pmTemplate").value = "";
       document.getElementById("pmCategory").value = mission.category;
-      document.getElementById("pmDepartment").value = mission.nodalDepartment || "";
+      setDepartmentFieldValue("pmDepartment", "pmDepartmentOtherGroup", "pmDepartmentOther", mission.nodalDepartment || "");
       document.getElementById("pmTitle").value = mission.title;
       document.getElementById("pmWard").value = mission.ward || mission.area || "";
       document.getElementById("pmDate").value = mission.date;
@@ -5480,12 +5632,16 @@
 
     async function reviewMissionRequest(missionId, approvalStatus) {
       const departmentSelect = document.getElementById(`requestDept-${missionId}`);
+      const departmentOther = document.getElementById(`requestDeptOther-${missionId}`);
+      const nodalDepartment = departmentSelect?.value === "Other"
+        ? String(departmentOther?.value || "").trim()
+        : String(departmentSelect?.value || "").trim();
       try {
         await apiRequest(`/api/admin/missions/${missionId}/review`, {
           method: "POST",
           body: JSON.stringify({
             approvalStatus,
-            nodalDepartment: departmentSelect ? departmentSelect.value : "",
+            nodalDepartment,
             status: "open"
           })
         });
@@ -5538,6 +5694,25 @@
         });
         await refreshPortalData();
         showToast(mode === "demo" ? "Demo data mode enabled." : "Real deploy mode enabled.", "🧭");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function saveLocationCatalog() {
+      try {
+        const locations = parseLocationText(document.getElementById("locationManualInput").value);
+        await apiRequest("/api/admin/locations", {
+          method: "POST",
+          body: JSON.stringify({ locations })
+        });
+        await refreshPortalData();
+        showToast(
+          state.lang === "hi"
+            ? `${locations.length} स्थान सेव कर दिए गए।`
+            : `${locations.length} locations saved to the district catalog.`,
+          "📍"
+        );
       } catch (error) {
         handleRequestError(error);
       }
@@ -5617,6 +5792,7 @@
         post: "adminPanePost",
         volunteers: "adminPaneVolunteers",
         announcements: "adminPaneAnnouncements",
+        locations: "adminPaneLocations",
         data: "adminPaneData",
         newsletter: "adminPaneNewsletter"
       };
@@ -5640,6 +5816,7 @@
       const category = document.getElementById("pmCategory").value || "other";
       const slots = Number(document.getElementById("pmSlots").value || 50);
       const editMissionId = Number(document.getElementById("postMissionForm").dataset.editMissionId || 0);
+      const nodalDepartment = toggleDepartmentOtherField("pmDepartment", "pmDepartmentOtherGroup", "pmDepartmentOther");
       try {
         await apiRequest(editMissionId ? `/api/admin/missions/${editMissionId}/update` : "/api/admin/missions", {
           method: "POST",
@@ -5650,7 +5827,7 @@
             desc: document.getElementById("pmDescription").value.trim(),
             date: document.getElementById("pmDate").value.trim(),
             location: document.getElementById("pmLocation").value.trim(),
-            nodalDepartment: document.getElementById("pmDepartment").value.trim(),
+            nodalDepartment,
             coordinator: document.getElementById("pmCoordinator").value.trim(),
             duration: document.getElementById("pmDuration").value.trim(),
             total: slots,
@@ -5661,6 +5838,7 @@
         });
         event.target.reset();
         delete event.target.dataset.editMissionId;
+        toggleDepartmentOtherField("pmDepartment", "pmDepartmentOtherGroup", "pmDepartmentOther");
         await refreshPortalData();
         switchAdminTab("overview");
         showToast(state.lang === "hi" ? (editMissionId ? "अभियान अपडेट हो गया।" : "नया अभियान पोस्ट हो गया।") : (editMissionId ? "Mission updated successfully." : "New mission posted successfully."), "🚀");
@@ -5819,6 +5997,28 @@
 
       document.getElementById("pmTemplate").addEventListener("change", (event) => {
         applyMissionTemplate(event.target.value);
+      });
+      document.getElementById("pmDepartment").addEventListener("change", () => {
+        toggleDepartmentOtherField("pmDepartment", "pmDepartmentOtherGroup", "pmDepartmentOther");
+      });
+      document.getElementById("saveLocationsBtn").addEventListener("click", saveLocationCatalog);
+      document.getElementById("locationImportFile").addEventListener("change", async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        try {
+          const imported = await parseLocationFile(file);
+          mergeLocationsIntoTextarea(imported);
+          showToast(
+            state.lang === "hi"
+              ? `${imported.length} स्थान ड्राफ्ट सूची में जोड़ दिए गए।`
+              : `${imported.length} locations imported into the draft list.`,
+            "📂"
+          );
+        } catch (error) {
+          handleRequestError(error);
+        } finally {
+          event.target.value = "";
+        }
       });
 
       document.getElementById("volunteerForm").addEventListener("submit", submitVolunteerForm);
