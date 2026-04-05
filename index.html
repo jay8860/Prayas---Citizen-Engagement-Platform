@@ -171,6 +171,10 @@
 
     body[data-theme="dark"] .detail-card,
     body[data-theme="dark"] .message-card,
+    body[data-theme="dark"] .activity-item,
+    body[data-theme="dark"] .history-item,
+    body[data-theme="dark"] .leader-report-stat,
+    body[data-theme="dark"] .pulse-highlight,
     body[data-theme="dark"] .payment-panel,
     body[data-theme="dark"] .upi-code,
     body[data-theme="dark"] .bank-row,
@@ -178,6 +182,32 @@
     body[data-theme="dark"] .admin-stat {
       background: #05080E;
       border-color: #1D2940;
+    }
+
+    body[data-theme="dark"] .pulse-report {
+      background:
+        radial-gradient(circle at top right, rgba(255,153,51,0.1), transparent 34%),
+        linear-gradient(180deg, rgba(8,10,15,0.98), rgba(1,3,6,0.98));
+    }
+
+    body[data-theme="dark"] .pulse-report-title,
+    body[data-theme="dark"] .pulse-highlight-value,
+    body[data-theme="dark"] .leader-report-value,
+    body[data-theme="dark"] .feed-title,
+    body[data-theme="dark"] .activity-title,
+    body[data-theme="dark"] .history-title {
+      color: #F7F9FC;
+    }
+
+    body[data-theme="dark"] .pulse-report-copy,
+    body[data-theme="dark"] .pulse-highlight-text,
+    body[data-theme="dark"] .leader-report-note,
+    body[data-theme="dark"] .feed-subtitle,
+    body[data-theme="dark"] .activity-text,
+    body[data-theme="dark"] .history-text,
+    body[data-theme="dark"] .activity-time,
+    body[data-theme="dark"] .history-time {
+      color: #C7D0E2;
     }
 
     body[data-theme="dark"] input,
@@ -1251,6 +1281,216 @@
       gap: 20px;
     }
 
+    .pulse-grid {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .pulse-report {
+      padding: 28px;
+      background:
+        radial-gradient(circle at top right, rgba(255,153,51,0.12), transparent 32%),
+        linear-gradient(135deg, rgba(27,58,107,0.04), rgba(19,136,8,0.08)),
+        var(--card);
+    }
+
+    .pulse-report-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+
+    .pulse-report-kicker {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--saffron-dark);
+      margin-bottom: 10px;
+    }
+
+    .pulse-report-title {
+      color: var(--navy);
+      font-size: 28px;
+      line-height: 1.15;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .pulse-report-copy {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+      max-width: 640px;
+    }
+
+    .pulse-highlight {
+      min-width: 210px;
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(27,58,107,0.1);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+
+    .pulse-highlight-label {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .pulse-highlight-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 6px;
+    }
+
+    .pulse-highlight-text {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .leader-report-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .leader-report-stat {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.82);
+      border: 1px solid var(--border);
+    }
+
+    .leader-report-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .leader-report-value {
+      color: var(--navy);
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .leader-report-note {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .pulse-side {
+      display: grid;
+      gap: 20px;
+    }
+
+    .feed-card {
+      padding: 24px;
+    }
+
+    .feed-title {
+      color: var(--navy);
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .feed-subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+
+    .activity-feed,
+    .history-feed {
+      display: grid;
+      gap: 12px;
+    }
+
+    .activity-item,
+    .history-item {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+
+    .activity-head,
+    .history-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .activity-tag,
+    .history-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: var(--navy-light);
+      color: var(--navy);
+    }
+
+    .activity-time,
+    .history-time {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .activity-title,
+    .history-title {
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 5px;
+      line-height: 1.5;
+    }
+
+    .activity-text,
+    .history-text {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .history-list-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--saffron-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
     .leader-card {
       position: relative;
       overflow: hidden;
@@ -2152,7 +2392,8 @@
     @media (max-width: 1140px) {
       .hero-inner,
       .volunteer-split,
-      .admin-two-col {
+      .admin-two-col,
+      .pulse-grid {
         grid-template-columns: 1fr;
       }
 
@@ -2160,6 +2401,7 @@
       .missions-grid,
       .showcase-grid,
       .leaderboard-grid,
+      .leader-report-grid,
       .fund-grid,
       .district-grid,
       .admin-grid {
@@ -2177,7 +2419,8 @@
       .stats-inner,
       .steps-grid,
       .detail-grid,
-      .passport-stats {
+      .passport-stats,
+      .leader-report-grid {
         grid-template-columns: repeat(2, 1fr);
       }
 
@@ -2196,6 +2439,7 @@
       .showcase-grid,
       .missions-grid,
       .leaderboard-grid,
+      .leader-report-grid,
       .admin-grid {
         grid-template-columns: 1fr;
       }
@@ -2225,8 +2469,16 @@
 
       .steps-grid,
       .detail-grid,
-      .passport-stats {
+      .passport-stats,
+      .leader-report-grid {
         grid-template-columns: 1fr;
+      }
+
+      .pulse-report-top,
+      .activity-head,
+      .history-head {
+        flex-direction: column;
+        align-items: flex-start;
       }
 
       .section-title {
@@ -2603,6 +2855,39 @@
           </div>
         </div>
         <div class="leaderboard-grid" id="leaderboardGrid"></div>
+      </div>
+    </section>
+
+    <section class="section alt" id="district-pulse">
+      <div class="section-inner">
+        <div class="section-top">
+          <div>
+            <div class="section-badge" style="background:var(--navy-light);color:var(--navy)">
+              <i class="fa-solid fa-chart-line"></i>
+              <span data-i18n="pulse-badge">District Pulse</span>
+            </div>
+            <h2 class="section-title" data-i18n="pulse-title">A live civic operations view for the district</h2>
+            <p class="section-subtitle" data-i18n="pulse-subtitle">
+              See who is leading, what just happened, and which activities have recently gone live or been completed across the portal.
+            </p>
+          </div>
+        </div>
+        <div class="pulse-grid">
+          <div class="pulse-report" id="leaderReportCard"></div>
+          <div class="pulse-side">
+            <div class="feed-card form-card">
+              <h3 class="feed-title" data-i18n="activity-feed-title">Recent Activity</h3>
+              <p class="feed-subtitle" data-i18n="activity-feed-subtitle">A quick stream of volunteer joins, public stories, and mission movements.</p>
+              <div class="activity-feed" id="recentActivityFeed"></div>
+            </div>
+            <div class="feed-card form-card">
+              <div class="history-list-label"><i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="event-history-kicker">Last 10 Events</span></div>
+              <h3 class="feed-title" data-i18n="event-history-title">Recent mission history</h3>
+              <p class="feed-subtitle" data-i18n="event-history-subtitle">Track the latest activities that were hosted, are active, or were completed recently.</p>
+              <div class="history-feed" id="recentEventHistory"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -3061,6 +3346,18 @@
               <h3 data-i18n="admin-overview-status-title">Activity Status Board</h3>
               <p data-i18n="admin-overview-status-subtitle">Mark activities as completed so certificates unlock only after real completion.</p>
               <div class="announcement-stream" id="missionStatusList"></div>
+            </div>
+          </div>
+          <div class="admin-two-col" style="margin-top:20px">
+            <div class="panel-card">
+              <h3 data-i18n="admin-overview-activity-title">Recent Platform Activity</h3>
+              <p data-i18n="admin-overview-activity-subtitle">See volunteer joins, new stories, and mission movement in one operational feed.</p>
+              <div class="announcement-stream" id="adminRecentActivityList"></div>
+            </div>
+            <div class="panel-card">
+              <h3 data-i18n="admin-overview-history-title">Last 10 Mission Events</h3>
+              <p data-i18n="admin-overview-history-subtitle">A clean history of the latest missions that were launched, running, or completed.</p>
+              <div class="announcement-stream" id="adminRecentEventHistoryList"></div>
             </div>
           </div>
         </div>
@@ -3678,6 +3975,14 @@
       "leader-badge": { en: "Monthly Leaders", hi: "मासिक लीडर्स" },
       "leader-title": { en: "Top contributors - April 2026", hi: "शीर्ष योगदानकर्ता - अप्रैल 2026" },
       "leader-subtitle": { en: "Meet the citizens whose time, effort, and consistency are moving the district forward.", hi: "उन नागरिकों से मिलिए जिनका समय, श्रम और निरंतरता जिले को आगे बढ़ा रही है।" },
+      "pulse-badge": { en: "District Pulse", hi: "जिला पल्स" },
+      "pulse-title": { en: "A live civic operations view for the district", hi: "जिले के लिए एक लाइव नागरिक संचालन दृश्य" },
+      "pulse-subtitle": { en: "See who is leading, what just happened, and which activities have recently gone live or been completed across the portal.", hi: "देखें कौन आगे है, अभी क्या हुआ, और कौन-सी गतिविधियाँ हाल में लाइव हुईं या पूरी हुईं।" },
+      "activity-feed-title": { en: "Recent Activity", hi: "हाल की गतिविधि" },
+      "activity-feed-subtitle": { en: "A quick stream of volunteer joins, public stories, and mission movements.", hi: "स्वयंसेवक जुड़ने, सार्वजनिक कहानियों और मिशन गतिविधियों की त्वरित धारा।" },
+      "event-history-kicker": { en: "Last 10 Events", hi: "पिछली 10 घटनाएँ" },
+      "event-history-title": { en: "Recent mission history", hi: "हाल का मिशन इतिहास" },
+      "event-history-subtitle": { en: "Track the latest activities that were hosted, are active, or were completed recently.", hi: "उन नवीनतम गतिविधियों को ट्रैक करें जो आयोजित हुईं, सक्रिय हैं या हाल में पूर्ण हुईं।" },
       "volunteer-badge": { en: "Join the Movement", hi: "इस अभियान से जुड़ें" },
       "volunteer-title": { en: "Your district needs you.", hi: "आपके जिले को आपकी ज़रूरत है।" },
       "volunteer-subtitle": { en: "Whether you have two hours a week or an entire weekend, every act of contribution can strengthen public life.", hi: "चाहे आपके पास हर सप्ताह दो घंटे हों या पूरा सप्ताहांत, हर योगदान सार्वजनिक जीवन को मजबूत करता है।" },
@@ -3821,6 +4126,10 @@
       "admin-overview-donations-subtitle": { en: "Verify payment references before contributions are reflected in live totals.", hi: "लाइव कुल राशि में जोड़ने से पहले भुगतान संदर्भ सत्यापित करें।" },
       "admin-overview-status-title": { en: "Activity Status Control", hi: "गतिविधि स्थिति नियंत्रण" },
       "admin-overview-status-subtitle": { en: "Mark activities as completed so certificates unlock only after real completion.", hi: "गतिविधियों को पूर्ण चिह्नित करें ताकि प्रमाणपत्र केवल वास्तविक पूर्णता के बाद ही खुले।" },
+      "admin-overview-activity-title": { en: "Recent Platform Activity", hi: "हाल की प्लेटफॉर्म गतिविधि" },
+      "admin-overview-activity-subtitle": { en: "See volunteer joins, new stories, and mission movement in one operational feed.", hi: "एक ही ऑपरेशनल फीड में स्वयंसेवक जुड़ने, नई कहानियाँ और मिशन गतिविधि देखें।" },
+      "admin-overview-history-title": { en: "Last 10 Mission Events", hi: "पिछली 10 मिशन घटनाएँ" },
+      "admin-overview-history-subtitle": { en: "A clean history of the latest missions that were launched, running, or completed.", hi: "हाल में शुरू, चल रही या पूर्ण हुई मिशन गतिविधियों का साफ इतिहास।" },
       "admin-data-title": { en: "Deployment Data Mode", hi: "डिप्लॉयमेंट डेटा मोड" },
       "admin-data-subtitle": { en: "Use demo mode for presentations. Use real deploy mode to hide all dummy seeded records and show only actual field data.", hi: "प्रस्तुति के लिए डेमो मोड और वास्तविक उपयोग के लिए रियल डिप्लॉय मोड चुनें, जिसमें सभी डमी रिकॉर्ड छिपे रहें।" },
       "admin-locations-title": { en: "Location Catalog", hi: "स्थान सूची" },
@@ -4711,6 +5020,188 @@
         .join("");
     }
 
+    function publicMissions() {
+      return state.missions.filter((mission) => mission.approvalStatus !== "pending" && mission.approvalStatus !== "rejected");
+    }
+
+    function recentActivityItems() {
+      const missions = publicMissions().slice(0, 6).map((mission) => ({
+        kind: mission.status === "completed" ? (state.lang === "hi" ? "पूर्ण" : "Completed") : mission.status === "upcoming" ? (state.lang === "hi" ? "निर्धारित" : "Scheduled") : (state.lang === "hi" ? "लाइव" : "Live"),
+        title: mission.title,
+        text: state.lang === "hi"
+          ? `${wardLabel(missionArea(mission))} में गतिविधि ${statusLabel(mission.status).toLowerCase()} है।`
+          : `Mission in ${wardLabel(missionArea(mission))} is currently ${statusLabel(mission.status).toLowerCase()}.`,
+        meta: `${mission.location} · ${mission.date}`
+      }));
+      const stories = state.stories.slice(0, 4).map((story) => ({
+        kind: state.lang === "hi" ? "कहानी" : "Story",
+        title: story.title,
+        text: state.lang === "hi"
+          ? `${story.contributor} ने अपना अनुभव साझा किया।`
+          : `${story.contributor} shared a public impact story.`,
+        meta: story.date
+      }));
+      const volunteers = state.volunteers.slice(0, 4).map((volunteer) => ({
+        kind: state.lang === "hi" ? "स्वयंसेवक" : "Volunteer",
+        title: volunteer.name,
+        text: state.lang === "hi"
+          ? `${volunteer.area || "जिले"} से स्वयंसेवक के रूप में जुड़े।`
+          : `Joined from ${volunteer.area || "the district"} as a volunteer.`,
+        meta: volunteer.date
+      }));
+
+      const items = [];
+      const sources = [volunteers, stories, missions];
+      const maxLen = Math.max(...sources.map((source) => source.length), 0);
+      for (let index = 0; index < maxLen; index += 1) {
+        sources.forEach((source) => {
+          if (source[index]) items.push(source[index]);
+        });
+      }
+      return items.slice(0, 8);
+    }
+
+    function recentMissionHistory() {
+      const statusPriority = { completed: 0, open: 1, full: 2, upcoming: 3, closed: 4 };
+      return publicMissions()
+        .slice()
+        .sort((left, right) => {
+          const priorityDiff = (statusPriority[left.status] ?? 9) - (statusPriority[right.status] ?? 9);
+          if (priorityDiff !== 0) return priorityDiff;
+          return Number(right.id || 0) - Number(left.id || 0);
+        })
+        .slice(0, 10)
+        .map((mission) => ({
+          title: mission.title,
+          status: statusLabel(mission.status),
+          text: `${wardLabel(missionArea(mission))} · ${mission.location}`,
+          meta: `${mission.date}${mission.nodalDepartment ? ` · ${mission.nodalDepartment}` : ""}`
+        }));
+    }
+
+    function buildLeaderReport() {
+      const leaders = state.leaders || [];
+      const missions = publicMissions();
+      const topLeader = leaders[0] || null;
+      const completedMissions = missions.filter((mission) => mission.status === "completed");
+      const completionRate = missions.length ? Math.round((completedMissions.length / missions.length) * 100) : 0;
+      const activeLocations = new Set(missions.map((mission) => missionArea(mission)).filter(Boolean));
+      const totalVolunteers = missions.reduce((sum, mission) => sum + Number(mission.volunteers || 0), 0);
+      const averageFill = missions.length
+        ? Math.round(missions.reduce((sum, mission) => sum + ((Number(mission.volunteers || 0) / Math.max(1, Number(mission.total || 1))) * 100), 0) / missions.length)
+        : 0;
+      const locationCounts = [...activeLocations].map((area) => ({
+        area,
+        count: missions.filter((mission) => missionArea(mission) === area).length
+      })).sort((left, right) => right.count - left.count);
+      const strongestArea = locationCounts[0]?.area || (state.lang === "hi" ? "अभी उपलब्ध नहीं" : "Not available yet");
+      const certificateReady = leaders.filter((leader) =>
+        leader.attended.some((title) => missions.some((mission) => mission.title.includes(title) && mission.status === "completed"))
+      ).length;
+
+      return {
+        topLeader,
+        completionRate,
+        activeLocations: activeLocations.size,
+        totalVolunteers,
+        averageFill,
+        strongestArea,
+        certificateReady
+      };
+    }
+
+    function renderLeaderReport() {
+      const container = document.getElementById("leaderReportCard");
+      if (!container) return;
+      const report = buildLeaderReport();
+      const topLeaderName = report.topLeader ? report.topLeader.name : (state.lang === "hi" ? "अभी कोई लीडर नहीं" : "No leader yet");
+      const topLeaderCopy = report.topLeader
+        ? (state.lang === "hi"
+          ? `${report.topLeader.points} अंक, ${report.topLeader.missions} अभियानों में भागीदारी, और ${report.topLeader.area} क्षेत्र से मजबूत नेतृत्व।`
+          : `${report.topLeader.points} points, ${report.topLeader.missions} missions, and strong on-ground leadership from ${report.topLeader.area}.`)
+        : (state.lang === "hi"
+          ? "जैसे ही वास्तविक भागीदारी बढ़ेगी, यह रिपोर्ट शीर्ष योगदानकर्ताओं को सामने लाएगी।"
+          : "As real participation grows, this report will surface the strongest civic contributors.");
+      container.innerHTML = `
+        <div class="pulse-report-top">
+          <div>
+            <div class="pulse-report-kicker">${state.lang === "hi" ? "लीडर रिपोर्ट" : "Leader Report"}</div>
+            <h3 class="pulse-report-title">${state.lang === "hi" ? "जिले की नागरिक ऊर्जा कहाँ सबसे मज़बूत है" : "Where the district's civic energy is strongest"}</h3>
+            <p class="pulse-report-copy">${state.lang === "hi"
+              ? "यह सेक्शन नेतृत्व, गतिविधि प्रगति, प्रमाणपत्र पात्रता और स्थान-वार भागीदारी को एक जगह पर पैक करता है, ताकि नागरिक और प्रशासन दोनों जुड़े रहें।"
+              : "This section packages leadership, mission progress, certificate readiness, and location-wise participation into one clear district snapshot for both citizens and administrators."}</p>
+          </div>
+          <div class="pulse-highlight">
+            <div class="pulse-highlight-label">${state.lang === "hi" ? "शीर्ष नागरिक लीडर" : "Top Citizen Leader"}</div>
+            <div class="pulse-highlight-value">${escapeHtml(topLeaderName)}</div>
+            <div class="pulse-highlight-text">${escapeHtml(topLeaderCopy)}</div>
+          </div>
+        </div>
+        <div class="leader-report-grid">
+          <div class="leader-report-stat">
+            <div class="leader-report-label">${state.lang === "hi" ? "पूर्णता दर" : "Completion Rate"}</div>
+            <div class="leader-report-value">${report.completionRate}%</div>
+            <div class="leader-report-note">${state.lang === "hi" ? "लाइव और पूर्ण मिशनों के अनुपात पर आधारित" : "Based on the share of missions already completed."}</div>
+          </div>
+          <div class="leader-report-stat">
+            <div class="leader-report-label">${state.lang === "hi" ? "सक्रिय स्थान" : "Active Locations"}</div>
+            <div class="leader-report-value">${report.activeLocations}</div>
+            <div class="leader-report-note">${state.lang === "hi" ? `सबसे मज़बूत क्षेत्र: ${report.strongestArea}` : `Strongest current cluster: ${report.strongestArea}`}</div>
+          </div>
+          <div class="leader-report-stat">
+            <div class="leader-report-label">${state.lang === "hi" ? "स्वयंसेवक संलग्न" : "Volunteers Engaged"}</div>
+            <div class="leader-report-value">${report.totalVolunteers.toLocaleString("en-IN")}</div>
+            <div class="leader-report-note">${state.lang === "hi" ? `मिशनों की औसत भराव दर ${report.averageFill}%` : `Average mission fill rate is ${report.averageFill}%.`}</div>
+          </div>
+          <div class="leader-report-stat">
+            <div class="leader-report-label">${state.lang === "hi" ? "प्रमाणपत्र पात्र" : "Certificate Ready"}</div>
+            <div class="leader-report-value">${report.certificateReady}</div>
+            <div class="leader-report-note">${state.lang === "hi" ? "वे नागरिक जिनकी कम-से-कम एक गतिविधि पूर्ण हो चुकी है" : "Citizens with at least one completed activity ready for certificate download."}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderRecentActivityFeed() {
+      const items = recentActivityItems();
+      const markup = items.length
+        ? items.map((item) => `
+            <div class="activity-item">
+              <div class="activity-head">
+                <span class="activity-tag">${escapeHtml(item.kind)}</span>
+                <span class="activity-time">${escapeHtml(item.meta)}</span>
+              </div>
+              <div class="activity-title">${escapeHtml(item.title)}</div>
+              <div class="activity-text">${escapeHtml(item.text)}</div>
+            </div>
+          `).join("")
+        : `<div class="activity-item"><div class="activity-title">${state.lang === "hi" ? "अभी हाल की गतिविधि उपलब्ध नहीं है।" : "No recent activity yet."}</div></div>`;
+      const publicContainer = document.getElementById("recentActivityFeed");
+      const adminContainer = document.getElementById("adminRecentActivityList");
+      if (publicContainer) publicContainer.innerHTML = markup;
+      if (adminContainer) adminContainer.innerHTML = markup;
+    }
+
+    function renderRecentEventHistory() {
+      const items = recentMissionHistory();
+      const markup = items.length
+        ? items.map((item) => `
+            <div class="history-item">
+              <div class="history-head">
+                <span class="history-tag">${escapeHtml(item.status)}</span>
+                <span class="history-time">${escapeHtml(item.meta)}</span>
+              </div>
+              <div class="history-title">${escapeHtml(item.title)}</div>
+              <div class="history-text">${escapeHtml(item.text)}</div>
+            </div>
+          `).join("")
+        : `<div class="history-item"><div class="history-title">${state.lang === "hi" ? "अभी कोई मिशन इतिहास उपलब्ध नहीं है।" : "No recent mission history yet."}</div></div>`;
+      const publicContainer = document.getElementById("recentEventHistory");
+      const adminContainer = document.getElementById("adminRecentEventHistoryList");
+      if (publicContainer) publicContainer.innerHTML = markup;
+      if (adminContainer) adminContainer.innerHTML = markup;
+    }
+
     function renderSelectedMissionBox() {
       const box = document.getElementById("selectedMissionBox");
       if (!state.selectedMissionId) {
@@ -5074,6 +5565,9 @@
       renderWardGrid();
       renderStories();
       renderLeaders();
+      renderLeaderReport();
+      renderRecentActivityFeed();
+      renderRecentEventHistory();
       renderSelectedMissionBox();
       renderAdminStats();
       renderMissionRequestList();
