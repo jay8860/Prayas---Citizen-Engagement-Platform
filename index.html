@@ -6,7 +6,7 @@
   <title>Prayas Portal</title>
   <meta
     name="description"
-    content="Prayas is a district-ready citizen action platform for missions, volunteering, crowdfunding, community stories, and civic recognition."
+    content="Prayas is a district-ready citizen action platform for missions, volunteering, community stories, and civic recognition."
   />
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap"
@@ -3040,7 +3040,7 @@
             </div>
           </a>
           <p class="footer-desc" data-i18n="footer-desc">
-            An initiative by the District Administration to connect citizens with meaningful social programs, drives, campaigns, crowdfunding, and recognition.
+            An initiative by the District Administration to connect citizens with meaningful social programs, drives, campaigns, and recognition.
           </p>
         </div>
 
@@ -3878,10 +3878,10 @@
       "newsletter-placeholder": { en: "Enter your email address", hi: "अपना ईमेल पता दर्ज करें" },
       "newsletter-submit": { en: "Subscribe Free", hi: "निःशुल्क सदस्यता लें" },
       "cta-title": { en: "The change you want to see - <span>start today.</span>", hi: "जो बदलाव आप देखना चाहते हैं - <span>आज से शुरू करें।</span>" },
-      "cta-copy": { en: "Mission slots, sponsorship support, skilled volunteering, and public stories are all in one place now. The district can move faster when good citizens can act faster.", hi: "अभियान, प्रायोजन, कौशल-आधारित स्वयंसेवा और सार्वजनिक कहानियाँ अब एक ही मंच पर हैं।" },
+      "cta-copy": { en: "Mission slots, skilled volunteering, and public stories are all in one place now. The district can move faster when good citizens can act faster.", hi: "अभियान, कौशल-आधारित स्वयंसेवा और सार्वजनिक कहानियाँ अब एक ही मंच पर हैं।" },
       "cta-missions": { en: "See Open Missions", hi: "खुले अभियान देखें" },
       "cta-register": { en: "Register Now", hi: "अभी पंजीकरण करें" },
-      "footer-desc": { en: "An initiative by the District Administration to connect citizens with meaningful social programs, drives, campaigns, crowdfunding, and recognition.", hi: "जिला प्रशासन की एक पहल जो नागरिकों को सामाजिक कार्यक्रमों, अभियानों, क्राउडफंडिंग और मान्यता से जोड़ती है।" },
+      "footer-desc": { en: "An initiative by the District Administration to connect citizens with meaningful social programs, drives, campaigns, and recognition.", hi: "जिला प्रशासन की एक पहल जो नागरिकों को सामाजिक कार्यक्रमों, अभियानों और मान्यता से जोड़ती है।" },
       "footer-platform": { en: "Platform", hi: "प्लेटफॉर्म" },
       "footer-categories": { en: "Categories", hi: "श्रेणियाँ" },
       "footer-admin": { en: "Administration", hi: "प्रशासन" },
@@ -4002,7 +4002,7 @@
       "admin-locations-manual-placeholder": { en: "One location per line or comma separated", hi: "प्रत्येक पंक्ति में एक स्थान या कॉमा से अलग" },
       "admin-locations-save": { en: "Save Location Catalog", hi: "स्थान सूची सहेजें" },
       "admin-locations-current-title": { en: "Current Location Options", hi: "वर्तमान स्थान विकल्प" },
-      "admin-locations-current-subtitle": { en: "These names feed the district location view, mission forms, and filters.", hi: "ये नाम जिला दृश्य, मिशन फॉर्म और फ़िल्टर में उपयोग होंगे।" },
+      "admin-locations-current-subtitle": { en: "These names appear as suggestions in mission forms and volunteer registration.", hi: "ये नाम मिशन फॉर्म और स्वयंसेवक पंजीकरण में सुझाव के रूप में दिखेंगे।" },
       "admin-newsletter-title": { en: "Newsletter Builder", hi: "न्यूज़लेटर बिल्डर" },
       "admin-newsletter-subtitle": { en: "Prepare a district message and preview how it will read.", hi: "जिला संदेश तैयार करें और उसका पूर्वावलोकन देखें।" },
       "admin-newsletter-subject-label": { en: "Subject", hi: "विषय" },
@@ -4192,7 +4192,6 @@
         activeStoryId: null,
         activeLeaderId: null,
         selectedMissionId: null,
-        paymentMethod: "upi",
         adminLoggedIn: Boolean(window.localStorage.getItem(ADMIN_TOKEN_KEY)),
         currentAdminTab: "overview",
         statsAnimated: false,
@@ -6218,26 +6217,6 @@
       persistState();
     }
 
-    function buildQrSvg() {
-      const squares = [
-        [0, 0], [1, 0], [2, 0], [4, 0], [6, 0], [7, 0], [8, 0],
-        [0, 1], [2, 1], [4, 1], [6, 1], [8, 1],
-        [0, 2], [1, 2], [2, 2], [5, 2], [6, 2], [7, 2], [8, 2],
-        [3, 3], [4, 3], [7, 3],
-        [0, 4], [1, 4], [3, 4], [5, 4], [7, 4], [8, 4],
-        [1, 5], [2, 5], [4, 5], [6, 5],
-        [0, 6], [2, 6], [3, 6], [5, 6], [6, 6], [8, 6],
-        [0, 7], [4, 7], [5, 7], [8, 7],
-        [0, 8], [1, 8], [2, 8], [6, 8], [7, 8], [8, 8]
-      ];
-      const rects = squares
-        .map(([x, y]) => `<rect x="${x * 12}" y="${y * 12}" width="12" height="12" fill="#1B3A6B"/>`)
-        .join("");
-      const qrBlock = document.getElementById("qrBlock");
-      if (qrBlock) qrBlock.innerHTML =
-        `<svg viewBox="0 0 108 108" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect width="108" height="108" fill="#fff"/>${rects}</svg>`;
-    }
-
     function attachEvents() {
       document.getElementById("langToggle").addEventListener("click", toggleLanguage);
       document.getElementById("themeToggle").addEventListener("click", toggleTheme);
@@ -6352,7 +6331,6 @@
     }
 
     async function init() {
-      buildQrSvg();
       document.body.setAttribute("data-theme", state.theme);
       document.getElementById("newsletterSubject").value = state.newsletterDraft.subject || "";
       document.getElementById("newsletterBody").value = state.newsletterDraft.body || "";
