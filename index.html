@@ -1707,6 +1707,65 @@
       min-height: 90px;
     }
 
+    /* ── Date-time picker row ── */
+    .datetime-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .datetime-row input[type="date"] {
+      flex: 1;
+      min-width: 160px;
+    }
+    .time-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .time-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .time-sep {
+      color: var(--muted);
+      font-weight: 700;
+      padding: 0 2px;
+    }
+    .time-select {
+      width: auto !important;
+      padding: 11px 6px !important;
+      min-width: 52px;
+    }
+    .time-select.period {
+      min-width: 62px;
+    }
+    /* ── Duration row ── */
+    .duration-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .duration-row input[type="number"] {
+      width: 80px !important;
+      flex-shrink: 0;
+    }
+    .duration-row select {
+      flex: 1;
+    }
+    /* ── Character counter ── */
+    .char-counter {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: right;
+      margin-top: 3px;
+    }
+    .char-counter.warn { color: var(--saffron-dark); }
+    /* ── Required star ── */
+    .req { color: var(--saffron-dark); margin-left: 2px; }
+
     .skills-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -2700,7 +2759,7 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="hostMissionTitle" data-i18n="host-title-label">Mission Title</label>
-                <input id="hostMissionTitle" type="text" required />
+                <input id="hostMissionTitle" type="text" maxlength="100" required />
               </div>
               <div class="form-group">
                 <label for="hostMissionCategory" data-i18n="host-category-label">Category</label>
@@ -2710,44 +2769,66 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="hostMissionArea" data-i18n="host-area-label">Area / Village / Ward</label>
-                <input id="hostMissionArea" type="text" list="locationSuggestions" required />
+                <input id="hostMissionArea" type="text" list="locationSuggestions" maxlength="100" required />
               </div>
               <div class="form-group">
                 <label for="hostMissionLocation" data-i18n="host-location-label">Exact Location</label>
-                <input id="hostMissionLocation" type="text" required />
+                <input id="hostMissionLocation" type="text" maxlength="150" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label data-i18n="host-date-label">Date / Time <span class="req">*</span></label>
+              <div class="datetime-row">
+                <input id="hostMissionDatePicker" type="date" required />
+                <div class="time-group">
+                  <span class="time-label">From</span>
+                  <select id="hostMissionTimeStartHour" class="time-select"></select>
+                  <select id="hostMissionTimeStartMin" class="time-select"></select>
+                  <select id="hostMissionTimeStartPeriod" class="time-select period"><option>AM</option><option>PM</option></select>
+                </div>
+                <span class="time-sep">–</span>
+                <div class="time-group">
+                  <span class="time-label">To</span>
+                  <select id="hostMissionTimeEndHour" class="time-select"></select>
+                  <select id="hostMissionTimeEndMin" class="time-select"></select>
+                  <select id="hostMissionTimeEndPeriod" class="time-select period"><option>AM</option><option selected>PM</option></select>
+                </div>
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label for="hostMissionDate" data-i18n="host-date-label">Date / Time</label>
-                <input id="hostMissionDate" type="text" required />
-              </div>
-              <div class="form-group">
-                <label for="hostMissionDuration" data-i18n="host-duration-label">Duration</label>
-                <input id="hostMissionDuration" type="text" required />
+                <label data-i18n="host-duration-label">Duration <span class="req">*</span></label>
+                <div class="duration-row">
+                  <input id="hostMissionDurationNum" type="number" min="1" max="72" value="2" required />
+                  <select id="hostMissionDurationUnit">
+                    <option value="minutes">Minutes</option>
+                    <option value="hours" selected>Hours</option>
+                    <option value="days">Days</option>
+                  </select>
+                </div>
               </div>
               <div class="form-group">
                 <label for="hostMissionSlots" data-i18n="host-slots-label">Volunteer Slots</label>
-                <input id="hostMissionSlots" type="number" min="1" value="25" required />
+                <input id="hostMissionSlots" type="number" min="1" max="10000" value="25" required />
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label for="hostMissionName" data-i18n="host-name-label">Host Name</label>
-                <input id="hostMissionName" type="text" required />
+                <input id="hostMissionName" type="text" maxlength="100" required />
               </div>
               <div class="form-group">
                 <label for="hostMissionPhone" data-i18n="host-phone-label">Phone Number</label>
-                <input id="hostMissionPhone" type="tel" required />
+                <input id="hostMissionPhone" type="tel" pattern="[6-9][0-9]{9}" maxlength="10" placeholder="10-digit mobile number" required />
               </div>
               <div class="form-group">
                 <label for="hostMissionEmail" data-i18n="host-email-label">Email ID</label>
-                <input id="hostMissionEmail" type="email" required />
+                <input id="hostMissionEmail" type="email" maxlength="100" required />
               </div>
             </div>
             <div class="form-group">
               <label for="hostMissionDescription" data-i18n="host-description-label">Description</label>
-              <textarea id="hostMissionDescription" required></textarea>
+              <textarea id="hostMissionDescription" maxlength="500" required></textarea>
             </div>
             <button class="btn btn-primary" type="submit" data-i18n="host-submit">Send Mission Request</button>
           </form>
@@ -3355,59 +3436,81 @@
                 <select id="pmTemplate"></select>
               </div>
               <div class="form-group">
-                <label for="pmDepartment" data-i18n="pm-department-label">Nodal Department</label>
+                <label for="pmDepartment" data-i18n="pm-department-label">Nodal Department <span class="req">*</span></label>
                 <select id="pmDepartment" required></select>
               </div>
               <div class="form-group hidden" id="pmDepartmentOtherGroup">
                 <label for="pmDepartmentOther" data-i18n="pm-department-other-label">Other Department Name</label>
-                <input id="pmDepartmentOther" type="text" data-i18n-placeholder="pm-department-other-placeholder" placeholder="Type custom nodal department" />
+                <input id="pmDepartmentOther" type="text" maxlength="100" data-i18n-placeholder="pm-department-other-placeholder" placeholder="Type custom nodal department" />
               </div>
               <div class="form-group">
-                <label for="pmTitle" data-i18n="pm-title-label">Mission Title</label>
-                <input id="pmTitle" type="text" required />
+                <label for="pmTitle" data-i18n="pm-title-label">Mission Title <span class="req">*</span></label>
+                <input id="pmTitle" type="text" maxlength="100" required />
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label for="pmWard" data-i18n="pm-ward-label">Ward</label>
-                <input id="pmWard" type="text" list="locationSuggestions" required data-i18n-placeholder="pm-area-placeholder" placeholder="Enter ward, gram panchayat, city, town or village" />
+                <label for="pmWard" data-i18n="pm-ward-label">Ward / Area <span class="req">*</span></label>
+                <input id="pmWard" type="text" list="locationSuggestions" maxlength="100" required data-i18n-placeholder="pm-area-placeholder" placeholder="Enter ward, gram panchayat, city, town or village" />
               </div>
               <div class="form-group">
-                <label for="pmDate" data-i18n="pm-date-label">Date / Schedule</label>
-                <input id="pmDate" type="text" required />
+                <label for="pmLocation" data-i18n="pm-location-label">Exact Location <span class="req">*</span></label>
+                <input id="pmLocation" type="text" maxlength="150" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label data-i18n="pm-date-label">Date / Schedule <span class="req">*</span></label>
+              <div class="datetime-row">
+                <input id="pmDatePicker" type="date" required />
+                <div class="time-group">
+                  <span class="time-label">From</span>
+                  <select id="pmTimeStartHour" class="time-select"></select>
+                  <select id="pmTimeStartMin" class="time-select"></select>
+                  <select id="pmTimeStartPeriod" class="time-select period"><option>AM</option><option>PM</option></select>
+                </div>
+                <span class="time-sep">–</span>
+                <div class="time-group">
+                  <span class="time-label">To</span>
+                  <select id="pmTimeEndHour" class="time-select"></select>
+                  <select id="pmTimeEndMin" class="time-select"></select>
+                  <select id="pmTimeEndPeriod" class="time-select period"><option>AM</option><option selected>PM</option></select>
+                </div>
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label for="pmLocation" data-i18n="pm-location-label">Location</label>
-                <input id="pmLocation" type="text" required />
+                <label for="pmCoordinator" data-i18n="pm-coordinator-label">Coordinator Name <span class="req">*</span></label>
+                <input id="pmCoordinator" type="text" maxlength="100" placeholder="Name and designation, e.g. Anita Mishra (Municipal Officer)" required />
               </div>
-              <div class="form-group">
-                <label for="pmCoordinator" data-i18n="pm-coordinator-label">Coordinator</label>
-                <input id="pmCoordinator" type="text" required />
-              </div>
-            </div>
-            <div class="form-row">
               <div class="form-group">
                 <label for="pmCategory" data-i18n="pm-category-label">Category</label>
                 <select id="pmCategory"></select>
               </div>
+            </div>
+            <div class="form-row">
               <div class="form-group">
-                <label for="pmSlots" data-i18n="pm-slots-label">Volunteer Slots</label>
-                <input id="pmSlots" type="number" min="1" value="50" required />
+                <label for="pmSlots" data-i18n="pm-slots-label">Volunteer Slots <span class="req">*</span></label>
+                <input id="pmSlots" type="number" min="1" max="10000" value="50" required />
               </div>
               <div class="form-group">
-                <label for="pmDuration" data-i18n="pm-duration-label">Duration</label>
-                <input id="pmDuration" type="text" required />
+                <label data-i18n="pm-duration-label">Duration <span class="req">*</span></label>
+                <div class="duration-row">
+                  <input id="pmDurationNum" type="number" min="1" max="72" value="2" required />
+                  <select id="pmDurationUnit">
+                    <option value="minutes">Minutes</option>
+                    <option value="hours" selected>Hours</option>
+                    <option value="days">Days</option>
+                  </select>
+                </div>
               </div>
             </div>
             <div class="form-group">
               <label for="pmImpact" data-i18n="pm-impact-label">Expected Impact</label>
-              <input id="pmImpact" type="text" data-i18n-placeholder="pm-impact-placeholder" placeholder="Expected outcome or result" />
+              <input id="pmImpact" type="text" maxlength="200" data-i18n-placeholder="pm-impact-placeholder" placeholder="Expected outcome or result" />
             </div>
             <div class="form-group">
-              <label for="pmDescription" data-i18n="pm-description-label">Description</label>
-              <textarea id="pmDescription" required></textarea>
+              <label for="pmDescription" data-i18n="pm-description-label">Description <span class="req">*</span></label>
+              <textarea id="pmDescription" maxlength="500" required></textarea>
             </div>
             <button class="btn btn-primary" type="submit" data-i18n="pm-submit">Post Mission</button>
           </form>
@@ -4625,6 +4728,117 @@
         input.value = normalized;
       }
       toggleDepartmentOtherField(selectId, groupId, inputId, select.value);
+    }
+
+    // ── Date / time / duration helpers ──────────────────────────────────────
+
+    const MONTHS_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+    function initTimeSelects() {
+      const hourOpts = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
+      const minOpts = ["00","15","30","45"].map((m) => `<option value="${m}">${m}</option>`).join("");
+      ["pm", "hostMission"].forEach((pfx) => {
+        ["TimeStartHour","TimeEndHour"].forEach((id) => {
+          const el = document.getElementById(`${pfx}${id}`);
+          if (el) el.innerHTML = hourOpts;
+        });
+        ["TimeStartMin","TimeEndMin"].forEach((id) => {
+          const el = document.getElementById(`${pfx}${id}`);
+          if (el) el.innerHTML = minOpts;
+        });
+      });
+      // Set sensible defaults: 9:00 AM → 12:00 PM
+      ["pm","hostMission"].forEach((pfx) => {
+        const sh = document.getElementById(`${pfx}TimeStartHour`);
+        const eh = document.getElementById(`${pfx}TimeEndHour`);
+        if (sh) sh.value = "9";
+        if (eh) eh.value = "12";
+      });
+    }
+
+    function assembleMissionDate(pfx) {
+      const picker = document.getElementById(`${pfx}DatePicker`);
+      if (!picker || !picker.value) return "";
+      const d = new Date(picker.value + "T00:00:00");
+      const dateStr = `${d.getDate()} ${MONTHS_EN[d.getMonth()]} ${d.getFullYear()}`;
+      const sh = document.getElementById(`${pfx}TimeStartHour`)?.value || "9";
+      const sm = document.getElementById(`${pfx}TimeStartMin`)?.value || "00";
+      const sp = document.getElementById(`${pfx}TimeStartPeriod`)?.value || "AM";
+      const eh = document.getElementById(`${pfx}TimeEndHour`)?.value || "12";
+      const em = document.getElementById(`${pfx}TimeEndMin`)?.value || "00";
+      const ep = document.getElementById(`${pfx}TimeEndPeriod`)?.value || "PM";
+      return `${dateStr}, ${sh}:${sm} ${sp} – ${eh}:${em} ${ep}`;
+    }
+
+    function assembleMissionDuration(pfx) {
+      const num = document.getElementById(`${pfx}DurationNum`)?.value || "2";
+      const unit = document.getElementById(`${pfx}DurationUnit`)?.value || "hours";
+      const n = Number(num);
+      // Singular/plural label
+      const label = n === 1 ? unit.replace(/s$/, "") : unit;
+      return `${n} ${label}`;
+    }
+
+    function parseMissionDateToFields(dateStr, pfx) {
+      // Try to match: "12 April 2025, 9:00 AM – 12:00 PM"
+      const m = dateStr.match(/^(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)[^0-9]*(\d{1,2}):(\d{2}) (AM|PM)/i);
+      if (m) {
+        const monthIdx = MONTHS_EN.indexOf(m[2]);
+        if (monthIdx !== -1) {
+          const iso = `${m[3]}-${String(monthIdx + 1).padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+          const picker = document.getElementById(`${pfx}DatePicker`);
+          if (picker) picker.value = iso;
+          const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+          set(`${pfx}TimeStartHour`, String(Number(m[4])));
+          set(`${pfx}TimeStartMin`, m[5]);
+          set(`${pfx}TimeStartPeriod`, m[6].toUpperCase());
+          set(`${pfx}TimeEndHour`, String(Number(m[7])));
+          set(`${pfx}TimeEndMin`, m[8]);
+          set(`${pfx}TimeEndPeriod`, m[9].toUpperCase());
+          return;
+        }
+      }
+      // Fallback: try native Date parse for ISO or simple dates
+      const d = new Date(dateStr);
+      const picker = document.getElementById(`${pfx}DatePicker`);
+      if (!isNaN(d.getTime()) && picker) {
+        picker.value = d.toISOString().slice(0, 10);
+      }
+    }
+
+    function parseMissionDurationToFields(durStr, pfx) {
+      const m = String(durStr || "").match(/^(\d+)\s*(min|hour|hr|day)/i);
+      if (!m) return;
+      const numEl = document.getElementById(`${pfx}DurationNum`);
+      const unitEl = document.getElementById(`${pfx}DurationUnit`);
+      if (numEl) numEl.value = m[1];
+      if (unitEl) {
+        const raw = m[2].toLowerCase();
+        if (raw.startsWith("min")) unitEl.value = "minutes";
+        else if (raw.startsWith("day")) unitEl.value = "days";
+        else unitEl.value = "hours";
+      }
+    }
+
+    function attachCharCounters() {
+      [
+        ["pmTitle", 100], ["pmDescription", 500], ["pmImpact", 200],
+        ["hostMissionTitle", 100], ["hostMissionDescription", 500]
+      ].forEach(([id, max]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const counter = document.createElement("div");
+        counter.className = "char-counter";
+        counter.id = `${id}Counter`;
+        el.parentNode.appendChild(counter);
+        const update = () => {
+          const len = el.value.length;
+          counter.textContent = `${len} / ${max}`;
+          counter.classList.toggle("warn", len > max * 0.85);
+        };
+        el.addEventListener("input", update);
+        update();
+      });
     }
 
     function parseLocationText(rawText) {
@@ -6120,13 +6334,17 @@
       setDepartmentFieldValue("pmDepartment", "pmDepartmentOtherGroup", "pmDepartmentOther", mission.nodalDepartment || "");
       document.getElementById("pmTitle").value = mission.title;
       document.getElementById("pmWard").value = mission.ward || mission.area || "";
-      document.getElementById("pmDate").value = mission.date;
+      parseMissionDateToFields(mission.date || "", "pm");
       document.getElementById("pmLocation").value = mission.location;
       document.getElementById("pmCoordinator").value = mission.coordinator;
       document.getElementById("pmSlots").value = mission.total;
-      document.getElementById("pmDuration").value = mission.duration;
+      parseMissionDurationToFields(mission.duration || "", "pm");
       document.getElementById("pmImpact").value = mission.impact;
       document.getElementById("pmDescription").value = mission.desc;
+      // Refresh char counters
+      ["pmTitle","pmDescription","pmImpact"].forEach((id) => {
+        document.getElementById(id)?.dispatchEvent(new Event("input"));
+      });
       switchAdminTab("post");
     }
 
@@ -6159,6 +6377,11 @@
 
     async function submitHostMissionForm(event) {
       event.preventDefault();
+      const hostDate = assembleMissionDate("hostMission");
+      if (!hostDate) {
+        showToast(state.lang === "hi" ? "कृपया मिशन की तारीख चुनें।" : "Please select a date for the mission.", "⚠️");
+        return;
+      }
       const btn = event.target.querySelector("[type='submit']");
       const originalText = btn.textContent;
       btn.disabled = true;
@@ -6171,8 +6394,8 @@
             category: document.getElementById("hostMissionCategory").value || "other",
             ward: document.getElementById("hostMissionArea").value.trim(),
             location: document.getElementById("hostMissionLocation").value.trim(),
-            date: document.getElementById("hostMissionDate").value.trim(),
-            duration: document.getElementById("hostMissionDuration").value.trim(),
+            date: hostDate,
+            duration: assembleMissionDuration("hostMission"),
             total: Number(document.getElementById("hostMissionSlots").value || 0),
             hostName: document.getElementById("hostMissionName").value.trim(),
             hostPhone: document.getElementById("hostMissionPhone").value.trim(),
@@ -6183,6 +6406,8 @@
           })
         });
         event.target.reset();
+        initTimeSelects();
+        ["hostMissionTitle","hostMissionDescription"].forEach((id) => document.getElementById(id)?.dispatchEvent(new Event("input")));
         await refreshPortalData();
         showToast(state.lang === "hi" ? "मिशन अनुरोध एडमिन समीक्षा के लिए भेज दिया गया।" : "Mission request sent for admin review.", "📨");
       } catch (error) {
@@ -6278,10 +6503,11 @@
       if (!template) return;
       document.getElementById("pmCategory").value = template.category;
       document.getElementById("pmTitle").value = state.lang === "hi" ? template.titleHi : template.titleEn;
-      document.getElementById("pmDuration").value = template.duration;
+      parseMissionDurationToFields(template.duration || "", "pm");
       document.getElementById("pmSlots").value = template.slots;
       document.getElementById("pmImpact").value = state.lang === "hi" ? template.impactHi : template.impactEn;
       document.getElementById("pmDescription").value = state.lang === "hi" ? template.descriptionHi : template.descriptionEn;
+      ["pmTitle","pmDescription","pmImpact"].forEach((id) => document.getElementById(id)?.dispatchEvent(new Event("input")));
     }
 
     async function submitPostMissionForm(event) {
@@ -6290,6 +6516,11 @@
       const slots = Number(document.getElementById("pmSlots").value || 50);
       const editMissionId = Number(document.getElementById("postMissionForm").dataset.editMissionId || 0);
       const nodalDepartment = toggleDepartmentOtherField("pmDepartment", "pmDepartmentOtherGroup", "pmDepartmentOther");
+      const missionDate = assembleMissionDate("pm");
+      if (!missionDate) {
+        showToast(state.lang === "hi" ? "कृपया मिशन की तारीख चुनें।" : "Please select a mission date.", "⚠️");
+        return;
+      }
       try {
         await apiRequest(editMissionId ? `/api/admin/missions/${editMissionId}/update` : "/api/admin/missions", {
           method: "POST",
@@ -6298,11 +6529,11 @@
             ward: document.getElementById("pmWard").value.trim(),
             title: document.getElementById("pmTitle").value.trim(),
             desc: document.getElementById("pmDescription").value.trim(),
-            date: document.getElementById("pmDate").value.trim(),
+            date: missionDate,
             location: document.getElementById("pmLocation").value.trim(),
             nodalDepartment,
             coordinator: document.getElementById("pmCoordinator").value.trim(),
-            duration: document.getElementById("pmDuration").value.trim(),
+            duration: assembleMissionDuration("pm"),
             total: slots,
             status: "open",
             age: "16+",
@@ -6312,6 +6543,8 @@
         event.target.reset();
         delete event.target.dataset.editMissionId;
         toggleDepartmentOtherField("pmDepartment", "pmDepartmentOtherGroup", "pmDepartmentOther");
+        initTimeSelects();
+        ["pmTitle","pmDescription","pmImpact"].forEach((id) => document.getElementById(id)?.dispatchEvent(new Event("input")));
         await refreshPortalData();
         switchAdminTab("overview");
         showToast(state.lang === "hi" ? (editMissionId ? "अभियान अपडेट हो गया।" : "नया अभियान पोस्ट हो गया।") : (editMissionId ? "Mission updated successfully." : "New mission posted successfully."), "🚀");
@@ -6557,6 +6790,8 @@
       document.body.setAttribute("data-theme", state.theme);
       document.getElementById("newsletterSubject").value = state.newsletterDraft.subject || "";
       document.getElementById("newsletterBody").value = state.newsletterDraft.body || "";
+      initTimeSelects();
+      attachCharCounters();
       attachEvents();
       renderAll();
       setStatText();
