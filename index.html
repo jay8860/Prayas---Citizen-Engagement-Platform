@@ -2644,7 +2644,6 @@
         </div>
 
         <div class="filters" id="categoryFilters"></div>
-        <div class="filters" id="wardFilters"></div>
         <div class="missions-grid" id="missionsGrid"></div>
       </div>
     </section>
@@ -4339,7 +4338,6 @@
         departments: [],
         dataMode: "real",
         currentCategory: "all",
-        currentWard: "all",
         activeMissionId: null,
         activeMissionTab: "details",
         activeFundId: null,
@@ -4788,32 +4786,11 @@
         .join("");
     }
 
-    function renderWardFilters() {
-      const areas = uniqueAreas();
-      if (state.currentWard !== "all" && !areas.includes(state.currentWard)) {
-        state.currentWard = "all";
-      }
-      const items = [
-        { value: "all", label: areaOverviewLabel() },
-        ...areas.map((area) => ({ value: area, label: wardLabel(area) }))
-      ];
-      document.getElementById("wardFilters").innerHTML = items
-        .map(
-          (item) => `
-            <button class="filter-btn ${state.currentWard === item.value ? "active" : ""}" type="button" onclick="setWardFilter('${item.value}')">
-              ${escapeHtml(item.label)}
-            </button>
-          `
-        )
-        .join("");
-    }
-
     function filteredMissions() {
       return state.missions.filter((mission) => {
         const publicOk = mission.approvalStatus !== "pending" && mission.approvalStatus !== "rejected";
         const categoryOk = state.currentCategory === "all" || mission.category === state.currentCategory;
-        const wardOk = state.currentWard === "all" || missionArea(mission) === state.currentWard;
-        return publicOk && categoryOk && wardOk;
+        return publicOk && categoryOk;
       });
     }
 
@@ -4946,7 +4923,7 @@
             <div class="ward-dots">${dots}</div>
             ${
               missions.length
-                ? `<button class="btn btn-soft" type="button" onclick="focusWard('${ward}')">${state.lang === "hi" ? "अभियान देखें" : "View Missions"}</button>`
+                ? ``
                 : `<button class="btn btn-soft" type="button" onclick="openAdminLogin()">${state.lang === "hi" ? "नया अभियान जोड़ें" : "Add Mission"}</button>`
             }
           </article>
@@ -5592,7 +5569,6 @@
       renderAvailabilityOptions();
       renderSkills();
       renderCategoryFilters();
-      renderWardFilters();
       renderMissions();
       renderWardGrid();
       renderStories();
@@ -5635,19 +5611,6 @@
       state.currentCategory = value;
       renderCategoryFilters();
       renderMissions();
-    }
-
-    function setWardFilter(value) {
-      state.currentWard = value;
-      renderWardFilters();
-      renderMissions();
-    }
-
-    function focusWard(ward) {
-      state.currentWard = ward;
-      renderWardFilters();
-      renderMissions();
-      document.getElementById("missions").scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function openModal(id) {
