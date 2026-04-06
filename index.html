@@ -3107,123 +3107,6 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="donationModal">
-    <div class="modal-shell narrow">
-      <div class="modal-header">
-        <div>
-          <h2 class="modal-title" id="donationModalTitle">Donate</h2>
-          <p class="modal-subtitle" data-i18n="donation-subtitle">Support a mission with a direct contribution.</p>
-        </div>
-        <button class="modal-close" type="button" data-close-modal="donationModal">✕</button>
-      </div>
-      <div class="modal-body">
-        <form id="donationForm">
-          <div class="form-group">
-            <label data-i18n="donation-amount-label">Select amount or enter a custom amount (₹)</label>
-            <div class="amount-pills" id="amountPills"></div>
-            <input id="customAmount" type="number" min="1" required />
-          </div>
-          <div class="pledge-grid">
-            <div class="form-group" id="donorNameGroup">
-              <label for="donorName" data-i18n="donation-name-label">Your name</label>
-              <input id="donorName" type="text" required />
-            </div>
-            <div class="form-group">
-              <label for="donationPhone" data-i18n="donation-phone-label">Mobile Number</label>
-              <input id="donationPhone" type="tel" data-i18n-placeholder="donation-phone-placeholder" placeholder="Phone for follow-up" />
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="donationEmail" data-i18n="donation-email-label">Email Address</label>
-            <input id="donationEmail" type="email" data-i18n-placeholder="donation-email-placeholder" placeholder="Email for follow-up" />
-          </div>
-          <div class="form-group">
-            <label data-i18n="donation-method-label">Preferred contribution mode</label>
-            <div class="payment-tabbar">
-              <button class="payment-tab active" type="button" data-payment-method="cash">Cash</button>
-              <button class="payment-tab" type="button" data-payment-method="upi">UPI</button>
-              <button class="payment-tab" type="button" data-payment-method="bank">Bank</button>
-            </div>
-          </div>
-          <div class="payment-panel" id="paymentCashPane">
-            <p data-i18n="donation-cash-copy">Share your contact details and pledge amount. The administration team can reach out to collect or coordinate the contribution offline.</p>
-          </div>
-          <div class="payment-panel hidden" id="paymentUpiPane">
-            <p data-i18n="donation-upi-copy">If you already paid via UPI, add the reference below. Otherwise, submit your interest and the team can guide you.</p>
-            <div class="qr-block" id="qrBlock"></div>
-            <div class="upi-code">prayas.district@upi</div>
-          </div>
-          <div class="payment-panel hidden" id="paymentBankPane">
-            <div class="bank-grid">
-              <div class="bank-row"><span data-i18n="bank-holder">Account Holder</span><strong>Prayas District Fund</strong></div>
-              <div class="bank-row"><span data-i18n="bank-number">Account Number</span><strong>50100123456789</strong></div>
-              <div class="bank-row"><span data-i18n="bank-ifsc">IFSC Code</span><strong>HDFC0001234</strong></div>
-              <div class="bank-row"><span data-i18n="bank-name">Bank</span><strong>HDFC Bank</strong></div>
-              <div class="bank-row"><span data-i18n="bank-branch">Branch</span><strong>Civil Lines</strong></div>
-            </div>
-          </div>
-          <div class="form-group" style="margin-top:18px">
-            <label for="donationTxnRef" data-i18n="donation-reference-label">Transaction Reference (Optional if already paid)</label>
-            <input id="donationTxnRef" type="text" data-i18n-placeholder="donation-reference-placeholder" placeholder="Add UTR or transaction note if payment is already made" />
-          </div>
-          <div class="form-group">
-            <label for="donationNote" data-i18n="donation-note-label">Note for Admin (Optional)</label>
-            <textarea id="donationNote" data-i18n-placeholder="donation-note-placeholder" placeholder="Mention organisation name, sponsorship note, or preferred callback timing"></textarea>
-          </div>
-          <div class="message-card" style="margin-top:6px">
-            <div class="message-text" data-i18n="donation-note-copy">This form can capture pledge interest, contact details, and any payment reference already available. Live totals are updated only after the contribution is actually received and verified.</div>
-          </div>
-          <button class="btn btn-primary" type="submit" style="width:100%;margin-top:18px" data-i18n="donation-submit">Submit Contribution Interest</button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="sponsorModal">
-    <div class="modal-shell narrow">
-      <div class="modal-header">
-        <div>
-          <h2 class="modal-title" data-i18n="sponsor-modal-title">Become a Sponsor</h2>
-          <p class="modal-subtitle" data-i18n="sponsor-modal-subtitle">Share your organisation details and preferred support tier.</p>
-        </div>
-        <button class="modal-close" type="button" data-close-modal="sponsorModal">✕</button>
-      </div>
-      <div class="modal-body">
-        <form id="sponsorForm">
-          <div class="form-group">
-            <label for="sponsorCompany" data-i18n="sponsor-company-label">Company Name</label>
-            <input id="sponsorCompany" type="text" required />
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="sponsorContact" data-i18n="sponsor-contact-label">Contact Person</label>
-              <input id="sponsorContact" type="text" required />
-            </div>
-            <div class="form-group">
-              <label for="sponsorPhone" data-i18n="sponsor-phone-label">Phone</label>
-              <input id="sponsorPhone" type="tel" required />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="sponsorEmail" data-i18n="sponsor-email-label">Email</label>
-              <input id="sponsorEmail" type="email" required />
-            </div>
-            <div class="form-group">
-              <label for="sponsorTier" data-i18n="sponsor-tier-label">Selected Tier</label>
-              <input id="sponsorTier" type="text" readonly />
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="sponsorMessage" data-i18n="sponsor-message-label">Message</label>
-            <textarea id="sponsorMessage" data-i18n-placeholder="sponsor-message-placeholder" placeholder="Tell us what mission area you want to support."></textarea>
-          </div>
-          <button class="btn btn-primary" type="submit" style="width:100%" data-i18n="sponsor-submit">Submit Sponsorship Interest</button>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <div class="modal-overlay" id="commentsModal">
     <div class="modal-shell narrow">
       <div class="modal-header">
@@ -3489,8 +3372,8 @@
               <h3 data-i18n="admin-locations-title">Location Catalog</h3>
               <p data-i18n="admin-locations-subtitle">Upload or paste gram panchayats, wards, villages, colonies, or any district-specific location list. These options will appear across the portal.</p>
               <div class="form-group">
-                <label for="locationImportFile" data-i18n="admin-locations-file-label">Upload Excel / CSV</label>
-                <input id="locationImportFile" type="file" accept=".xlsx,.xls,.csv,.tsv" />
+                <label for="locationImportFile" data-i18n="admin-locations-file-label">Upload CSV / TSV</label>
+                <input id="locationImportFile" type="file" accept=".csv,.tsv" />
               </div>
               <div class="form-group">
                 <label for="locationManualInput" data-i18n="admin-locations-manual-label">Paste or Type Locations</label>
@@ -3824,37 +3707,6 @@
       }
     ];
 
-    const sponsorTiers = [
-      {
-        name: "Bronze",
-        icon: "🥉",
-        price: "₹10,000",
-        tierClass: "tier-bronze",
-        benefits: ["Name listed on mission page", "Acknowledgement in district social post", "Digital appreciation certificate"]
-      },
-      {
-        name: "Silver",
-        icon: "🥈",
-        price: "₹25,000",
-        tierClass: "tier-silver",
-        benefits: ["Logo on mission page", "Recognition in event roll-up", "Mention in district press note"]
-      },
-      {
-        name: "Gold",
-        icon: "🥇",
-        price: "₹50,000",
-        tierClass: "tier-gold",
-        benefits: ["Banner presence at mission events", "Logo in communication creatives", "Priority co-branding visibility"]
-      },
-      {
-        name: "Platinum",
-        icon: "🏛️",
-        price: "₹1,00,000",
-        tierClass: "tier-platinum",
-        benefits: ["Co-organiser status for flagship mission", "Dedicated impact acknowledgement", "District-level partnership spotlight"]
-      }
-    ];
-
     const leaders = [
       {
         id: 1,
@@ -4145,7 +3997,7 @@
       "admin-data-subtitle": { en: "Use demo mode for presentations. Use real deploy mode to hide all dummy seeded records and show only actual field data.", hi: "प्रस्तुति के लिए डेमो मोड और वास्तविक उपयोग के लिए रियल डिप्लॉय मोड चुनें, जिसमें सभी डमी रिकॉर्ड छिपे रहें।" },
       "admin-locations-title": { en: "Location Catalog", hi: "स्थान सूची" },
       "admin-locations-subtitle": { en: "Upload or paste gram panchayats, wards, villages, colonies, or any district-specific location list. These options will appear across the portal.", hi: "ग्राम पंचायत, वार्ड, गांव, कॉलोनी या किसी भी जिला-विशिष्ट स्थान सूची को अपलोड या पेस्ट करें। ये विकल्प पूरे पोर्टल में दिखेंगे।" },
-      "admin-locations-file-label": { en: "Upload Excel / CSV", hi: "Excel / CSV अपलोड करें" },
+      "admin-locations-file-label": { en: "Upload CSV / TSV", hi: "CSV / TSV अपलोड करें" },
       "admin-locations-manual-label": { en: "Paste or Type Locations", hi: "स्थान पेस्ट करें या टाइप करें" },
       "admin-locations-manual-placeholder": { en: "One location per line or comma separated", hi: "प्रत्येक पंक्ति में एक स्थान या कॉमा से अलग" },
       "admin-locations-save": { en: "Save Location Catalog", hi: "स्थान सूची सहेजें" },
@@ -4155,7 +4007,7 @@
       "admin-newsletter-subtitle": { en: "Prepare a district message and preview how it will read.", hi: "जिला संदेश तैयार करें और उसका पूर्वावलोकन देखें।" },
       "admin-newsletter-subject-label": { en: "Subject", hi: "विषय" },
       "admin-newsletter-body-label": { en: "Body", hi: "बॉडी" },
-      "admin-newsletter-send": { en: "Send to Subscribers", hi: "ग्राहकों को भेजें" },
+      "admin-newsletter-send": { en: "Save Newsletter Draft", hi: "न्यूज़लेटर ड्राफ्ट सेव करें" },
       "admin-newsletter-preview-title": { en: "Preview", hi: "पूर्वावलोकन" },
       "admin-newsletter-preview-subtitle": { en: "Live preview of the current newsletter draft.", hi: "वर्तमान न्यूज़लेटर ड्राफ्ट का लाइव पूर्वावलोकन।" },
       "admin-newsletter-subscribers-title": { en: "Recent Subscribers", hi: "हाल के ग्राहक" },
@@ -4324,23 +4176,19 @@
           "Prayas portal is ready for district deployment."
         ],
         missions: [],
-        funds: [],
         stories: [],
         leaders: [],
         volunteers: [],
         volunteerEvents: [],
-        donations: [],
         newsletterSubs: 847,
         newsletterSignups: [],
         newsletterDraft: { subject: "", body: "" },
-        sponsorLeads: [],
         locations: [],
         departments: [],
         dataMode: "real",
         currentCategory: "all",
         activeMissionId: null,
         activeMissionTab: "details",
-        activeFundId: null,
         activeStoryId: null,
         activeLeaderId: null,
         selectedMissionId: null,
@@ -4437,13 +4285,10 @@
       state.departments = Array.isArray(payload.departments) ? payload.departments : [];
       state.announcements = Array.isArray(payload.announcements) ? payload.announcements : [];
       state.missions = Array.isArray(payload.missions) ? payload.missions : [];
-      state.funds = Array.isArray(payload.funds) ? payload.funds : [];
       state.stories = Array.isArray(payload.stories) ? payload.stories : [];
       state.leaders = Array.isArray(payload.leaders) ? payload.leaders : deepClone(leaders);
       state.volunteers = Array.isArray(payload.volunteers) ? payload.volunteers : [];
       state.volunteerEvents = Array.isArray(payload.volunteerEvents) ? payload.volunteerEvents : [];
-      state.sponsorLeads = Array.isArray(payload.sponsorLeads) ? payload.sponsorLeads : [];
-      state.donations = Array.isArray(payload.donations) ? payload.donations : [];
       state.newsletterSignups = Array.isArray(payload.newsletterSignups) ? payload.newsletterSignups : [];
       state.newsletterSubs = Number(payload.newsletterSubs || 0);
       if (payload.newsletterDraft && typeof payload.newsletterDraft === "object") {
@@ -4692,20 +4537,7 @@
       if (fileName.endsWith(".csv") || fileName.endsWith(".tsv")) {
         return parseLocationText(await file.text());
       }
-      if ((fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) && window.XLSX) {
-        const buffer = await file.arrayBuffer();
-        const workbook = window.XLSX.read(buffer, { type: "array" });
-        const values = [];
-        workbook.SheetNames.forEach((sheetName) => {
-          const rows = window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false });
-          rows.forEach((row) => row.forEach((cell) => {
-            const value = String(cell || "").trim();
-            if (value) values.push(value);
-          }));
-        });
-        return [...new Set(values)];
-      }
-      throw new Error(state.lang === "hi" ? "यह फ़ाइल फ़ॉर्मेट अभी समर्थित नहीं है।" : "This file format is not supported yet.");
+      throw new Error(state.lang === "hi" ? "केवल CSV या TSV फ़ाइलें समर्थित हैं।" : "Only CSV or TSV files are supported.");
     }
 
     function mergeLocationsIntoTextarea(locations) {
@@ -4853,52 +4685,6 @@
             </article>
           `;
         })
-        .join("");
-    }
-
-    function renderFundCards() {
-      document.getElementById("fundGrid").innerHTML = state.funds
-        .map((fund) => {
-          const percentage = Math.min(100, Math.round((fund.raised / fund.target) * 100));
-          return `
-            <article class="fund-card">
-              <div class="fund-band" style="background:${fund.color}"></div>
-              <div class="fund-emoji">${fund.emoji}</div>
-              <div class="fund-body">
-                <h3 class="fund-title">${escapeHtml(fund.title)}</h3>
-                <div class="fund-amount-line">
-                  <strong>₹${fund.raised.toLocaleString("en-IN")}</strong>
-                  ${state.lang === "hi" ? `₹${fund.target.toLocaleString("en-IN")} के लक्ष्य में से` : `raised of ₹${fund.target.toLocaleString("en-IN")} goal`}
-                </div>
-                <div class="progress-bar"><div class="progress-fill" style="width:${percentage}%"></div></div>
-                <div class="fund-meta">
-                  ${fund.donors} ${state.lang === "hi" ? "दाता" : "donors"} · ${fund.daysLeft} ${state.lang === "hi" ? "दिन शेष" : "days left"}
-                </div>
-                <button class="btn btn-primary" type="button" style="width:100%" onclick="openDonationModal(${fund.id})">
-                  ${state.lang === "hi" ? "योगदान करें" : "Contribute ₹"}
-                </button>
-              </div>
-            </article>
-          `;
-        })
-        .join("");
-    }
-
-    function renderSponsorCards() {
-      document.getElementById("sponsorGrid").innerHTML = sponsorTiers
-        .map(
-          (tier) => `
-            <article class="sponsor-card ${tier.tierClass}">
-              <div class="tier-icon">${tier.icon}</div>
-              <h3>${escapeHtml(tier.name)}</h3>
-              <div class="tier-price">${escapeHtml(tier.price)}</div>
-              <ul>${tier.benefits.map((benefit) => `<li>${escapeHtml(benefit)}</li>`).join("")}</ul>
-              <button class="btn btn-primary" type="button" onclick="openSponsorModal('${tier.name}')">
-                ${state.lang === "hi" ? "प्रायोजक बनें" : "Become Sponsor"}
-              </button>
-            </article>
-          `
-        )
         .join("");
     }
 
@@ -5214,8 +5000,6 @@
     }
 
     function renderAdminStats() {
-      const totalFunds = state.funds.reduce((sum, fund) => sum + fund.raised, 0);
-      const pendingDonations = state.donations.filter((donation) => donation.status !== "verified").length;
       const completedMissions = state.missions.filter((mission) => mission.status === "completed").length;
       const pendingRequests = state.missions.filter((mission) => mission.sourceType === "community" && mission.approvalStatus === "pending").length;
       const items = [
@@ -5228,31 +5012,6 @@
       ];
       document.getElementById("adminStatsGrid").innerHTML = items
         .map((item) => `<div class="admin-stat"><div class="admin-stat-value">${escapeHtml(String(item.value))}</div><div class="admin-stat-label">${escapeHtml(item.label)}</div></div>`)
-        .join("");
-    }
-
-    function renderDonationQueue() {
-      const container = document.getElementById("donationQueueList");
-      const pending = state.donations.filter((donation) => donation.status !== "verified");
-      if (!pending.length) {
-        container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "सत्यापन के लिए कोई लंबित भुगतान नहीं है।" : "No pending contributions awaiting verification."}</div></div>`;
-        return;
-      }
-      container.innerHTML = pending
-        .slice(0, 8)
-        .map((donation) => `
-          <div class="message-card">
-            <div class="message-name">₹${donation.amount.toLocaleString("en-IN")} · ${escapeHtml(donation.fundTitle)}</div>
-            <div class="message-text">${escapeHtml(donation.donorName)}</div>
-            <div class="message-text">${escapeHtml(donation.donorPhone || (state.lang === "hi" ? "फोन उपलब्ध नहीं" : "No phone"))} · ${escapeHtml(donation.donorEmail || (state.lang === "hi" ? "ईमेल उपलब्ध नहीं" : "No email"))}</div>
-            <div class="message-text">${escapeHtml((donation.preferredMode || donation.paymentMethod || "").toUpperCase())} · ${escapeHtml(donation.status === "lead" ? (state.lang === "hi" ? "फॉलो-अप आवश्यक" : "Follow-up needed") : donation.transactionReference)}</div>
-            ${donation.note ? `<div class="message-text">${escapeHtml(donation.note)}</div>` : ""}
-            <div class="message-time">${escapeHtml(donation.date)}</div>
-            <div class="message-actions">
-              <button class="btn btn-primary" type="button" onclick="verifyDonation(${donation.id})">${donation.status === "lead" ? (state.lang === "hi" ? "राशि प्राप्त चिह्नित करें" : "Mark Received") : state.lang === "hi" ? "सत्यापित करें" : "Verify Payment"}</button>
-            </div>
-          </div>
-        `)
         .join("");
     }
 
@@ -5294,6 +5053,7 @@
             <div class="message-text">${escapeHtml(mission.hostName)} · ${escapeHtml(mission.hostPhone)} · ${escapeHtml(mission.hostEmail)}</div>
             <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.location)} · ${escapeHtml(mission.date)}</div>
             <div class="form-group" style="margin-top:10px">
+              <label style="font-size:13px;color:var(--muted)">${state.lang === "hi" ? "नोडल विभाग (स्वीकृति के लिए अनिवार्य)" : "Nodal Department (required for approval)"}</label>
               <select id="requestDept-${mission.id}" onchange="toggleDepartmentOtherField('requestDept-${mission.id}', 'requestDeptOtherGroup-${mission.id}', 'requestDeptOther-${mission.id}')">${document.getElementById("pmDepartment").innerHTML}</select>
             </div>
             <div class="form-group hidden" id="requestDeptOtherGroup-${mission.id}">
@@ -5356,24 +5116,6 @@
         .join("");
     }
 
-    function renderSponsorLeadList() {
-      const container = document.getElementById("sponsorLeadList");
-      if (!state.sponsorLeads.length) {
-        container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "अभी तक कोई प्रायोजक लीड प्राप्त नहीं हुई है।" : "No sponsor leads have been collected yet."}</div></div>`;
-        return;
-      }
-      container.innerHTML = state.sponsorLeads
-        .slice(0, 6)
-        .map((lead) => `
-          <div class="message-card">
-            <div class="message-name">${escapeHtml(lead.company)} · ${escapeHtml(lead.tier)}</div>
-            <div class="message-text">${escapeHtml(lead.contact)} · ${escapeHtml(lead.phone)} · ${escapeHtml(lead.email)}</div>
-            <div class="message-time">${escapeHtml(lead.date)}</div>
-          </div>
-        `)
-        .join("");
-    }
-
     function renderRecentVolunteerList() {
       const container = document.getElementById("recentVolunteerList");
       if (!state.volunteerEvents.length) {
@@ -5418,8 +5160,8 @@
       document.getElementById("newsletterPreviewBody").textContent = body;
       document.getElementById("newsletterPreviewFoot").textContent =
         state.lang === "hi"
-          ? `${state.newsletterSubs} ग्राहकों को भेजने के लिए तैयार।`
-          : `Ready to send to ${state.newsletterSubs} subscribers.`;
+          ? `${state.newsletterSubs} ग्राहकों के लिए ड्राफ्ट तैयार।`
+          : `Draft ready for ${state.newsletterSubs} subscribers.`;
       state.newsletterDraft = {
         subject: subjectInput.value,
         body: bodyInput.value
@@ -5848,6 +5590,10 @@
         );
         return;
       }
+      const btn = document.getElementById("volunteerSubmitBtn");
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = state.lang === "hi" ? "सेव हो रहा है..." : "Saving...";
       try {
         const result = await apiRequest("/api/volunteers", {
           method: "POST",
@@ -5896,6 +5642,9 @@
         );
       } catch (error) {
         handleRequestError(error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
       }
     }
 
@@ -5931,6 +5680,10 @@
 
     async function submitStoryForm(event) {
       event.preventDefault();
+      const btn = event.target.querySelector("[type='submit']");
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = state.lang === "hi" ? "सेव हो रहा है..." : "Saving...";
       try {
         const file = document.getElementById("storyPhoto").files[0];
         const category = document.getElementById("storyCategory").value;
@@ -5950,6 +5703,9 @@
         showToast(state.lang === "hi" ? "आपकी कहानी प्रकाशित हो गई।" : "Your story has been published.", "📸");
       } catch (error) {
         handleRequestError(error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
       }
     }
 
@@ -6054,22 +5810,22 @@
       ctx.textAlign = "center";
       ctx.fillStyle = "#1B3A6B";
       ctx.font = "700 18px Inter";
-      ctx.fillText("GOVERNMENT OF CHHATTISGARH", canvas.width / 2, 108);
+      ctx.fillText(state.lang === "hi" ? "छत्तीसगढ़ सरकार" : "GOVERNMENT OF CHHATTISGARH", canvas.width / 2, 108);
       ctx.font = "700 30px Georgia";
-      ctx.fillText("District Administration", canvas.width / 2, 148);
+      ctx.fillText(state.lang === "hi" ? "जिला प्रशासन" : "District Administration", canvas.width / 2, 148);
       ctx.font = "700 26px Georgia";
-      ctx.fillText("Prayas Citizen Engagement Platform", canvas.width / 2, 186);
+      ctx.fillText(state.lang === "hi" ? "प्रयास नागरिक सहभागिता मंच" : "Prayas Citizen Engagement Platform", canvas.width / 2, 186);
 
       ctx.fillStyle = "#6B7280";
       ctx.font = "600 16px Inter";
-      ctx.fillText("Official Certificate of Civic Contribution", canvas.width / 2, 220);
+      ctx.fillText(state.lang === "hi" ? "नागरिक योगदान का आधिकारिक प्रमाणपत्र" : "Official Certificate of Civic Contribution", canvas.width / 2, 220);
 
       drawSeal(190, 156, 48, "Government of", "Chhattisgarh", "CG");
       drawSeal(canvas.width - 190, 156, 48, "Prayas", "Certificate Seal", "P");
 
       ctx.fillStyle = "#6B7280";
       ctx.font = "18px Georgia";
-      ctx.fillText("This is to certify that", canvas.width / 2, 294);
+      ctx.fillText(state.lang === "hi" ? "यह प्रमाणित किया जाता है कि" : "This is to certify that", canvas.width / 2, 294);
 
       ctx.fillStyle = "#1B3A6B";
       ctx.font = "700 42px Georgia";
@@ -6077,7 +5833,7 @@
 
       ctx.fillStyle = "#374151";
       ctx.font = "18px Georgia";
-      ctx.fillText("has successfully contributed to a verified public service activity under the Prayas platform.", canvas.width / 2, 412);
+      ctx.fillText(state.lang === "hi" ? "ने प्रयास मंच के अंतर्गत एक सत्यापित सार्वजनिक सेवा गतिविधि में सफलतापूर्वक भाग लिया है।" : "has successfully contributed to a verified public service activity under the Prayas platform.", canvas.width / 2, 412);
 
       ctx.fillStyle = "#1B3A6B";
       ctx.font = "700 24px Inter";
@@ -6085,8 +5841,8 @@
 
       ctx.fillStyle = "#6B7280";
       ctx.font = "16px Inter";
-      ctx.fillText(`Completed activity count: ${completedActivities.length}  |  Certificate No: ${certificateId}`, canvas.width / 2, 500);
-      ctx.fillText(`Issued on ${formatDate(new Date(), "en")}  |  Verified by District Administration`, canvas.width / 2, 528);
+      ctx.fillText(state.lang === "hi" ? `पूर्ण गतिविधियाँ: ${completedActivities.length}  |  प्रमाणपत्र क्र.: ${certificateId}` : `Completed activity count: ${completedActivities.length}  |  Certificate No: ${certificateId}`, canvas.width / 2, 500);
+      ctx.fillText(state.lang === "hi" ? `जारी किया गया: ${formatDate(new Date(), "hi")}  |  जिला प्रशासन द्वारा सत्यापित` : `Issued on ${formatDate(new Date(), "en")}  |  Verified by District Administration`, canvas.width / 2, 528);
 
       ctx.strokeStyle = "#C8A96A";
       ctx.lineWidth = 1;
@@ -6106,113 +5862,19 @@
 
       ctx.fillStyle = "#1B3A6B";
       ctx.font = "700 16px Inter";
-      ctx.fillText("Government Header Treatment", 270, 666);
-      ctx.fillText("District Administration", 850, 666);
+      ctx.fillText(state.lang === "hi" ? "सरकारी शीर्षक" : "Government Header Treatment", 270, 666);
+      ctx.fillText(state.lang === "hi" ? "जिला प्रशासन" : "District Administration", 850, 666);
 
       ctx.fillStyle = "#6B7280";
       ctx.font = "14px Inter";
-      ctx.fillText("Prayas Citizen Engagement Platform", 270, 690);
-      ctx.fillText("Authorised Signatory", 850, 690);
+      ctx.fillText(state.lang === "hi" ? "प्रयास नागरिक सहभागिता मंच" : "Prayas Citizen Engagement Platform", 270, 690);
+      ctx.fillText(state.lang === "hi" ? "अधिकृत हस्ताक्षरकर्ता" : "Authorised Signatory", 850, 690);
 
       const link = document.createElement("a");
       link.href = canvas.toDataURL("image/png");
       link.download = `${leader.name.replace(/\s+/g, "_")}_certificate.png`;
       link.click();
       showToast(state.lang === "hi" ? "प्रमाणपत्र डाउनलोड हो गया।" : "Certificate downloaded.", "🏅");
-    }
-
-    function openDonationModal(fundId) {
-      state.activeFundId = fundId;
-      state.paymentMethod = "cash";
-      const fund = state.funds.find((item) => item.id === fundId);
-      if (!fund) return;
-      document.getElementById("donationModalTitle").textContent =
-        state.lang === "hi" ? `${fund.title} के लिए दान` : `Donate to ${fund.title}`;
-      document.getElementById("customAmount").value = "";
-      document.getElementById("donorName").value = "";
-      document.getElementById("donationPhone").value = "";
-      document.getElementById("donationEmail").value = "";
-      document.getElementById("donationTxnRef").value = "";
-      document.getElementById("donationNote").value = "";
-      renderAmountPills();
-      setPaymentMethod("cash");
-      openModal("donationModal");
-    }
-
-    function renderAmountPills(selected = 0) {
-      const values = [50, 100, 250, 500, 1000];
-      document.getElementById("amountPills").innerHTML = values
-        .map(
-          (amount) => `
-            <button class="amount-pill ${selected === amount ? "active" : ""}" type="button" onclick="selectAmount(${amount})">
-              ₹${amount}
-            </button>
-          `
-        )
-        .join("");
-    }
-
-    function selectAmount(amount) {
-      document.getElementById("customAmount").value = amount;
-      renderAmountPills(amount);
-    }
-
-    function setPaymentMethod(method) {
-      state.paymentMethod = method;
-      document.querySelectorAll(".payment-tab").forEach((button) => {
-        button.classList.toggle("active", button.getAttribute("data-payment-method") === method);
-      });
-      document.getElementById("paymentCashPane").classList.toggle("hidden", method !== "cash");
-      document.getElementById("paymentUpiPane").classList.toggle("hidden", method !== "upi");
-      document.getElementById("paymentBankPane").classList.toggle("hidden", method !== "bank");
-    }
-
-    async function submitDonationForm(event) {
-      event.preventDefault();
-      const amount = Number(document.getElementById("customAmount").value || 0);
-      const donorName = document.getElementById("donorName").value.trim();
-      const donorPhone = document.getElementById("donationPhone").value.trim();
-      const donorEmail = document.getElementById("donationEmail").value.trim();
-      const transactionReference = document.getElementById("donationTxnRef").value.trim();
-      if (!amount) {
-        showToast(state.lang === "hi" ? "दान राशि दर्ज करें।" : "Please enter a donation amount.", "⚠️");
-        return;
-      }
-      if (!donorName) {
-        showToast(state.lang === "hi" ? "कृपया अपना नाम दर्ज करें।" : "Please enter your name.", "⚠️");
-        return;
-      }
-      if (!donorPhone && !donorEmail) {
-        showToast(state.lang === "hi" ? "फोन या ईमेल में से कम से कम एक दें।" : "Please provide at least a phone number or email.", "⚠️");
-        return;
-      }
-      const fund = state.funds.find((item) => item.id === state.activeFundId);
-      if (!fund) return;
-      try {
-        await apiRequest("/api/donations", {
-          method: "POST",
-          body: JSON.stringify({
-            fundId: fund.id,
-            amount,
-            donorName,
-            donorPhone,
-            donorEmail,
-            anonymous: false,
-            preferredMode: state.paymentMethod,
-            paymentMethod: state.paymentMethod,
-            transactionReference,
-            note: document.getElementById("donationNote").value.trim()
-          })
-        });
-        closeModal("donationModal");
-        await refreshPortalData();
-        showToast(
-          state.lang === "hi" ? `₹${amount} की योगदान रुचि दर्ज हो गई। टीम फॉलो-अप कर सकेगी।` : `Contribution interest for ₹${amount} has been recorded for follow-up.`,
-          "💰"
-        );
-      } catch (error) {
-        handleRequestError(error);
-      }
     }
 
     async function verifyDonation(donationId) {
@@ -6302,6 +5964,10 @@
 
     async function submitHostMissionForm(event) {
       event.preventDefault();
+      const btn = event.target.querySelector("[type='submit']");
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = state.lang === "hi" ? "सेव हो रहा है..." : "Saving...";
       try {
         await apiRequest("/api/community-missions", {
           method: "POST",
@@ -6326,6 +5992,9 @@
         showToast(state.lang === "hi" ? "मिशन अनुरोध एडमिन समीक्षा के लिए भेज दिया गया।" : "Mission request sent for admin review.", "📨");
       } catch (error) {
         handleRequestError(error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
       }
     }
 
@@ -6355,40 +6024,6 @@
             ? `${locations.length} स्थान सेव कर दिए गए।`
             : `${locations.length} locations saved to the district catalog.`,
           "📍"
-        );
-      } catch (error) {
-        handleRequestError(error);
-      }
-    }
-
-    function openSponsorModal(tier) {
-      document.getElementById("sponsorTier").value = tier;
-      openModal("sponsorModal");
-    }
-
-    async function submitSponsorForm(event) {
-      event.preventDefault();
-      const company = document.getElementById("sponsorCompany").value.trim();
-      try {
-        await apiRequest("/api/sponsors", {
-          method: "POST",
-          body: JSON.stringify({
-            company,
-            contact: document.getElementById("sponsorContact").value.trim(),
-            phone: document.getElementById("sponsorPhone").value.trim(),
-            email: document.getElementById("sponsorEmail").value.trim(),
-            tier: document.getElementById("sponsorTier").value.trim(),
-            message: document.getElementById("sponsorMessage").value.trim()
-          })
-        });
-        closeModal("sponsorModal");
-        event.target.reset();
-        await refreshPortalData();
-        showToast(
-          state.lang === "hi"
-            ? `${company} की प्रायोजन रुचि प्राप्त हुई।`
-            : `Sponsorship interest received from ${company}.`,
-          "🏢"
         );
       } catch (error) {
         handleRequestError(error);
@@ -6598,7 +6233,8 @@
       const rects = squares
         .map(([x, y]) => `<rect x="${x * 12}" y="${y * 12}" width="12" height="12" fill="#1B3A6B"/>`)
         .join("");
-      document.getElementById("qrBlock").innerHTML =
+      const qrBlock = document.getElementById("qrBlock");
+      if (qrBlock) qrBlock.innerHTML =
         `<svg viewBox="0 0 108 108" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><rect width="108" height="108" fill="#fff"/>${rects}</svg>`;
     }
 
@@ -6632,10 +6268,6 @@
           state.activeMissionTab = button.getAttribute("data-mission-tab");
           renderMissionModal();
         });
-      });
-
-      document.querySelectorAll(".payment-tab").forEach((button) => {
-        button.addEventListener("click", () => setPaymentMethod(button.getAttribute("data-payment-method")));
       });
 
       document.getElementById("pmTemplate").addEventListener("change", (event) => {
@@ -6690,8 +6322,6 @@
       document.getElementById("storyForm").addEventListener("submit", submitStoryForm);
       document.getElementById("hostMissionForm").addEventListener("submit", submitHostMissionForm);
       document.getElementById("commentForm").addEventListener("submit", submitCommentForm);
-      document.getElementById("donationForm").addEventListener("submit", submitDonationForm);
-      document.getElementById("sponsorForm").addEventListener("submit", submitSponsorForm);
       document.getElementById("adminLoginForm").addEventListener("submit", submitAdminLogin);
       document.getElementById("postMissionForm").addEventListener("submit", submitPostMissionForm);
       document.getElementById("exportVolunteersBtn").addEventListener("click", exportVolunteersCsv);
