@@ -534,6 +534,15 @@ try {
 try {
   db.exec("ALTER TABLE leaders ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0");
 } catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN outcome_note TEXT NOT NULL DEFAULT ''");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN actual_turnout INTEGER NOT NULL DEFAULT 0");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN photo_url TEXT NOT NULL DEFAULT ''");
+} catch (error) {}
 
 seedDatabase();
 migrateLegacyDemoRecords();
@@ -1025,6 +1034,9 @@ function buildBootstrapPayload() {
     duration: mission.duration,
     age: mission.age,
     impact: mission.impact,
+    outcomeNote: mission.outcome_note || "",
+    actualTurnout: mission.actual_turnout || 0,
+    photoUrl: mission.photo_url || "",
     discussion: discussionStmt.all(mission.id).map((entry) => ({
       name: entry.name,
       text: entry.text,
@@ -1641,7 +1653,15 @@ function updateMissionStatus(missionId, body) {
   if (!allowed.has(status)) {
     throw publicError(400, "Invalid activity status.");
   }
-  db.prepare("UPDATE missions SET status = ? WHERE id = ?").run(status, missionId);
+  if (status === "completed") {
+    const outcomeNote = String(body.outcomeNote || "").trim();
+    const actualTurnout = Math.max(0, Number(body.actualTurnout || 0));
+    const photoUrl = String(body.photoUrl || "").trim();
+    db.prepare("UPDATE missions SET status = ?, outcome_note = ?, actual_turnout = ?, photo_url = ? WHERE id = ?")
+      .run(status, outcomeNote, actualTurnout, photoUrl, missionId);
+  } else {
+    db.prepare("UPDATE missions SET status = ? WHERE id = ?").run(status, missionId);
+  }
   return { ok: true };
 }
 

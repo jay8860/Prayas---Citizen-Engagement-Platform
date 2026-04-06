@@ -699,6 +699,34 @@
       line-height: 1.68;
     }
 
+    .mission-search-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .mission-search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 14px;
+      pointer-events: none;
+    }
+    .mission-search-input {
+      width: 100%;
+      padding: 10px 14px 10px 38px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 14px;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+    .mission-search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
     .filters {
       display: flex;
       gap: 10px;
@@ -2643,6 +2671,10 @@
           </button>
         </div>
 
+        <div class="mission-search-wrap">
+          <i class="fa-solid fa-magnifying-glass mission-search-icon"></i>
+          <input id="missionSearchInput" type="search" class="mission-search-input" data-i18n-placeholder="missions-search-placeholder" placeholder="Search missions by title, location or description…" />
+        </div>
         <div class="filters" id="categoryFilters"></div>
         <div class="missions-grid" id="missionsGrid"></div>
       </div>
@@ -2854,6 +2886,11 @@
           </div>
         </div>
         <div class="leaderboard-grid" id="leaderboardGrid"></div>
+        <div style="text-align:center;margin-top:24px">
+          <button class="btn btn-soft" type="button" onclick="openMyMissionsModal()" data-i18n="my-missions-open-btn">
+            <i class="fa-solid fa-list-check"></i> View My Missions
+          </button>
+        </div>
       </div>
     </section>
 
@@ -3171,6 +3208,61 @@
           <div class="message-text" id="passportEligibilityText"></div>
         </div>
         <button class="btn btn-saffron" id="downloadCertificateBtn" type="button" style="width:100%;margin-top:18px" data-i18n="passport-download">Download Certificate</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="completionSummaryModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" data-i18n="completion-modal-title">Mark Mission Completed</h2>
+          <p class="modal-subtitle" data-i18n="completion-modal-subtitle">Add a summary before closing this activity.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="completionSummaryModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="completionSummaryForm">
+          <div class="form-group">
+            <label for="completionTurnout" data-i18n="completion-turnout-label">Actual Volunteers Who Showed Up</label>
+            <input id="completionTurnout" type="number" min="0" placeholder="0" />
+          </div>
+          <div class="form-group">
+            <label for="completionNote" data-i18n="completion-note-label">Outcome Note</label>
+            <textarea id="completionNote" data-i18n-placeholder="completion-note-placeholder" placeholder="Brief summary of what was accomplished…"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="completionPhoto" data-i18n="completion-photo-label">Photo URL (Optional)</label>
+            <input id="completionPhoto" type="url" data-i18n-placeholder="completion-photo-placeholder" placeholder="https://… (link to mission photo)" />
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%" data-i18n="completion-submit">Save &amp; Mark Completed</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="myMissionsModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" data-i18n="my-missions-title">My Missions</h2>
+          <p class="modal-subtitle" data-i18n="my-missions-subtitle">Enter your registered name and mobile to see all missions you have joined.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="myMissionsModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="myMissionsName" data-i18n="vol-name-label">Full Name</label>
+            <input id="myMissionsName" type="text" />
+          </div>
+          <div class="form-group">
+            <label for="myMissionsPhone" data-i18n="vol-phone-label">Mobile Number</label>
+            <input id="myMissionsPhone" type="tel" />
+          </div>
+        </div>
+        <button class="btn btn-primary" type="button" id="myMissionsLookupBtn" style="width:100%;margin-bottom:20px" data-i18n="my-missions-lookup">Find My Missions</button>
+        <div id="myMissionsResult"></div>
       </div>
     </div>
   </div>
@@ -3785,6 +3877,7 @@
       "stats-completed": { en: "Programs Completed", hi: "पूर्ण कार्यक्रम" },
       "stats-lives": { en: "Lives Impacted", hi: "प्रभावित जीवन" },
       "missions-badge": { en: "Active Missions", hi: "सक्रिय अभियान" },
+      "missions-search-placeholder": { en: "Search missions by title, location or description…", hi: "शीर्षक, स्थान या विवरण से खोजें…" },
       "missions-title": { en: "Choose your cause. Make your mark.", hi: "अपना उद्देश्य चुनें। अपनी पहचान बनाएं।" },
       "missions-subtitle": { en: "From cleanliness drives to district teaching programs, explore missions that match your time, location, and skills.", hi: "स्वच्छता अभियान से लेकर शिक्षण कार्यक्रम तक, अपने समय, स्थान और कौशल के अनुसार अभियान चुनें।" },
       "missions-post": { en: "Post a Mission", hi: "अभियान पोस्ट करें" },
@@ -3936,6 +4029,18 @@
       "passport-timeline": { en: "Missions Attended", hi: "शामिल अभियान" },
       "passport-completion-title": { en: "Certificate Eligibility", hi: "प्रमाणपत्र पात्रता" },
       "passport-download": { en: "Download Certificate", hi: "प्रमाणपत्र डाउनलोड करें" },
+      "completion-modal-title": { en: "Mark Mission Completed", hi: "अभियान पूर्ण चिह्नित करें" },
+      "completion-modal-subtitle": { en: "Add a summary before closing this activity.", hi: "गतिविधि बंद करने से पहले संक्षिप्त विवरण दर्ज करें।" },
+      "completion-turnout-label": { en: "Actual Volunteers Who Showed Up", hi: "वास्तविक उपस्थित स्वयंसेवक" },
+      "completion-note-label": { en: "Outcome Note", hi: "परिणाम नोट" },
+      "completion-note-placeholder": { en: "Brief summary of what was accomplished…", hi: "क्या हासिल हुआ इसका संक्षिप्त विवरण…" },
+      "completion-photo-label": { en: "Photo URL (Optional)", hi: "फोटो लिंक (वैकल्पिक)" },
+      "completion-photo-placeholder": { en: "https://… (link to mission photo)", hi: "https://… (मिशन फोटो का लिंक)" },
+      "completion-submit": { en: "Save & Mark Completed", hi: "सेव करें और पूर्ण चिह्नित करें" },
+      "my-missions-title": { en: "My Missions", hi: "मेरे अभियान" },
+      "my-missions-subtitle": { en: "Enter your registered name and mobile to see all missions you have joined.", hi: "अपना पंजीकृत नाम और मोबाइल दर्ज करें और देखें आपने किन अभियानों में हिस्सा लिया।" },
+      "my-missions-lookup": { en: "Find My Missions", hi: "मेरे अभियान खोजें" },
+      "my-missions-open-btn": { en: "View My Missions", hi: "मेरे अभियान देखें" },
       "admin-login-title": { en: "Admin Login", hi: "प्रशासक लॉगिन" },
       "admin-login-subtitle": { en: "Enter any password during this testing phase to open the control panel.", hi: "टेस्टिंग चरण में कंट्रोल पैनल खोलने के लिए कोई भी पासवर्ड दर्ज करें।" },
       "admin-password-label": { en: "Password", hi: "पासवर्ड" },
@@ -4187,6 +4292,7 @@
         departments: [],
         dataMode: "real",
         currentCategory: "all",
+        missionSearch: "",
         activeMissionId: null,
         activeMissionTab: "details",
         activeStoryId: null,
@@ -4196,6 +4302,7 @@
         currentAdminTab: "overview",
         statsAnimated: false,
         pendingMissionDepartment: {},
+        pendingCompletionMissionId: null,
         volunteerLookup: { found: false, checkedKey: "", profile: null },
         volunteerJoinMode: "general"
       };
@@ -4618,10 +4725,16 @@
     }
 
     function filteredMissions() {
+      const q = state.missionSearch.toLowerCase().trim();
       return state.missions.filter((mission) => {
         const publicOk = mission.approvalStatus !== "pending" && mission.approvalStatus !== "rejected";
         const categoryOk = state.currentCategory === "all" || mission.category === state.currentCategory;
-        return publicOk && categoryOk;
+        const searchOk = !q ||
+          mission.title.toLowerCase().includes(q) ||
+          mission.location.toLowerCase().includes(q) ||
+          (mission.desc || "").toLowerCase().includes(q) ||
+          (mission.ward || "").toLowerCase().includes(q);
+        return publicOk && categoryOk && searchOk;
       });
     }
 
@@ -5029,7 +5142,7 @@
             <div class="message-time">${escapeHtml(statusLabel(mission.status))}</div>
             <div class="message-actions">
               <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
-              ${mission.status !== "completed" ? `<button class="btn btn-primary" type="button" onclick="updateMissionStatus(${mission.id}, 'completed')">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>` : ""}
+              ${mission.status !== "completed" ? `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>` : ""}
               ${mission.status !== "closed" ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'closed')">${state.lang === "hi" ? "अस्थायी बंद" : "Close Temporarily"}</button>` : `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>`}
               <button class="btn btn-soft" type="button" onclick="deleteMission(${mission.id})">${state.lang === "hi" ? "हटाएँ" : "Delete"}</button>
             </div>
@@ -5207,7 +5320,15 @@
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           <button class="btn btn-primary" type="button" onclick="registerForMissionFromModal()" ${isCompleted || isFull || isClosed ? "disabled" : ""}>${isCompleted ? (state.lang === "hi" ? "गतिविधि पूर्ण हो चुकी है" : "Activity Completed") : isFull ? (state.lang === "hi" ? "स्लॉट भर चुके हैं" : "Slots Filled") : isClosed ? (state.lang === "hi" ? "अस्थायी रूप से बंद" : "Temporarily Closed") : state.lang === "hi" ? "इस अभियान के लिए पंजीकरण करें" : "Sign Up for This Mission"}</button>
           <button class="btn btn-green" type="button" onclick="shareMission(${mission.id})"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+          <button class="btn btn-soft" type="button" onclick="downloadMissionICS(${mission.id})"><i class="fa-solid fa-calendar-plus"></i> ${state.lang === "hi" ? "कैलेंडर में जोड़ें" : "Add to Calendar"}</button>
         </div>
+        ${isCompleted && (mission.outcomeNote || mission.actualTurnout) ? `
+        <div class="message-card" style="margin-top:20px">
+          <div class="message-name">${state.lang === "hi" ? "अभियान परिणाम" : "Mission Outcome"}</div>
+          ${mission.actualTurnout ? `<div class="message-text">✅ ${mission.actualTurnout} ${state.lang === "hi" ? "स्वयंसेवक उपस्थित" : "volunteers attended"}</div>` : ""}
+          ${mission.outcomeNote ? `<div class="message-text">${escapeHtml(mission.outcomeNote)}</div>` : ""}
+          ${mission.photoUrl ? `<div class="message-actions"><a class="btn btn-soft" href="${escapeHtml(mission.photoUrl)}" target="_blank" rel="noopener">${state.lang === "hi" ? "फोटो देखें" : "View Photo"}</a></div>` : ""}
+        </div>` : ""}
       `;
 
       discussionPane.innerHTML = `
@@ -5392,6 +5513,38 @@
           ? `नया मिशन लाइव है: ${mission.title}\nस्थान: ${mission.location}\nसमय: ${mission.date}\nमिशन देखने और जुड़ने के लिए इस लिंक पर क्लिक करें: ${window.location.origin}${window.location.pathname}?mission=${mission.id}`
           : `A new mission is now live: ${mission.title}\nLocation: ${mission.location}\nTime: ${mission.date}\nOpen the mission and join from this link: ${window.location.origin}${window.location.pathname}?mission=${mission.id}`;
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+    }
+
+    function downloadMissionICS(missionId) {
+      const mission = state.missions.find((item) => item.id === missionId);
+      if (!mission) return;
+      // Try to parse the date string; fall back to today if unparseable
+      const parsed = new Date(mission.date);
+      const dtBase = isNaN(parsed.getTime()) ? new Date() : parsed;
+      const pad = (n) => String(n).padStart(2, "0");
+      const ymd = (d) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+      const uid = `prayas-mission-${mission.id}-${Date.now()}@prayas`;
+      const ics = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Prayas//Citizen Engagement Platform//EN",
+        "BEGIN:VEVENT",
+        `UID:${uid}`,
+        `DTSTAMP:${ymd(new Date())}T000000Z`,
+        `DTSTART;VALUE=DATE:${ymd(dtBase)}`,
+        `DTEND;VALUE=DATE:${ymd(new Date(dtBase.getTime() + 86400000))}`,
+        `SUMMARY:${mission.title.replace(/[,;\\]/g, "\\$&")}`,
+        `DESCRIPTION:${(mission.desc || "").replace(/[,;\\]/g, "\\$&").replace(/\n/g, "\\n")} | Prayas Mission`,
+        `LOCATION:${mission.location.replace(/[,;\\]/g, "\\$&")}`,
+        "END:VEVENT",
+        "END:VCALENDAR"
+      ].join("\r\n");
+      const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${mission.title.replace(/\s+/g, "_")}.ics`;
+      link.click();
+      showToast(state.lang === "hi" ? "कैलेंडर फ़ाइल डाउनलोड हुई।" : "Calendar file downloaded.", "📅");
     }
 
     function openMissionModal(missionId) {
@@ -5744,6 +5897,42 @@
       }
     }
 
+    function openMyMissionsModal() {
+      document.getElementById("myMissionsName").value = "";
+      document.getElementById("myMissionsPhone").value = "";
+      document.getElementById("myMissionsResult").innerHTML = "";
+      openModal("myMissionsModal");
+    }
+
+    function lookupMyMissions() {
+      const name = normalizeVolunteerName(document.getElementById("myMissionsName").value);
+      const phone = normalizeVolunteerPhone(document.getElementById("myMissionsPhone").value);
+      const result = document.getElementById("myMissionsResult");
+      if (!name || !phone) {
+        result.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "कृपया नाम और मोबाइल दर्ज करें।" : "Please enter your name and mobile number."}</div></div>`;
+        return;
+      }
+      const events = state.volunteerEvents.filter((e) => {
+        const eName = normalizeVolunteerName(e.name);
+        const ePhone = normalizeVolunteerPhone(e.phone);
+        return eName === name && ePhone === phone;
+      });
+      if (!events.length) {
+        result.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "इस नाम और मोबाइल से कोई पंजीकरण नहीं मिला।" : "No registrations found for this name and mobile."}</div></div>`;
+        return;
+      }
+      result.innerHTML = events.map((e) => {
+        const mission = state.missions.find((m) => m.id === e.mission_id);
+        const statusText = mission ? statusLabel(mission.status) : "";
+        return `
+          <div class="message-card">
+            <div class="message-name">${escapeHtml(e.mission_title)}</div>
+            <div class="message-text">${escapeHtml(e.date_label)}${statusText ? ` · ${escapeHtml(statusText)}` : ""}</div>
+            ${mission ? `<div class="message-actions"><button class="btn btn-soft" type="button" onclick="closeModal('myMissionsModal');openMissionModal(${mission.id})">${state.lang === "hi" ? "विवरण देखें" : "View Details"}</button></div>` : ""}
+          </div>`;
+      }).join("");
+    }
+
     function openPassportModal(leaderId) {
       state.activeLeaderId = leaderId;
       renderPassportModal();
@@ -5886,11 +6075,19 @@
       }
     }
 
-    async function updateMissionStatus(missionId, status) {
+    function openCompletionSummaryModal(missionId) {
+      state.pendingCompletionMissionId = missionId;
+      document.getElementById("completionTurnout").value = "";
+      document.getElementById("completionNote").value = "";
+      document.getElementById("completionPhoto").value = "";
+      openModal("completionSummaryModal");
+    }
+
+    async function updateMissionStatus(missionId, status, extra = {}) {
       try {
         await apiRequest(`/api/admin/missions/${missionId}/status`, {
           method: "POST",
-          body: JSON.stringify({ status })
+          body: JSON.stringify({ status, ...extra })
         });
         await refreshPortalData();
         showToast(
@@ -6218,6 +6415,33 @@
     }
 
     function attachEvents() {
+      document.getElementById("missionSearchInput").addEventListener("input", (e) => {
+        state.missionSearch = e.target.value;
+        renderMissions();
+      });
+      document.getElementById("myMissionsLookupBtn").addEventListener("click", lookupMyMissions);
+      document.getElementById("completionSummaryForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const missionId = state.pendingCompletionMissionId;
+        if (!missionId) return;
+        const btn = event.target.querySelector("button[type=submit]");
+        const origText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = state.lang === "hi" ? "सेव हो रहा है..." : "Saving...";
+        try {
+          await updateMissionStatus(missionId, "completed", {
+            outcomeNote: document.getElementById("completionNote").value.trim(),
+            actualTurnout: Number(document.getElementById("completionTurnout").value || 0),
+            photoUrl: document.getElementById("completionPhoto").value.trim()
+          });
+          closeModal("completionSummaryModal");
+        } catch (error) {
+          handleRequestError(error);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = origText;
+        }
+      });
       document.getElementById("langToggle").addEventListener("click", toggleLanguage);
       document.getElementById("themeToggle").addEventListener("click", toggleTheme);
       document.getElementById("adminOpenBtn").addEventListener("click", openAdminLogin);
