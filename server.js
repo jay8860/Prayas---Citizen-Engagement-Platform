@@ -1102,7 +1102,7 @@ function buildBootstrapPayload() {
     message: volunteer.message,
     skills: safeJsonArray(volunteer.skills_json),
     mission: "",
-    date: formatDate(volunteer.last_active_at || volunteer.first_registered_at || new Date(), "en")
+    date: new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric" }).format(new Date(volunteer.last_active_at || volunteer.first_registered_at || new Date()))
   }));
 
   const volunteerEvents = volunteerParticipationRows.map((entry) => ({
