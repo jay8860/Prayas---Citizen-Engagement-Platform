@@ -11,7 +11,14 @@ const DB_PATH = path.join(DB_DIR, "prayas.sqlite");
 const INDEX_PATH = path.join(APP_ROOT, "index.html");
 const ADMIN_PASSWORD = process.env.PRAYAS_ADMIN_PASSWORD || "Prayas@2026";
 const TOKEN_SECRET = process.env.PRAYAS_TOKEN_SECRET || "replace-this-secret-before-production";
-const TOKEN_TTL_MS = 1000 * 60 * 60 * 12;
+const TOKEN_TTL_MS = 1000 * 60 * 60 * 2; // 2 hours
+
+if (!process.env.PRAYAS_ADMIN_PASSWORD) {
+  console.warn("[WARN] PRAYAS_ADMIN_PASSWORD is not set — using insecure default. Set this env var before exposing the server publicly.");
+}
+if (!process.env.PRAYAS_TOKEN_SECRET || process.env.PRAYAS_TOKEN_SECRET === "replace-this-secret-before-production") {
+  console.warn("[WARN] PRAYAS_TOKEN_SECRET is not set or is still the placeholder value. Set a strong random secret before exposing the server publicly.");
+}
 
 const seedAnnouncements = [
   "Van Mahotsav registrations open - 500 spots available.",
@@ -552,8 +559,17 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "POST" && url.pathname === "/api/admin/login") {
       const body = await readJsonBody(req);
-      if (!String(body.password || "").trim()) {
-        return sendJson(res, 400, { error: "Enter any password to continue during testing." });
+      const provided = String(body.password || "");
+      if (!provided) {
+        return sendJson(res, 400, { error: "Password is required." });
+      }
+      const providedBuf = Buffer.from(provided);
+      const expectedBuf = Buffer.from(ADMIN_PASSWORD);
+      const match =
+        providedBuf.length === expectedBuf.length &&
+        crypto.timingSafeEqual(providedBuf, expectedBuf);
+      if (!match) {
+        return sendJson(res, 401, { error: "Invalid password." });
       }
       return sendJson(res, 200, { token: createAdminToken() });
     }
@@ -706,9 +722,13 @@ server.listen(PORT, () => {
   console.log(`Prayas portal running on http://localhost:${PORT}`);
 });
 
+// Set PRAYAS_ALLOWED_ORIGIN to your domain in production (e.g. "https://prayas.example.com").
+// Defaults to "*" for local development only.
+const ALLOWED_ORIGIN = process.env.PRAYAS_ALLOWED_ORIGIN || "*";
+
 function corsHeaders() {
   return {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization"
   };
@@ -1180,6 +1200,14 @@ function registerVolunteer(body) {
   if (!name || !phone) {
     throw publicError(400, "Name and mobile number are required.");
   }
+  const normalizedPhone = normalizeVolunteerPhone(phone);
+  if (normalizedPhone.length !== 10) {
+    throw publicError(400, "Mobile number must be a valid 10-digit number.");
+  }
+  const emailRaw = String(body.email || "").trim();
+  if (emailRaw && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) {
+    throw publicError(400, "Please provide a valid email address.");
+  }
 
   const missionId = Number(body.missionId || 0);
   const mission = missionId
@@ -1353,7 +1381,7 @@ function lookupVolunteerProfile(body) {
 
 function subscribeNewsletter(body) {
   const email = String(body.email || "").trim().toLowerCase();
-  if (!email || !email.includes("@")) {
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw publicError(400, "A valid email address is required.");
   }
 
@@ -1725,7 +1753,12 @@ function saveNewsletterDraft(body) {
   return { ok: true };
 }
 
+const ALLOWED_TABLES = new Set(["stories", "missions", "funds"]);
+
 function ensureRowExists(table, id, message) {
+  if (!ALLOWED_TABLES.has(table)) {
+    throw new Error(`ensureRowExists: invalid table name "${table}"`);
+  }
   const row = db.prepare(`SELECT id FROM ${table} WHERE id = ?`).get(id);
   if (!row) {
     throw publicError(404, message);
