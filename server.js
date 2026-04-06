@@ -12,12 +12,41 @@ const INDEX_PATH = path.join(APP_ROOT, "index.html");
 const ADMIN_PASSWORD = process.env.PRAYAS_ADMIN_PASSWORD || "Prayas@2026";
 const TOKEN_SECRET = process.env.PRAYAS_TOKEN_SECRET || "replace-this-secret-before-production";
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 2; // 2 hours
+const DISTRICT_NAME = process.env.PRAYAS_DISTRICT_NAME || "Your District";
+const STATE_NAME = process.env.PRAYAS_STATE_NAME || "Your State";
+const STATE_ABBR = process.env.PRAYAS_STATE_ABBR || "ST";
 
 if (!process.env.PRAYAS_ADMIN_PASSWORD) {
   console.warn("[WARN] PRAYAS_ADMIN_PASSWORD is not set — using insecure default. Set this env var before exposing the server publicly.");
 }
 if (!process.env.PRAYAS_TOKEN_SECRET || process.env.PRAYAS_TOKEN_SECRET === "replace-this-secret-before-production") {
   console.warn("[WARN] PRAYAS_TOKEN_SECRET is not set or is still the placeholder value. Set a strong random secret before exposing the server publicly.");
+}
+
+// ── Brute-force protection for admin login ───────────────────────────────────
+// Tracks failed attempts per IP. After 5 failures within 15 minutes, the IP is
+// locked out for 15 minutes. State is in-memory; clears on server restart.
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const loginAttempts = new Map(); // ip -> { count, windowStart }
+
+function checkLoginRateLimit(ip) {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (!entry || now - entry.windowStart > LOGIN_WINDOW_MS) {
+    loginAttempts.set(ip, { count: 0, windowStart: now });
+    return true; // allowed
+  }
+  return entry.count < LOGIN_MAX_ATTEMPTS;
+}
+
+function recordLoginFailure(ip) {
+  const entry = loginAttempts.get(ip);
+  if (entry) entry.count += 1;
+}
+
+function resetLoginAttempts(ip) {
+  loginAttempts.delete(ip);
 }
 
 const seedAnnouncements = [
@@ -567,6 +596,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/login") {
+      const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      if (!checkLoginRateLimit(ip)) {
+        return sendJson(res, 429, { error: "Too many failed login attempts. Please wait 15 minutes before trying again." });
+      }
       const body = await readJsonBody(req);
       const provided = String(body.password || "");
       if (!provided) {
@@ -578,8 +611,10 @@ const server = http.createServer(async (req, res) => {
         providedBuf.length === expectedBuf.length &&
         crypto.timingSafeEqual(providedBuf, expectedBuf);
       if (!match) {
+        recordLoginFailure(ip);
         return sendJson(res, 401, { error: "Invalid password." });
       }
+      resetLoginAttempts(ip);
       return sendJson(res, 200, { token: createAdminToken() });
     }
 
@@ -1151,6 +1186,9 @@ function buildBootstrapPayload() {
 
   return {
     dataMode,
+    districtName: DISTRICT_NAME,
+    stateName: STATE_NAME,
+    stateAbbr: STATE_ABBR,
     locations,
     departments,
     announcements: announcementRows.map((row) => row.text),

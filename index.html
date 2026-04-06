@@ -4379,6 +4379,9 @@
       return {
         lang: "en",
         theme: "light",
+        districtName: "Your District",
+        stateName: "Your State",
+        stateAbbr: "ST",
         announcements: [
           "Prayas portal is ready for district deployment."
         ],
@@ -4489,6 +4492,9 @@
 
     function applyBootstrapData(payload) {
       state.dataMode = payload.dataMode || "real";
+      state.districtName = payload.districtName || "Your District";
+      state.stateName = payload.stateName || "Your State";
+      state.stateAbbr = payload.stateAbbr || "ST";
       state.locations = Array.isArray(payload.locations) ? payload.locations : [];
       state.departments = Array.isArray(payload.departments) ? payload.departments : [];
       state.announcements = Array.isArray(payload.announcements) ? payload.announcements : [];
@@ -6213,7 +6219,7 @@
       ctx.font = "700 18px Inter";
       ctx.fillText(state.lang === "hi" ? "छत्तीसगढ़ सरकार" : "GOVERNMENT OF CHHATTISGARH", canvas.width / 2, 108);
       ctx.font = "700 30px Georgia";
-      ctx.fillText(state.lang === "hi" ? "जिला प्रशासन" : "District Administration", canvas.width / 2, 148);
+      ctx.fillText(state.lang === "hi" ? `${state.districtName} जिला प्रशासन` : `${state.districtName} District Administration`, canvas.width / 2, 148);
       ctx.font = "700 26px Georgia";
       ctx.fillText(state.lang === "hi" ? "प्रयास नागरिक सहभागिता मंच" : "Prayas Citizen Engagement Platform", canvas.width / 2, 186);
 
@@ -6221,7 +6227,7 @@
       ctx.font = "600 16px Inter";
       ctx.fillText(state.lang === "hi" ? "नागरिक योगदान का आधिकारिक प्रमाणपत्र" : "Official Certificate of Civic Contribution", canvas.width / 2, 220);
 
-      drawSeal(190, 156, 48, "Government of", "Chhattisgarh", "CG");
+      drawSeal(190, 156, 48, "Government of", state.stateName, state.stateAbbr);
       drawSeal(canvas.width - 190, 156, 48, "Prayas", "Certificate Seal", "P");
 
       ctx.fillStyle = "#6B7280";
@@ -6263,7 +6269,7 @@
 
       ctx.fillStyle = "#1B3A6B";
       ctx.font = "700 16px Inter";
-      ctx.fillText(state.lang === "hi" ? "सरकारी शीर्षक" : "Government Header Treatment", 270, 666);
+      ctx.fillText(state.lang === "hi" ? `${state.districtName} जिला प्रशासन` : `${state.districtName} District Administration`, 270, 666);
       ctx.fillText(state.lang === "hi" ? "जिला प्रशासन" : "District Administration", 850, 666);
 
       ctx.fillStyle = "#6B7280";
