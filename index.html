@@ -6616,20 +6616,36 @@
         showToast(state.lang === "hi" ? "विषय और बॉडी दोनों भरें।" : "Please fill both subject and body.", "⚠️");
         return;
       }
+      const btn = document.getElementById("sendNewsletterBtn");
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = state.lang === "hi" ? "भेजा जा रहा है..." : "Sending…";
       try {
-        await apiRequest("/api/admin/newsletter", {
+        const result = await apiRequest("/api/admin/newsletter/send", {
           method: "POST",
           body: JSON.stringify({ subject, body })
         });
         await refreshPortalData();
-        showToast(
-          state.lang === "hi"
-            ? `${state.newsletterSubs} ग्राहकों के लिए न्यूज़लेटर ड्राफ्ट सेव हो गया।`
-            : `Newsletter draft saved for ${state.newsletterSubs} subscribers.`,
-          "📨"
-        );
+        if (result.emailDisabled) {
+          showToast(
+            state.lang === "hi"
+              ? "ड्राफ्ट सेव हो गया। ईमेल भेजने के लिए Gmail सेट करें।"
+              : "Draft saved. Configure Gmail credentials in Railway to enable actual sending.",
+            "💾"
+          );
+        } else {
+          showToast(
+            state.lang === "hi"
+              ? `न्यूज़लेटर ${result.sent} ग्राहकों को भेज दिया गया।`
+              : `Newsletter sent to ${result.sent} subscriber${result.sent === 1 ? "" : "s"}.`,
+            "📨"
+          );
+        }
       } catch (error) {
         handleRequestError(error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
       }
     }
 

@@ -16,6 +16,13 @@ const DISTRICT_NAME = process.env.PRAYAS_DISTRICT_NAME || "Your District";
 const STATE_NAME = process.env.PRAYAS_STATE_NAME || "Your State";
 const STATE_ABBR = process.env.PRAYAS_STATE_ABBR || "ST";
 
+// ── Email (Gmail SMTP via nodemailer) ────────────────────────────────────────
+// Set PRAYAS_GMAIL_USER and PRAYAS_GMAIL_APP_PASSWORD to enable email features.
+// Generate an App Password at: myaccount.google.com → Security → App Passwords
+const GMAIL_USER = process.env.PRAYAS_GMAIL_USER || "";
+const GMAIL_APP_PASSWORD = process.env.PRAYAS_GMAIL_APP_PASSWORD || "";
+const ADMIN_EMAIL = process.env.PRAYAS_ADMIN_EMAIL || GMAIL_USER;
+
 if (!process.env.PRAYAS_ADMIN_PASSWORD) {
   console.warn("[WARN] PRAYAS_ADMIN_PASSWORD is not set — using insecure default. Set this env var before exposing the server publicly.");
 }
@@ -47,6 +54,91 @@ function recordLoginFailure(ip) {
 
 function resetLoginAttempts(ip) {
   loginAttempts.delete(ip);
+}
+
+// ── Email helpers ─────────────────────────────────────────────────────────────
+
+let _transporter = null;
+function getTransporter() {
+  if (!GMAIL_USER || !GMAIL_APP_PASSWORD) return null;
+  if (!_transporter) {
+    const nodemailer = require("nodemailer");
+    _transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD }
+    });
+  }
+  return _transporter;
+}
+
+async function sendEmail(to, subject, html) {
+  const t = getTransporter();
+  if (!t) return false;
+  try {
+    await t.sendMail({ from: `"Prayas Portal" <${GMAIL_USER}>`, to, subject, html });
+    return true;
+  } catch (err) {
+    console.error("[EMAIL] Failed:", to, err.message);
+    return false;
+  }
+}
+
+// Fire-and-forget admin alert — never blocks the HTTP response
+function notifyAdmin(subject, html) {
+  if (!ADMIN_EMAIL) return;
+  sendEmail(ADMIN_EMAIL, subject, adminAlertHtml(subject, html)).catch(() => {});
+}
+
+function adminAlertHtml(title, bodyHtml) {
+  return `
+  <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f4f4f4;padding:20px">
+    <div style="background:#1B3A6B;color:#fff;padding:14px 20px;border-radius:8px 8px 0 0">
+      <span style="font-size:16px;font-weight:700">Prayas Portal</span>
+      <span style="font-size:13px;opacity:.8;margin-left:8px">Admin Alert</span>
+    </div>
+    <div style="background:#fff;padding:24px;border-radius:0 0 8px 8px;border:1px solid #ddd">
+      <h2 style="margin:0 0 16px;color:#1B3A6B;font-size:18px">${title}</h2>
+      ${bodyHtml}
+    </div>
+    <p style="color:#aaa;font-size:11px;text-align:center;margin-top:10px">
+      ${DISTRICT_NAME} District Administration · Prayas Citizen Engagement Platform
+    </p>
+  </div>`;
+}
+
+function newsletterEmailHtml(subject, bodyText) {
+  const escaped = bodyText
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br>");
+  return `
+  <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+    <div style="background:#FF9933;padding:20px;text-align:center;border-radius:8px 8px 0 0">
+      <h1 style="color:#fff;margin:0;font-size:26px;letter-spacing:1px">प्रयास · Prayas</h1>
+      <p style="color:#fff;margin:4px 0 0;font-size:13px;opacity:.9">
+        ${DISTRICT_NAME} District · Citizen Engagement Platform
+      </p>
+    </div>
+    <div style="padding:30px;background:#fff;border:1px solid #eee">
+      <h2 style="color:#1B3A6B;margin-top:0">${subject}</h2>
+      <p style="line-height:1.7;color:#333;font-size:15px">${escaped}</p>
+    </div>
+    <div style="background:#f9f9f9;padding:16px;text-align:center;font-size:12px;color:#aaa;
+                border:1px solid #eee;border-top:none;border-radius:0 0 8px 8px">
+      You are receiving this because you subscribed to district updates from Prayas.<br>
+      ${DISTRICT_NAME} District Administration
+    </div>
+  </div>`;
+}
+
+async function sendNewsletterToAll(subject, bodyText) {
+  const rows = db.prepare("SELECT email FROM newsletter_subscribers ORDER BY id").all();
+  const emails = rows.map((r) => r.email).filter(Boolean);
+  if (!emails.length) return 0;
+  const html = newsletterEmailHtml(subject, bodyText);
+  const results = await Promise.allSettled(
+    emails.map((email) => sendEmail(email, subject, html))
+  );
+  return results.filter((r) => r.status === "fulfilled" && r.value === true).length;
 }
 
 const seedAnnouncements = [
@@ -620,7 +712,23 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "POST" && url.pathname === "/api/volunteers") {
       const body = await readJsonBody(req);
-      return sendJson(res, 200, registerVolunteer(body));
+      const result = registerVolunteer(body);
+      // Fire-and-forget admin notification
+      const missionRow = body.missionId
+        ? db.prepare("SELECT title FROM missions WHERE id = ?").get(Number(body.missionId))
+        : null;
+      const missionTitle = missionRow?.title || "";
+      notifyAdmin(
+        `New volunteer: ${String(body.name || "").trim()}`,
+        `<table style="border-collapse:collapse;width:100%;font-size:14px">
+          <tr><td style="padding:6px 10px;color:#666;width:120px">Name</td><td style="padding:6px 10px"><strong>${String(body.name || "").trim()}</strong></td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 10px;color:#666">Phone</td><td style="padding:6px 10px">${String(body.phone || "").trim()}</td></tr>
+          <tr><td style="padding:6px 10px;color:#666">Area</td><td style="padding:6px 10px">${String(body.area || "-").trim()}</td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 10px;color:#666">Mission</td><td style="padding:6px 10px">${missionTitle || "General volunteer (no mission selected)"}</td></tr>
+          <tr><td style="padding:6px 10px;color:#666">Skills</td><td style="padding:6px 10px">${(Array.isArray(body.skills) ? body.skills : []).join(", ") || "-"}</td></tr>
+        </table>`
+      );
+      return sendJson(res, 200, result);
     }
 
     if (req.method === "POST" && url.pathname === "/api/volunteers/lookup") {
@@ -630,7 +738,21 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "POST" && url.pathname === "/api/community-missions") {
       const body = await readJsonBody(req);
-      return sendJson(res, 200, createCommunityMission(body));
+      const result = createCommunityMission(body);
+      // Fire-and-forget admin notification
+      notifyAdmin(
+        `New mission request: ${String(body.title || "").trim()}`,
+        `<table style="border-collapse:collapse;width:100%;font-size:14px">
+          <tr><td style="padding:6px 10px;color:#666;width:120px">Title</td><td style="padding:6px 10px"><strong>${String(body.title || "").trim()}</strong></td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 10px;color:#666">Host</td><td style="padding:6px 10px">${String(body.hostName || "").trim()}</td></tr>
+          <tr><td style="padding:6px 10px;color:#666">Phone</td><td style="padding:6px 10px">${String(body.hostPhone || "").trim()}</td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 10px;color:#666">Email</td><td style="padding:6px 10px">${String(body.hostEmail || "").trim()}</td></tr>
+          <tr><td style="padding:6px 10px;color:#666">Location</td><td style="padding:6px 10px">${String(body.location || "").trim()}, ${String(body.ward || "").trim()}</td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 10px;color:#666">Date</td><td style="padding:6px 10px">${String(body.date || "").trim()}</td></tr>
+        </table>
+        <p style="margin-top:16px;color:#666;font-size:13px">Log in to the admin panel to review and approve or reject this request.</p>`
+      );
+      return sendJson(res, 200, result);
     }
 
     if (req.method === "POST" && url.pathname === "/api/newsletter/subscribe") {
@@ -640,7 +762,18 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "POST" && url.pathname === "/api/stories") {
       const body = await readJsonBody(req);
-      return sendJson(res, 200, createStory(body));
+      const result = createStory(body);
+      // Fire-and-forget admin notification
+      notifyAdmin(
+        `New story submitted: ${String(body.title || "").trim()}`,
+        `<table style="border-collapse:collapse;width:100%;font-size:14px">
+          <tr><td style="padding:6px 10px;color:#666;width:120px">Title</td><td style="padding:6px 10px"><strong>${String(body.title || "").trim()}</strong></td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 10px;color:#666">By</td><td style="padding:6px 10px">${String(body.contributor || "").trim()} · ${String(body.role || "").trim()}</td></tr>
+          <tr><td style="padding:6px 10px;color:#666">Category</td><td style="padding:6px 10px">${String(body.category || "").trim()}</td></tr>
+        </table>
+        <p style="margin-top:16px;color:#666;font-size:13px">Check the Showcase section on the portal to review the story.</p>`
+      );
+      return sendJson(res, 200, result);
     }
 
     if (req.method === "POST" && /^\/api\/stories\/\d+\/comments$/.test(url.pathname)) {
@@ -737,6 +870,21 @@ const server = http.createServer(async (req, res) => {
       requireAdmin(req);
       const body = await readJsonBody(req);
       return sendJson(res, 200, saveNewsletterDraft(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/admin/newsletter/send") {
+      requireAdmin(req);
+      const body = await readJsonBody(req);
+      // Save draft first
+      saveNewsletterDraft(body);
+      if (!getTransporter()) {
+        return sendJson(res, 200, { ok: true, sent: 0, emailDisabled: true });
+      }
+      const sent = await sendNewsletterToAll(
+        String(body.subject || "").trim(),
+        String(body.body || "").trim()
+      );
+      return sendJson(res, 200, { ok: true, sent });
     }
 
     if (url.pathname === "/" || url.pathname === "/index.html") {
