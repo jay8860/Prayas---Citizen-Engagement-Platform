@@ -1766,6 +1766,113 @@
     /* ── Required star ── */
     .req { color: var(--saffron-dark); margin-left: 2px; }
 
+    /* ── Leaderboard tabs ── */
+    .lb-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 28px;
+      justify-content: center;
+    }
+    .lb-tab {
+      padding: 8px 22px;
+      border-radius: 20px;
+      border: 2px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lb-tab.active {
+      background: var(--navy);
+      color: #fff;
+      border-color: var(--navy);
+    }
+
+    /* ── Civic rank badge on leader card ── */
+    .civic-rank-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+      background: var(--saffron-light);
+      color: var(--saffron-dark);
+      margin: 4px 0 6px;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── Streak pill on leader card ── */
+    .streak-pill {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .streak-pill.active { color: #EA580C; }
+
+    /* ── Ward leaderboard panel ── */
+    .ward-lb-list { display: flex; flex-direction: column; gap: 10px; }
+    .ward-lb-row {
+      display: grid;
+      grid-template-columns: 40px 1fr auto;
+      align-items: center;
+      gap: 14px;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+    }
+    .ward-lb-row.top1 { border-color: #F59E0B; background: #FFFBEB; }
+    .ward-lb-row.top2 { border-color: #94A3B8; background: #F8FAFC; }
+    .ward-lb-row.top3 { border-color: #CD7C50; background: #FFF7F0; }
+    body[data-theme="dark"] .ward-lb-row.top1 { background: #2A2000; }
+    body[data-theme="dark"] .ward-lb-row.top2 { background: #1A1F2A; }
+    body[data-theme="dark"] .ward-lb-row.top3 { background: #2A1500; }
+    .ward-lb-rank {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--navy);
+      text-align: center;
+    }
+    .ward-lb-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .ward-lb-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .ward-lb-bar-wrap {
+      width: 100%;
+      background: var(--border);
+      border-radius: 4px;
+      height: 5px;
+      margin-top: 6px;
+    }
+    .ward-lb-bar {
+      height: 5px;
+      border-radius: 4px;
+      background: var(--saffron);
+      transition: width 0.6s ease;
+    }
+    .ward-lb-stats {
+      text-align: right;
+      white-space: nowrap;
+    }
+    .ward-lb-pts {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+    .ward-lb-pts-label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
     .skills-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -2965,8 +3072,19 @@
             </p>
           </div>
         </div>
-        <div class="leaderboard-grid" id="leaderboardGrid"></div>
-        <div style="text-align:center;margin-top:24px">
+        <div class="lb-tabs">
+          <button class="lb-tab active" id="lbTabIndividual" onclick="setLbTab('individual')">
+            <i class="fa-solid fa-trophy"></i> Individual Leaders
+          </button>
+          <button class="lb-tab" id="lbTabWard" onclick="setLbTab('ward')">
+            <i class="fa-solid fa-map-location-dot"></i> Ward vs. Ward
+          </button>
+        </div>
+        <div id="leaderboardGrid"></div>
+        <div id="wardLeaderboardPanel" class="hidden">
+          <div class="ward-lb-list" id="wardLbList"></div>
+        </div>
+        <div style="text-align:center;margin-top:28px">
           <button class="btn btn-soft" type="button" onclick="openMyMissionsModal()" data-i18n="my-missions-open-btn">
             <i class="fa-solid fa-list-check"></i> View My Missions
           </button>
@@ -3263,6 +3381,7 @@
         <div class="passport-header">
           <div class="passport-avatar" id="passportAvatar"></div>
           <div class="passport-name" id="passportName"></div>
+          <div id="passportCivicRank" style="margin:4px 0"></div>
           <div class="passport-area" id="passportArea"></div>
         </div>
         <div class="passport-stats">
@@ -3274,11 +3393,16 @@
             <div class="passport-stat-value" id="passportMissions"></div>
             <div class="passport-stat-label" data-i18n="passport-missions">Missions</div>
           </div>
+          <div class="passport-stat">
+            <div class="passport-stat-value" id="passportStreak">—</div>
+            <div class="passport-stat-label">🔥 Streak</div>
+          </div>
         </div>
         <div>
           <h3 class="form-card-title" style="font-size:18px;margin-bottom:12px" data-i18n="passport-badges">Badges Earned</h3>
           <div class="leader-badges" id="passportBadges" style="justify-content:flex-start"></div>
         </div>
+        <div id="passportPointBreakdown" style="margin-top:16px"></div>
         <div>
           <h3 class="form-card-title" style="font-size:18px;margin:18px 0 12px" data-i18n="passport-timeline">Missions Attended</h3>
           <div class="timeline" id="passportTimeline"></div>
@@ -4409,7 +4533,9 @@
         pendingMissionDepartment: {},
         pendingCompletionMissionId: null,
         volunteerLookup: { found: false, checkedKey: "", profile: null },
-        volunteerJoinMode: "general"
+        volunteerJoinMode: "general",
+        wardLeaderboard: [],
+        activeLbTab: "individual"
       };
     }
 
@@ -4503,6 +4629,7 @@
       state.leaders = Array.isArray(payload.leaders) ? payload.leaders : deepClone(leaders);
       state.volunteers = Array.isArray(payload.volunteers) ? payload.volunteers : [];
       state.volunteerEvents = Array.isArray(payload.volunteerEvents) ? payload.volunteerEvents : [];
+      state.wardLeaderboard = Array.isArray(payload.wardLeaderboard) ? payload.wardLeaderboard : [];
       state.newsletterSignups = Array.isArray(payload.newsletterSignups) ? payload.newsletterSignups : [];
       state.newsletterSubs = Number(payload.newsletterSubs || 0);
       if (payload.newsletterDraft && typeof payload.newsletterDraft === "object") {
@@ -5107,27 +5234,78 @@
     }
 
     function renderLeaders() {
+      const grid = document.getElementById("leaderboardGrid");
       if (!state.leaders.length) {
-        document.getElementById("leaderboardGrid").innerHTML = `<div class="mission-card" style="grid-column:1/-1;padding:32px;text-align:center"><h3 class="mission-title">${state.lang === "hi" ? "अभी तक कोई लीडरबोर्ड डेटा नहीं है।" : "No leaderboard data yet."}</h3><p class="mission-desc" style="display:block">${state.lang === "hi" ? "वास्तविक स्वयंसेवी भागीदारी आने पर यह स्वतः भर जाएगा।" : "This will populate automatically as real participation comes in."}</p></div>`;
+        grid.innerHTML = `<div class="mission-card" style="grid-column:1/-1;padding:32px;text-align:center">
+          <h3 class="mission-title">${state.lang === "hi" ? "अभी तक कोई लीडरबोर्ड डेटा नहीं है।" : "No leaderboard data yet."}</h3>
+          <p class="mission-desc" style="display:block">${state.lang === "hi" ? "वास्तविक स्वयंसेवी भागीदारी आने पर यह स्वतः भर जाएगा।" : "This will populate automatically as real participation comes in."}</p>
+        </div>`;
         return;
       }
-      document.getElementById("leaderboardGrid").innerHTML = state.leaders
-        .map(
-          (leader) => `
-            <article class="leader-card ${leader.cls}">
-              <div class="leader-rank">${leader.rank}</div>
-              <div class="leader-avatar" style="background:${leader.color}">${escapeHtml(leader.initials)}</div>
-              <div class="leader-name">${escapeHtml(leader.name)}</div>
-              <div class="leader-area"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(leader.area)}</div>
-              <div class="leader-score">⚡ ${leader.points} pts · ${leader.missions} ${state.lang === "hi" ? "अभियान" : "missions"}</div>
-              <div class="leader-badges">${leader.badges.map((badge) => `<span class="badge-emoji">${badge}</span>`).join("")}</div>
-              <button class="btn btn-primary" type="button" style="width:100%" onclick="openPassportModal(${leader.id})">
-                ${state.lang === "hi" ? "पासपोर्ट देखें" : "View Passport"}
-              </button>
-            </article>
-          `
-        )
-        .join("");
+      grid.innerHTML = state.leaders.map((leader) => {
+        const rankLabel = state.lang === "hi" ? (leader.civicRankHi || leader.civicRankEn || "") : (leader.civicRankEn || "");
+        const streakTxt = leader.streak > 0
+          ? (state.lang === "hi" ? `🔥 ${leader.streak} माह की स्ट्रीक` : `🔥 ${leader.streak}-month streak`)
+          : "";
+        return `
+          <article class="leader-card ${leader.cls}">
+            <div class="leader-rank">${leader.rank}</div>
+            <div class="leader-avatar" style="background:${leader.color}">${escapeHtml(leader.initials)}</div>
+            <div class="leader-name">${escapeHtml(leader.name)}</div>
+            ${rankLabel ? `<div class="civic-rank-badge">${escapeHtml(rankLabel)}</div>` : ""}
+            <div class="leader-area"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(leader.area)}</div>
+            <div class="leader-score">⚡ ${leader.points} ${state.lang === "hi" ? "अंक" : "pts"} · ${leader.missions} ${state.lang === "hi" ? "अभियान" : "missions"}</div>
+            ${streakTxt ? `<div class="streak-pill active">${streakTxt}</div>` : ""}
+            <div class="leader-badges">${(leader.badges || []).map((b) => `<span class="badge-emoji">${b}</span>`).join("")}</div>
+            <button class="btn btn-primary" type="button" style="width:100%;margin-top:8px" onclick="openPassportModal(${leader.id})">
+              ${state.lang === "hi" ? "पासपोर्ट देखें" : "View Passport"}
+            </button>
+          </article>`;
+      }).join("");
+    }
+
+    function setLbTab(tab) {
+      state.activeLbTab = tab;
+      document.getElementById("lbTabIndividual").classList.toggle("active", tab === "individual");
+      document.getElementById("lbTabWard").classList.toggle("active", tab === "ward");
+      document.getElementById("leaderboardGrid").classList.toggle("hidden", tab !== "individual");
+      document.getElementById("wardLeaderboardPanel").classList.toggle("hidden", tab !== "ward");
+      if (tab === "ward") renderWardLeaderboard();
+    }
+
+    function renderWardLeaderboard() {
+      const list = document.getElementById("wardLbList");
+      if (!state.wardLeaderboard.length) {
+        list.innerHTML = `<div class="message-card" style="text-align:center;padding:32px">
+          <div class="message-name">${state.lang === "hi" ? "अभी तक कोई क्षेत्र डेटा नहीं" : "No area data yet"}</div>
+          <div class="message-text">${state.lang === "hi" ? "जैसे ही स्वयंसेवक पंजीकरण करेंगे, यह चार्ट भर जाएगा।" : "This chart fills as volunteers register with their area."}</div>
+        </div>`;
+        return;
+      }
+      const maxP = state.wardLeaderboard[0]?.participations || 1;
+      const rankEmoji = ["🥇","🥈","🥉"];
+      const rowClass = ["top1","top2","top3"];
+      list.innerHTML = state.wardLeaderboard.map((row, idx) => {
+        const pct = Math.round((row.participations / maxP) * 100);
+        const cls = rowClass[idx] || "";
+        const rankLabel = rankEmoji[idx] || String(idx + 1);
+        return `
+          <div class="ward-lb-row ${cls}">
+            <div class="ward-lb-rank">${rankLabel}</div>
+            <div>
+              <div class="ward-lb-name">${escapeHtml(row.area)}</div>
+              <div class="ward-lb-meta">
+                ${row.volunteers} ${state.lang === "hi" ? "स्वयंसेवक" : "volunteer" + (row.volunteers !== 1 ? "s" : "")} ·
+                ${row.participations} ${state.lang === "hi" ? "भागीदारी" : "participation" + (row.participations !== 1 ? "s" : "")}
+              </div>
+              <div class="ward-lb-bar-wrap"><div class="ward-lb-bar" style="width:${pct}%"></div></div>
+            </div>
+            <div class="ward-lb-stats">
+              <div class="ward-lb-pts">${row.participations}</div>
+              <div class="ward-lb-pts-label">${state.lang === "hi" ? "भागीदारी" : "joins"}</div>
+            </div>
+          </div>`;
+      }).join("");
     }
 
     function publicMissions() {
@@ -5622,7 +5800,20 @@
       document.getElementById("passportArea").textContent = leader.area;
       document.getElementById("passportPoints").textContent = leader.points;
       document.getElementById("passportMissions").textContent = leader.missions;
-      document.getElementById("passportBadges").innerHTML = leader.badges.map((badge) => `<span class="badge-emoji">${badge}</span>`).join("");
+      // Civic rank badge
+      const rankLabel = state.lang === "hi" ? (leader.civicRankHi || leader.civicRankEn || "") : (leader.civicRankEn || "");
+      const rankEl = document.getElementById("passportCivicRank");
+      if (rankEl) rankEl.innerHTML = rankLabel ? `<span class="civic-rank-badge">${escapeHtml(rankLabel)}</span>` : "";
+      // Streak
+      const streakEl = document.getElementById("passportStreak");
+      if (streakEl) {
+        const s = leader.streak || 0;
+        const best = leader.longestStreak || 0;
+        streakEl.textContent = s > 0
+          ? `${s} ${state.lang === "hi" ? "माह" : "mo" + (s !== 1 ? "s" : "")}`
+          : (best > 0 ? `${state.lang === "hi" ? "सर्वश्रेष्ठ" : "Best"}: ${best}` : "—");
+      }
+      document.getElementById("passportBadges").innerHTML = (leader.badges || []).map((badge) => `<span class="badge-emoji">${badge}</span>`).join("");
       document.getElementById("passportTimeline").innerHTML = leader.attended
         .map((mission) => `<div class="timeline-item">${escapeHtml(mission)}${completedActivities.includes(mission) ? ` · ${state.lang === "hi" ? "पूर्ण" : "completed"}` : ""}</div>`)
         .join("");
@@ -5634,6 +5825,29 @@
           ? "प्रमाणपत्र तभी खुलेगा जब एडमिन किसी पूर्ण की गई गतिविधि को completed चिह्नित करेगा।"
           : "Certificates unlock only after an admin marks at least one attended activity as completed.";
       document.getElementById("downloadCertificateBtn").disabled = !completedActivities.length;
+      // Point breakdown panel
+      const bdEl = document.getElementById("passportPointBreakdown");
+      if (bdEl && leader.missions != null) {
+        const hi = state.lang === "hi";
+        const m = leader.missions;
+        const completed = completedActivities.length;
+        const base = 10 + m * 25 + completed * 50;
+        const milestone = m >= 10 ? 200 : m >= 5 ? 100 : 0;
+        const nextMilestone = m < 5 ? 5 : m < 10 ? 10 : null;
+        const ptsToNext = nextMilestone ? `+${nextMilestone >= 10 ? 200 : 100} ${hi ? "बोनस" : "bonus"} at ${nextMilestone} ${hi ? "अभियान" : "missions"}` : "";
+        bdEl.innerHTML = `
+          <div class="message-card" style="padding:14px 16px">
+            <div class="message-name" style="margin-bottom:8px">${hi ? "अंक विवरण" : "Point Breakdown"}</div>
+            <div style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)">
+              <div style="display:flex;justify-content:space-between"><span>${hi ? "पंजीकरण" : "Registration"}</span><span style="color:var(--text);font-weight:600">+10</span></div>
+              <div style="display:flex;justify-content:space-between"><span>${m} ${hi ? "अभियान में भागीदारी" : "mission join" + (m !== 1 ? "s" : "")} × 25</span><span style="color:var(--text);font-weight:600">+${m * 25}</span></div>
+              <div style="display:flex;justify-content:space-between"><span>${completed} ${hi ? "पूर्ण अभियान" : "completed mission" + (completed !== 1 ? "s" : "")} × 50</span><span style="color:var(--text);font-weight:600">+${completed * 50}</span></div>
+              ${milestone ? `<div style="display:flex;justify-content:space-between"><span>${hi ? "माइलस्टोन बोनस" : "Milestone bonus"}</span><span style="color:var(--green);font-weight:600">+${milestone}</span></div>` : ""}
+              <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span style="font-weight:700;color:var(--text)">${hi ? "कुल" : "Total"}</span><span style="font-weight:800;color:var(--navy)">⚡ ${leader.points}</span></div>
+            </div>
+            ${ptsToNext ? `<div style="margin-top:8px;font-size:12px;color:var(--saffron-dark);font-weight:600">🎯 ${ptsToNext}</div>` : ""}
+          </div>`;
+      }
     }
 
     function renderAll() {
@@ -5655,6 +5869,7 @@
       renderStories();
       renderLeaders();
       renderLeaderReport();
+      if (state.activeLbTab === "ward") renderWardLeaderboard();
       renderRecentActivityFeed();
       renderRecentEventHistory();
       renderSelectedMissionBox();

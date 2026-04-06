@@ -56,6 +56,171 @@ function resetLoginAttempts(ip) {
   loginAttempts.delete(ip);
 }
 
+// ── Gamification: points, streaks, civic ranks, badges ───────────────────────
+
+const POINTS = {
+  register:          10,
+  missionJoin:       25,
+  missionCompleted:  50,   // bonus on top of join when mission is marked completed
+  milestone5:       100,
+  milestone10:      200,
+};
+
+const CIVIC_RANKS = [
+  { min: 1000, en: "Lok Nayak",    hi: "लोक नायक" },
+  { min: 500,  en: "Jan Sewak",    hi: "जन सेवक" },
+  { min: 300,  en: "Karyakarta",   hi: "कार्यकर्ता" },
+  { min: 150,  en: "Prabhari",     hi: "प्रभारी" },
+  { min: 50,   en: "Sevak",        hi: "सेवक" },
+  { min: 0,    en: "Nagarik",      hi: "नागरिक" },
+];
+
+const CATEGORY_BADGES = [
+  { category: "sanitation",     badge: "🧹" },
+  { category: "environment",    badge: "🌱" },
+  { category: "education",      badge: "📚" },
+  { category: "health",         badge: "🏥" },
+  { category: "arts",           badge: "🎨" },
+  { category: "infrastructure", badge: "🏗️" },
+  { category: "awareness",      badge: "📢" },
+];
+
+function getCivicRank(points) {
+  return CIVIC_RANKS.find((r) => points >= r.min) || CIVIC_RANKS[CIVIC_RANKS.length - 1];
+}
+
+// Compute gamification stats for ALL volunteer profiles in two DB queries.
+// Returns a Map: profileId -> { points, missionCount, streak, longestStreak, badges, attended }
+function computeAllVolunteerStats() {
+  const allParticipations = db.prepare(`
+    SELECT vp.volunteer_profile_id, vp.created_at, vp.mission_title, m.status, m.category
+    FROM volunteer_participations vp
+    LEFT JOIN missions m ON m.id = vp.mission_id
+    ORDER BY vp.volunteer_profile_id, vp.created_at ASC
+  `).all();
+
+  // Group by profile
+  const byProfile = {};
+  allParticipations.forEach((row) => {
+    const pid = row.volunteer_profile_id;
+    if (!byProfile[pid]) byProfile[pid] = [];
+    byProfile[pid].push(row);
+  });
+
+  const now = new Date();
+  const thisYM  = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevYM  = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+
+  const statsMap = new Map();
+
+  Object.entries(byProfile).forEach(([pidStr, rows]) => {
+    const pid = Number(pidStr);
+    const missionCount    = rows.length;
+    const completedCount  = rows.filter((r) => r.status === "completed").length;
+
+    // Points
+    let points = POINTS.register + missionCount * POINTS.missionJoin + completedCount * POINTS.missionCompleted;
+    if (missionCount >= 10) points += POINTS.milestone10;
+    else if (missionCount >= 5) points += POINTS.milestone5;
+
+    // Streak — distinct months sorted
+    const months = [...new Set(rows.map((r) => r.created_at.slice(0, 7)))].sort();
+    let streak = months.length ? 1 : 0;
+    let longestStreak = streak;
+    for (let i = 1; i < months.length; i++) {
+      const [py, pm] = months[i - 1].split("-").map(Number);
+      const [cy, cm] = months[i].split("-").map(Number);
+      if ((cy - py) * 12 + (cm - pm) === 1) {
+        streak++;
+        if (streak > longestStreak) longestStreak = streak;
+      } else {
+        streak = 1;
+      }
+    }
+    const lastYM = months[months.length - 1] || "";
+    const currentStreak = (lastYM === thisYM || lastYM === prevYM) ? streak : 0;
+
+    // Category badges
+    const catCount = {};
+    rows.forEach((r) => { if (r.category) catCount[r.category] = (catCount[r.category] || 0) + 1; });
+    const badges = CATEGORY_BADGES.filter((b) => (catCount[b.category] || 0) >= 2).map((b) => b.badge);
+    if (missionCount >= 5)  badges.push("🏅");
+    if (missionCount >= 10) badges.push("🌟");
+    if (currentStreak >= 2) badges.push("🔥");
+
+    // Attended mission titles
+    const attended = rows.map((r) => r.mission_title).filter(Boolean);
+
+    statsMap.set(pid, { points, missionCount, completedCount, currentStreak, longestStreak, badges, attended });
+  });
+
+  return statsMap;
+}
+
+// Build real leaders from volunteer_profiles + computed stats
+const AVATAR_COLORS = ["#7C3AED","#059669","#DC2626","#D97706","#0284C7","#9D174D","#065F46","#92400E","#B45309","#1D4ED8"];
+
+function buildRealLeaders() {
+  const profiles = db.prepare("SELECT id, name, area FROM volunteer_profiles").all();
+  if (!profiles.length) return [];
+
+  const statsMap = computeAllVolunteerStats();
+
+  const enriched = profiles.map((p, idx) => {
+    const stats = statsMap.get(p.id) || { points: POINTS.register, missionCount: 0, completedCount: 0, currentStreak: 0, longestStreak: 0, badges: [], attended: [] };
+    const words = p.name.trim().split(/\s+/);
+    const initials = words.slice(0, 2).map((w) => w[0]?.toUpperCase() || "").join("") || "?";
+    const rank = getCivicRank(stats.points);
+    return {
+      id: p.id,
+      name: p.name,
+      area: p.area || "—",
+      initials,
+      color: AVATAR_COLORS[idx % AVATAR_COLORS.length],
+      ...stats,
+      civicRankEn: rank.en,
+      civicRankHi: rank.hi,
+    };
+  });
+
+  enriched.sort((a, b) => b.points - a.points || b.missionCount - a.missionCount);
+
+  return enriched.slice(0, 10).map((v, idx) => ({
+    id:           v.id,
+    name:         v.name,
+    area:         v.area,
+    initials:     v.initials,
+    color:        v.color,
+    points:       v.points,
+    missions:     v.missionCount,
+    rank:         idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : String(idx + 1),
+    cls:          idx === 0 ? "gold" : idx === 1 ? "silver" : idx === 2 ? "bronze" : "",
+    badges:       v.badges,
+    attended:     v.attended,
+    civicRankEn:  v.civicRankEn,
+    civicRankHi:  v.civicRankHi,
+    streak:       v.currentStreak,
+    longestStreak:v.longestStreak,
+  }));
+}
+
+// Ward vs. Ward: aggregate volunteer_profiles by area
+function buildWardLeaderboard() {
+  return db.prepare(`
+    SELECT
+      p.area,
+      COUNT(DISTINCT p.id)  AS volunteers,
+      COUNT(vp.id)          AS participations
+    FROM volunteer_profiles p
+    LEFT JOIN volunteer_participations vp ON vp.volunteer_profile_id = p.id
+    WHERE p.area != ''
+    GROUP BY p.area
+    ORDER BY participations DESC, volunteers DESC
+    LIMIT 20
+  `).all().map((r) => ({ area: r.area, volunteers: r.volunteers, participations: r.participations }));
+}
+
 // ── Email helpers ─────────────────────────────────────────────────────────────
 
 let _transporter = null;
@@ -1260,19 +1425,30 @@ function buildBootstrapPayload() {
     }))
   }));
 
-  const leaders = leaderRows.map((leader) => ({
-    id: leader.id,
-    name: leader.name,
-    area: leader.area,
-    initials: leader.initials,
-    color: leader.color,
-    points: leader.points,
-    missions: leader.missions,
-    rank: leader.rank_label,
-    cls: leader.cls,
-    badges: safeJsonArray(leader.badges_json),
-    attended: safeJsonArray(leader.attended_json)
-  }));
+  // In real mode, compute leaders dynamically from volunteer data.
+  // In demo mode (or when no real volunteers exist), fall back to seed records.
+  const realVolunteerCount = db.prepare("SELECT COUNT(*) as n FROM volunteer_profiles").get().n;
+  const leaders = (dataMode === "real" && realVolunteerCount > 0)
+    ? buildRealLeaders()
+    : leaderRows.map((leader) => ({
+        id: leader.id,
+        name: leader.name,
+        area: leader.area,
+        initials: leader.initials,
+        color: leader.color,
+        points: leader.points,
+        missions: leader.missions,
+        rank: leader.rank_label,
+        cls: leader.cls,
+        badges: safeJsonArray(leader.badges_json),
+        attended: safeJsonArray(leader.attended_json),
+        civicRankEn: getCivicRank(leader.points).en,
+        civicRankHi: getCivicRank(leader.points).hi,
+        streak: 0,
+        longestStreak: 0,
+      }));
+
+  const wardLeaderboard = buildWardLeaderboard();
 
   const volunteers = volunteerProfileRows.map((volunteer) => ({
     id: volunteer.id,
@@ -1344,6 +1520,7 @@ function buildBootstrapPayload() {
     funds,
     stories,
     leaders,
+    wardLeaderboard,
     volunteers,
     volunteerEvents,
     sponsorLeads,
