@@ -1214,6 +1214,10 @@ function registerVolunteer(body) {
     ? db.prepare("SELECT id, title, volunteers, total, status FROM missions WHERE id = ?").get(missionId)
     : null;
 
+  if (missionId && !mission) {
+    throw publicError(404, "Mission not found.");
+  }
+
   if (mission && (mission.status === "full" || mission.status === "completed" || mission.status === "closed")) {
     throw publicError(409, mission.status === "completed" ? "This activity has already been completed." : mission.status === "closed" ? "This mission is temporarily closed." : "This mission is already full.");
   }

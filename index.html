@@ -5873,6 +5873,9 @@
       const skills = formData.getAll("skills");
       const selectedMission = state.missions.find((mission) => mission.id === state.selectedMissionId) || null;
       const volunteerName = String(formData.get("volName") || document.getElementById("volName").value || "").trim();
+      if (selectedMission && state.volunteerJoinMode === "returning" && state.volunteerLookup.checkedKey === "") {
+        await lookupReturningVolunteer();
+      }
       if (selectedMission && state.volunteerJoinMode === "returning" && !state.volunteerLookup.found) {
         showToast(
           state.lang === "hi"
@@ -6712,11 +6715,11 @@
       document.getElementById("volName").addEventListener("blur", lookupReturningVolunteer);
       document.getElementById("volPhone").addEventListener("blur", lookupReturningVolunteer);
       document.getElementById("volName").addEventListener("input", () => {
-        state.volunteerLookup.checkedKey = "";
+        state.volunteerLookup = { found: false, checkedKey: "", profile: null };
         updateVolunteerFormMode();
       });
       document.getElementById("volPhone").addEventListener("input", () => {
-        state.volunteerLookup.checkedKey = "";
+        state.volunteerLookup = { found: false, checkedKey: "", profile: null };
         updateVolunteerFormMode();
       });
       document.getElementById("newsletterForm").addEventListener("submit", submitNewsletterForm);
