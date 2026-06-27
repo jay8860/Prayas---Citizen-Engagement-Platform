@@ -596,8 +596,13 @@ const seedLeaders = [
 
 fs.mkdirSync(DB_DIR, { recursive: true });
 
+const SERVER_START_TIME = Date.now();
+
 const db = new DatabaseSync(DB_PATH);
 db.exec(`
+  PRAGMA journal_mode=WAL;
+  PRAGMA synchronous=NORMAL;
+  PRAGMA cache_size=-20000;
   PRAGMA foreign_keys = ON;
 
   CREATE TABLE IF NOT EXISTS settings (
@@ -779,6 +784,26 @@ db.exec(`
     date_label TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS admin_audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    action TEXT NOT NULL,
+    target_type TEXT NOT NULL DEFAULT '',
+    target_id INTEGER,
+    detail TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS mission_feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mission_id INTEGER NOT NULL REFERENCES missions(id) ON DELETE CASCADE,
+    volunteer_phone TEXT NOT NULL,
+    rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
+    comment TEXT NOT NULL DEFAULT '',
+    date_label TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(mission_id, volunteer_phone)
+  );
 `);
 
 try {
@@ -829,10 +854,20 @@ try {
 try {
   db.exec("ALTER TABLE missions ADD COLUMN photo_url TEXT NOT NULL DEFAULT ''");
 } catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN archived_at TEXT");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN check_in_code TEXT NOT NULL DEFAULT ''");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE volunteer_participations ADD COLUMN attended_at TEXT");
+} catch (error) {}
 
 seedDatabase();
 migrateLegacyDemoRecords();
 migrateVolunteerRegistry();
+migrateCheckInCodes();
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
@@ -845,7 +880,13 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === "/health") {
-      return sendJson(res, 200, { ok: true });
+      let dbOk = false;
+      try { db.prepare("SELECT 1").get(); dbOk = true; } catch (e) {}
+      return sendJson(res, dbOk ? 200 : 503, {
+        ok: dbOk,
+        dbOk,
+        uptimeSeconds: Math.floor((Date.now() - SERVER_START_TIME) / 1000)
+      });
     }
 
     if (req.method === "GET" && url.pathname === "/api/bootstrap") {
@@ -1052,11 +1093,88 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true, sent });
     }
 
+    // ── Volunteer search (admin) ──────────────────────────────────────────────
+    if (req.method === "GET" && url.pathname === "/api/admin/volunteers/search") {
+      requireAdmin(req);
+      return sendJson(res, 200, searchVolunteers(url.searchParams));
+    }
+
+    // ── Bulk approve/reject community missions ────────────────────────────────
+    if (req.method === "POST" && url.pathname === "/api/admin/community-missions/bulk") {
+      requireAdmin(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, bulkReviewMissions(body));
+    }
+
+    // ── Soft-delete (archive) a mission ──────────────────────────────────────
+    if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/archive$/.test(url.pathname)) {
+      requireAdmin(req);
+      const missionId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, archiveMission(missionId));
+    }
+
+    // ── Restore an archived mission ───────────────────────────────────────────
+    if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/restore$/.test(url.pathname)) {
+      requireAdmin(req);
+      const missionId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, restoreArchivedMission(missionId));
+    }
+
+    // ── Analytics dashboard ───────────────────────────────────────────────────
+    if (req.method === "GET" && url.pathname === "/api/admin/analytics") {
+      requireAdmin(req);
+      return sendJson(res, 200, buildAnalytics());
+    }
+
+    // ── Data exports ──────────────────────────────────────────────────────────
+    if (req.method === "GET" && url.pathname === "/api/admin/export/missions.csv") {
+      requireAdmin(req);
+      return sendCsv(res, exportMissionsCsv());
+    }
+    if (req.method === "GET" && url.pathname === "/api/admin/export/stories.csv") {
+      requireAdmin(req);
+      return sendCsv(res, exportStoriesCsv());
+    }
+    if (req.method === "GET" && url.pathname === "/api/admin/export/subscribers.csv") {
+      requireAdmin(req);
+      return sendCsv(res, exportSubscribersCsv());
+    }
+
+    // ── Admin audit log ───────────────────────────────────────────────────────
+    if (req.method === "GET" && url.pathname === "/api/admin/audit-log") {
+      requireAdmin(req);
+      return sendJson(res, 200, { entries: getAuditLog() });
+    }
+
+    // ── Community mission status tracking (citizen) ───────────────────────────
+    if (req.method === "GET" && url.pathname === "/api/my-missions") {
+      const phone = String(url.searchParams.get("phone") || "").trim();
+      return sendJson(res, 200, getMyMissions(phone));
+    }
+
+    // ── QR code check-in ──────────────────────────────────────────────────────
+    if (req.method === "POST" && url.pathname === "/api/checkin") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, checkInVolunteer(body));
+    }
+
+    // ── Post-mission feedback ─────────────────────────────────────────────────
+    if (req.method === "POST" && url.pathname === "/api/feedback") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, submitFeedback(body));
+    }
+
+    if (req.method === "GET" && /^\/api\/missions\/\d+\/feedback$/.test(url.pathname)) {
+      const missionId = Number(url.pathname.split("/")[3]);
+      return sendJson(res, 200, { feedback: getMissionFeedback(missionId) });
+    }
+
     if (url.pathname === "/" || url.pathname === "/index.html") {
       const html = fs.readFileSync(INDEX_PATH);
       res.writeHead(200, {
         "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-cache"
+        "Cache-Control": "no-cache",
+        ...securityHeaders()
       });
       res.end(html);
       return;
@@ -1077,7 +1195,21 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Prayas portal running on http://localhost:${PORT}`);
+  if (ALLOWED_ORIGIN === "*") {
+    console.warn("[WARN] PRAYAS_ALLOWED_ORIGIN is not set — CORS allows all origins. Set this env var to your domain before going public.");
+  }
 });
+
+function gracefulShutdown(signal) {
+  console.log(`[${signal}] Closing server gracefully...`);
+  server.close(() => {
+    console.log("HTTP server closed.");
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10_000).unref();
+}
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 // Set PRAYAS_ALLOWED_ORIGIN to your domain in production (e.g. "https://prayas.example.com").
 // Defaults to "*" for local development only.
@@ -1091,11 +1223,42 @@ function corsHeaders() {
   };
 }
 
+function securityHeaders() {
+  return {
+    "X-Frame-Options": "DENY",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Content-Security-Policy":
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; " +
+      "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
+      "img-src 'self' data: blob: https:; " +
+      "connect-src 'self';"
+  };
+}
+
+function sendCsv(res, csvContent) {
+  res.writeHead(200, {
+    "Content-Type": "text/csv; charset=utf-8",
+    "Cache-Control": "no-cache",
+    ...corsHeaders(),
+    ...securityHeaders()
+  });
+  res.end(csvContent);
+}
+
+function stripHtml(value) {
+  return String(value || "").replace(/<[^>]*>/g, "").trim();
+}
+
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-cache",
-    ...corsHeaders()
+    ...corsHeaders(),
+    ...securityHeaders()
   });
   res.end(JSON.stringify(payload));
 }
@@ -1342,7 +1505,7 @@ function buildBootstrapPayload() {
   const locations = safeJsonArray(getSetting("location_catalog_json", "[]"));
   const departments = safeJsonArray(getSetting("department_catalog_json", "[]"));
   const announcementRows = db.prepare("SELECT text FROM announcements WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
-  const missionRows = db.prepare("SELECT * FROM missions WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
+  const missionRows = db.prepare("SELECT * FROM missions WHERE is_demo = ? AND archived_at IS NULL ORDER BY id DESC").all(demoFlag);
   const discussionStmt = db.prepare("SELECT name, text, time_label FROM mission_discussions WHERE mission_id = ? ORDER BY id DESC");
   const fundRows = [];
   const storyRows = db.prepare("SELECT * FROM stories WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
@@ -1385,6 +1548,7 @@ function buildBootstrapPayload() {
     outcomeNote: mission.outcome_note || "",
     actualTurnout: mission.actual_turnout || 0,
     photoUrl: mission.photo_url || "",
+    checkInCode: mission.check_in_code || "",
     discussion: discussionStmt.all(mission.id).map((entry) => ({
       name: entry.name,
       text: entry.text,
@@ -1569,6 +1733,14 @@ function migrateVolunteerRegistry() {
   });
 }
 
+function migrateCheckInCodes() {
+  const missions = db.prepare("SELECT id FROM missions WHERE (check_in_code IS NULL OR check_in_code = '') AND archived_at IS NULL").all();
+  missions.forEach((m) => {
+    const code = generateCheckInCode();
+    db.prepare("UPDATE missions SET check_in_code = ? WHERE id = ?").run(code, m.id);
+  });
+}
+
 function registerVolunteer(body) {
   const name = String(body.name || "").trim();
   const phone = String(body.phone || "").trim();
@@ -1635,17 +1807,21 @@ function registerVolunteer(body) {
     if (existingParticipation) {
       return { ok: true, returningVolunteer: true, alreadyJoinedMission: true };
     }
-    db.prepare(`
-      INSERT INTO volunteer_participations (
-        volunteer_profile_id, mission_id, mission_title, date_label, created_at
-      ) VALUES (?, ?, ?, ?, ?)
-    `).run(finalProfile.id, mission.id, mission.title, dateLabel, isoNow());
-  }
-
-  if (mission) {
-    const nextVolunteers = Math.min(mission.total, mission.volunteers + 1);
-    const nextStatus = nextVolunteers >= mission.total ? "full" : mission.status;
-    db.prepare("UPDATE missions SET volunteers = ?, status = ? WHERE id = ?").run(nextVolunteers, nextStatus, mission.id);
+    db.exec("BEGIN");
+    try {
+      db.prepare(`
+        INSERT INTO volunteer_participations (
+          volunteer_profile_id, mission_id, mission_title, date_label, created_at
+        ) VALUES (?, ?, ?, ?, ?)
+      `).run(finalProfile.id, mission.id, mission.title, dateLabel, isoNow());
+      const nextVolunteers = Math.min(mission.total, mission.volunteers + 1);
+      const nextStatus = nextVolunteers >= mission.total ? "full" : mission.status;
+      db.prepare("UPDATE missions SET volunteers = ?, status = ? WHERE id = ?").run(nextVolunteers, nextStatus, mission.id);
+      db.exec("COMMIT");
+    } catch (txErr) {
+      db.exec("ROLLBACK");
+      throw txErr;
+    }
   }
 
   return { ok: true, returningVolunteer: Boolean(existingProfile) };
@@ -1778,11 +1954,11 @@ function subscribeNewsletter(body) {
 }
 
 function createStory(body) {
-  const contributor = String(body.contributor || "").trim();
-  const role = String(body.role || "").trim();
-  const title = String(body.title || "").trim();
-  const story = String(body.story || "").trim();
-  const category = String(body.category || "").trim();
+  const contributor = stripHtml(body.contributor).slice(0, 100);
+  const role = stripHtml(body.role).slice(0, 100);
+  const title = stripHtml(body.title).slice(0, 200);
+  const story = stripHtml(body.story).slice(0, 5000);
+  const category = stripHtml(body.category).slice(0, 50);
   if (!contributor || !role || !title || !story || !category) {
     throw publicError(400, "Story contributor, role, category, title, and story are required.");
   }
@@ -1812,8 +1988,8 @@ function createStory(body) {
 
 function addStoryComment(storyId, body) {
   ensureRowExists("stories", storyId, "Story not found.");
-  const name = String(body.name || "").trim();
-  const text = String(body.text || "").trim();
+  const name = stripHtml(body.name).slice(0, 100);
+  const text = stripHtml(body.text).slice(0, 1000);
   if (!name || !text) {
     throw publicError(400, "Comment name and text are required.");
   }
@@ -1832,8 +2008,8 @@ function cheerStory(storyId) {
 
 function addMissionDiscussion(missionId, body) {
   ensureRowExists("missions", missionId, "Mission not found.");
-  const name = String(body.name || "").trim();
-  const text = String(body.text || "").trim();
+  const name = stripHtml(body.name).slice(0, 100);
+  const text = stripHtml(body.text).slice(0, 1000);
   if (!name || !text) {
     throw publicError(400, "Discussion name and text are required.");
   }
@@ -1950,6 +2126,9 @@ function createMission(body) {
     String(body.impact || "Just launched"),
     isoNow()
   );
+  const newMissionId = Number(db.prepare("SELECT last_insert_rowid() AS id").get().id);
+  ensureCheckInCode(newMissionId);
+  writeAuditLog("create_mission", "mission", newMissionId, `New mission created: ${title}`);
 
   return { ok: true };
 }
@@ -2041,12 +2220,17 @@ function reviewMissionRequest(missionId, body) {
     throw publicError(400, "Select a nodal department before approval.");
   }
   appendDepartmentCatalog(nodalDepartment);
+  const newStatus = approvalStatus === "approved" ? status : "upcoming";
+  if (approvalStatus === "approved") {
+    ensureCheckInCode(missionId);
+  }
   db.prepare("UPDATE missions SET approval_status = ?, nodal_department = ?, status = ? WHERE id = ?").run(
     approvalStatus,
     nodalDepartment,
-    approvalStatus === "approved" ? status : "upcoming",
+    newStatus,
     missionId
   );
+  writeAuditLog(`${approvalStatus}_mission`, "mission", missionId, `Mission ${approvalStatus} by admin, dept: ${nodalDepartment}`);
   return { ok: true };
 }
 
@@ -2124,8 +2308,21 @@ function updateMission(missionId, body) {
 }
 
 function deleteMission(missionId) {
+  return archiveMission(missionId);
+}
+
+function archiveMission(missionId) {
   ensureRowExists("missions", missionId, "Mission not found.");
-  db.prepare("DELETE FROM missions WHERE id = ?").run(missionId);
+  db.prepare("UPDATE missions SET archived_at = ? WHERE id = ?").run(isoNow(), missionId);
+  writeAuditLog("archive_mission", "mission", missionId, `Mission ${missionId} archived`);
+  return { ok: true };
+}
+
+function restoreArchivedMission(missionId) {
+  const row = db.prepare("SELECT id FROM missions WHERE id = ?").get(missionId);
+  if (!row) throw publicError(404, "Mission not found.");
+  db.prepare("UPDATE missions SET archived_at = NULL WHERE id = ?").run(missionId);
+  writeAuditLog("restore_mission", "mission", missionId, `Mission ${missionId} restored`);
   return { ok: true };
 }
 
@@ -2190,4 +2387,341 @@ function categoryGradient(category) {
     arts: "linear-gradient(135deg,#F3E5F5,#E1BEE7)",
     education: "linear-gradient(135deg,#E3F2FD,#BBDEFB)"
   }[category] || "linear-gradient(135deg,#EEF2F8,#DCE8F7)";
+}
+
+// ── Admin audit log ───────────────────────────────────────────────────────────
+
+function writeAuditLog(action, targetType, targetId, detail) {
+  try {
+    db.prepare(`
+      INSERT INTO admin_audit_log (action, target_type, target_id, detail, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(action, targetType || "", targetId || null, detail || "", isoNow());
+  } catch (e) {
+    // Audit log failures must never crash the main request
+    console.error("[AUDIT LOG ERROR]", e.message);
+  }
+}
+
+function getAuditLog() {
+  return db.prepare(`
+    SELECT id, action, target_type, target_id, detail, created_at
+    FROM admin_audit_log
+    ORDER BY id DESC
+    LIMIT 200
+  `).all();
+}
+
+// ── Volunteer search (admin) ──────────────────────────────────────────────────
+
+function searchVolunteers(params) {
+  const q = String(params.get("q") || "").trim();
+  const ward = String(params.get("ward") || "").trim();
+  const skill = String(params.get("skill") || "").trim();
+  const page = Math.max(1, Number(params.get("page") || 1));
+  const limit = Math.min(100, Math.max(1, Number(params.get("limit") || 50)));
+  const offset = (page - 1) * limit;
+
+  let where = "1=1";
+  const args = [];
+
+  if (q) {
+    where += " AND (name LIKE ? OR phone LIKE ? OR area LIKE ?)";
+    const like = `%${q}%`;
+    args.push(like, like, like);
+  }
+  if (ward) {
+    where += " AND area = ?";
+    args.push(ward);
+  }
+  if (skill) {
+    where += " AND skills_json LIKE ?";
+    args.push(`%${skill}%`);
+  }
+
+  const total = db.prepare(`SELECT COUNT(*) AS n FROM volunteer_profiles WHERE ${where}`).get(...args).n;
+  const rows = db.prepare(`
+    SELECT id, name, phone, email, area, occupation, availability, skills_json,
+           first_registered_at, last_active_at
+    FROM volunteer_profiles
+    WHERE ${where}
+    ORDER BY last_active_at DESC, id DESC
+    LIMIT ? OFFSET ?
+  `).all(...args, limit, offset);
+
+  return {
+    total,
+    page,
+    limit,
+    volunteers: rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      phone: r.phone,
+      email: r.email || "",
+      area: r.area || "",
+      occupation: r.occupation || "",
+      skills: safeJsonArray(r.skills_json),
+      joinedDate: new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" })
+        .format(new Date(r.first_registered_at || isoNow()))
+    }))
+  };
+}
+
+// ── Bulk approve/reject community missions ────────────────────────────────────
+
+function bulkReviewMissions(body) {
+  const ids = Array.isArray(body.ids) ? body.ids.map(Number).filter(Boolean) : [];
+  const action = String(body.action || "").trim();
+  const nodalDepartment = String(body.nodalDepartment || "").trim();
+  if (!ids.length) throw publicError(400, "No mission IDs provided.");
+  if (!["approve", "reject"].includes(action)) throw publicError(400, "Action must be 'approve' or 'reject'.");
+  if (action === "approve" && !nodalDepartment) throw publicError(400, "Select a nodal department for bulk approval.");
+
+  const approvalStatus = action === "approve" ? "approved" : "rejected";
+  const missionStatus = action === "approve" ? "open" : "upcoming";
+
+  db.exec("BEGIN");
+  try {
+    const stmt = db.prepare(
+      "UPDATE missions SET approval_status = ?, nodal_department = ?, status = ? WHERE id = ?"
+    );
+    ids.forEach((id) => {
+      stmt.run(approvalStatus, action === "approve" ? nodalDepartment : "", missionStatus, id);
+      writeAuditLog(`bulk_${action}_mission`, "mission", id, `Bulk ${action} by admin`);
+    });
+    if (action === "approve" && nodalDepartment) appendDepartmentCatalog(nodalDepartment);
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
+
+  return { ok: true, processed: ids.length };
+}
+
+// ── Mission analytics ─────────────────────────────────────────────────────────
+
+function buildAnalytics() {
+  const totalVolunteers = db.prepare("SELECT COUNT(*) AS n FROM volunteer_profiles").get().n;
+  const totalMissions = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE archived_at IS NULL").get().n;
+  const completedMissions = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE status = 'completed' AND archived_at IS NULL").get().n;
+  const pendingRequests = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE source_type = 'community' AND approval_status = 'pending' AND archived_at IS NULL").get().n;
+  const totalParticipations = db.prepare("SELECT COUNT(*) AS n FROM volunteer_participations").get().n;
+
+  const byCategory = db.prepare(`
+    SELECT category, COUNT(*) AS missions, SUM(volunteers) AS participants
+    FROM missions
+    WHERE archived_at IS NULL
+    GROUP BY category
+    ORDER BY participants DESC
+  `).all();
+
+  const top5Missions = db.prepare(`
+    SELECT m.id, m.title, m.category, m.volunteers, m.total, m.status, m.date
+    FROM missions m
+    WHERE m.archived_at IS NULL
+    ORDER BY m.volunteers DESC
+    LIMIT 5
+  `).all();
+
+  const volunteersByWard = db.prepare(`
+    SELECT area, COUNT(*) AS count
+    FROM volunteer_profiles
+    WHERE area != ''
+    GROUP BY area
+    ORDER BY count DESC
+    LIMIT 10
+  `).all();
+
+  const monthlyRegistrations = db.prepare(`
+    SELECT strftime('%Y-%m', first_registered_at) AS month, COUNT(*) AS count
+    FROM volunteer_profiles
+    GROUP BY month
+    ORDER BY month DESC
+    LIMIT 12
+  `).all();
+
+  const avgRating = db.prepare("SELECT AVG(rating) AS avg FROM mission_feedback").get().avg;
+
+  return {
+    totalVolunteers,
+    totalMissions,
+    completedMissions,
+    pendingRequests,
+    totalParticipations,
+    completionRate: totalMissions > 0 ? Math.round((completedMissions / totalMissions) * 100) : 0,
+    avgFeedbackRating: avgRating ? Math.round(avgRating * 10) / 10 : null,
+    byCategory,
+    top5Missions,
+    volunteersByWard,
+    monthlyRegistrations
+  };
+}
+
+// ── CSV exports ───────────────────────────────────────────────────────────────
+
+function csvEscape(value) {
+  const str = String(value == null ? "" : value);
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function exportMissionsCsv() {
+  const rows = db.prepare(`
+    SELECT m.id, m.title, m.category, m.ward, m.date, m.location, m.status,
+           m.approval_status, m.volunteers, m.total, m.coordinator,
+           m.nodal_department, m.host_name, m.host_phone, m.created_at
+    FROM missions m
+    ORDER BY m.id DESC
+  `).all();
+  const header = "ID,Title,Category,Ward,Date,Location,Status,Approval,Registered,Capacity,Coordinator,Department,HostName,HostPhone,CreatedAt\n";
+  const lines = rows.map((r) =>
+    [r.id, r.title, r.category, r.ward, r.date, r.location, r.status, r.approval_status,
+     r.volunteers, r.total, r.coordinator, r.nodal_department, r.host_name, r.host_phone, r.created_at]
+      .map(csvEscape).join(",")
+  );
+  return header + lines.join("\n");
+}
+
+function exportStoriesCsv() {
+  const rows = db.prepare(`
+    SELECT id, contributor, role, title, likes, date_label, created_at
+    FROM stories
+    ORDER BY id DESC
+  `).all();
+  const header = "ID,Contributor,Role,Title,Likes,Date,CreatedAt\n";
+  const lines = rows.map((r) =>
+    [r.id, r.contributor, r.role, r.title, r.likes, r.date_label, r.created_at]
+      .map(csvEscape).join(",")
+  );
+  return header + lines.join("\n");
+}
+
+function exportSubscribersCsv() {
+  const rows = db.prepare("SELECT email, date_label, created_at FROM newsletter_subscribers ORDER BY id DESC").all();
+  const header = "Email,SubscribedDate,CreatedAt\n";
+  const lines = rows.map((r) => [r.email, r.date_label, r.created_at].map(csvEscape).join(","));
+  return header + lines.join("\n");
+}
+
+// ── Community mission tracking (citizen) ─────────────────────────────────────
+
+function getMyMissions(phone) {
+  if (!phone) return { missions: [] };
+  const normalized = normalizeVolunteerPhone(phone);
+  if (normalized.length < 10) return { missions: [] };
+
+  const rows = db.prepare(`
+    SELECT id, title, category, date, location, status, approval_status, created_at
+    FROM missions
+    WHERE host_phone LIKE ?
+    ORDER BY id DESC
+  `).all(`%${normalized}%`);
+
+  return {
+    missions: rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      category: r.category,
+      date: r.date,
+      location: r.location,
+      status: r.status,
+      approvalStatus: r.approval_status,
+      createdAt: displayDate(r.created_at)
+    }))
+  };
+}
+
+// ── QR code check-in ──────────────────────────────────────────────────────────
+
+function generateCheckInCode() {
+  return crypto.randomBytes(3).toString("hex").toUpperCase(); // 6-char hex e.g. "A3F2B1"
+}
+
+function ensureCheckInCode(missionId) {
+  const row = db.prepare("SELECT check_in_code FROM missions WHERE id = ?").get(missionId);
+  if (!row) throw publicError(404, "Mission not found.");
+  if (row.check_in_code) return row.check_in_code;
+  const code = generateCheckInCode();
+  db.prepare("UPDATE missions SET check_in_code = ? WHERE id = ?").run(code, missionId);
+  return code;
+}
+
+function checkInVolunteer(body) {
+  const code = String(body.code || "").trim().toUpperCase();
+  const phone = String(body.phone || "").trim();
+  if (!code || !phone) throw publicError(400, "Check-in code and volunteer phone are required.");
+  const normalizedPhone = normalizeVolunteerPhone(phone);
+
+  const mission = db.prepare("SELECT id, title, status FROM missions WHERE check_in_code = ? AND archived_at IS NULL").get(code);
+  if (!mission) throw publicError(404, "Invalid check-in code. Please verify with your mission coordinator.");
+
+  const profile = db.prepare("SELECT id FROM volunteer_profiles WHERE normalized_phone = ? LIMIT 1").get(normalizedPhone);
+  if (!profile) throw publicError(404, "Volunteer not found. Please register first.");
+
+  const participation = db.prepare(`
+    SELECT id, attended_at FROM volunteer_participations
+    WHERE volunteer_profile_id = ? AND mission_id = ?
+    LIMIT 1
+  `).get(profile.id, mission.id);
+
+  if (!participation) throw publicError(409, "You are not registered for this mission. Please register first.");
+  if (participation.attended_at) return { ok: true, alreadyCheckedIn: true, missionTitle: mission.title };
+
+  db.prepare("UPDATE volunteer_participations SET attended_at = ? WHERE id = ?").run(isoNow(), participation.id);
+  return { ok: true, checkedIn: true, missionTitle: mission.title };
+}
+
+// ── Post-mission feedback ─────────────────────────────────────────────────────
+
+function submitFeedback(body) {
+  const missionId = Number(body.missionId || 0);
+  const phone = String(body.phone || "").trim();
+  const rating = Number(body.rating || 0);
+  const comment = stripHtml(body.comment || "").slice(0, 500);
+
+  if (!missionId) throw publicError(400, "Mission ID is required.");
+  if (!phone) throw publicError(400, "Phone number is required.");
+  if (rating < 1 || rating > 5) throw publicError(400, "Rating must be between 1 and 5.");
+
+  const normalizedPhone = normalizeVolunteerPhone(phone);
+  const profile = db.prepare("SELECT id FROM volunteer_profiles WHERE normalized_phone = ? LIMIT 1").get(normalizedPhone);
+  if (!profile) throw publicError(404, "Volunteer not found. Please register to leave feedback.");
+
+  const participation = db.prepare(`
+    SELECT id FROM volunteer_participations
+    WHERE volunteer_profile_id = ? AND mission_id = ?
+    LIMIT 1
+  `).get(profile.id, missionId);
+  if (!participation) throw publicError(403, "You must be registered for this mission to leave feedback.");
+
+  try {
+    db.prepare(`
+      INSERT INTO mission_feedback (mission_id, volunteer_phone, rating, comment, date_label, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(missionId, normalizedPhone, rating, comment, displayDate(), isoNow());
+  } catch (e) {
+    if (e.message && e.message.includes("UNIQUE")) {
+      db.prepare("UPDATE mission_feedback SET rating = ?, comment = ? WHERE mission_id = ? AND volunteer_phone = ?")
+        .run(rating, comment, missionId, normalizedPhone);
+    } else throw e;
+  }
+
+  return { ok: true };
+}
+
+function getMissionFeedback(missionId) {
+  return db.prepare(`
+    SELECT rating, comment, date_label
+    FROM mission_feedback
+    WHERE mission_id = ?
+    ORDER BY created_at DESC
+    LIMIT 50
+  `).all(missionId).map((r) => ({
+    rating: r.rating,
+    comment: r.comment,
+    date: r.date_label
+  }));
 }
