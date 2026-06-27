@@ -2774,6 +2774,8 @@
           <div class="hero-actions">
             <a class="btn btn-saffron" href="#missions" data-i18n="hero-explore">Explore Missions</a>
             <a class="btn btn-soft" href="#volunteer" data-i18n="hero-register">Register as Volunteer</a>
+            <button class="btn btn-soft" type="button" onclick="openModal('checkInModal')" style="background:rgba(255,255,255,0.18)">Check In at Venue</button>
+            <button class="btn btn-soft" type="button" onclick="openModal('trackMissionModal')" style="background:rgba(255,255,255,0.18)">Track My Request</button>
           </div>
         </div>
 
@@ -3412,6 +3414,92 @@
           <div class="message-text" id="passportEligibilityText"></div>
         </div>
         <button class="btn btn-saffron" id="downloadCertificateBtn" type="button" style="width:100%;margin-top:18px" data-i18n="passport-download">Download Certificate</button>
+        <button class="btn btn-secondary" id="downloadIdCardBtn" type="button" style="width:100%;margin-top:10px">Download Volunteer ID Card</button>
+        <button class="btn btn-green" id="sharePassportWhatsAppBtn" type="button" style="width:100%;margin-top:10px"><i class="fa-brands fa-whatsapp"></i> Share on WhatsApp</button>
+        <div style="margin-top:16px">
+          <button class="btn btn-secondary" type="button" style="width:100%;font-size:13px" onclick="openFeedbackModal()">Leave Mission Feedback</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback modal -->
+  <div class="modal-overlay" id="feedbackModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Mission Feedback</h2>
+          <p class="modal-subtitle">Rate and review a mission you attended.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="feedbackModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="feedbackForm" onsubmit="submitFeedback(event)">
+          <div class="form-group">
+            <label class="form-label">Select Mission</label>
+            <select id="feedbackMissionId" class="form-control" required>
+              <option value="">Choose a mission you attended…</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rating</label>
+            <div id="feedbackStars" style="display:flex;gap:8px;font-size:28px;cursor:pointer">
+              <span data-star="1">☆</span><span data-star="2">☆</span><span data-star="3">☆</span><span data-star="4">☆</span><span data-star="5">☆</span>
+            </div>
+            <input type="hidden" id="feedbackRating" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Your Comment (optional)</label>
+            <textarea id="feedbackComment" class="form-control" rows="3" maxlength="500" placeholder="How was the experience? What could be improved?"></textarea>
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%">Submit Feedback</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Track My Mission modal -->
+  <div class="modal-overlay" id="trackMissionModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Track My Mission Request</h2>
+          <p class="modal-subtitle">Check the status of missions you submitted for review.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="trackMissionModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="display:flex;gap:8px">
+          <input type="tel" id="trackMissionPhone" class="form-control" placeholder="Your mobile number" maxlength="10" pattern="[6-9][0-9]{9}">
+          <button class="btn btn-primary" type="button" onclick="trackMyMissions()">Track</button>
+        </div>
+        <div id="trackMissionResults" style="margin-top:14px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Check-in modal -->
+  <div class="modal-overlay" id="checkInModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Mission Check-In</h2>
+          <p class="modal-subtitle">Enter the 6-character code shown at the venue to mark your attendance.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="checkInModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="checkInForm" onsubmit="submitCheckIn(event)">
+          <div class="form-group">
+            <label class="form-label">Check-In Code</label>
+            <input type="text" id="checkInCode" class="form-control" placeholder="e.g. A3F2B1" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-size:22px;text-align:center" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Your Mobile Number</label>
+            <input type="tel" id="checkInPhone" class="form-control" placeholder="10-digit mobile number" maxlength="10" required>
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%">Check In</button>
+        </form>
       </div>
     </div>
   </div>
@@ -3506,6 +3594,9 @@
           <button class="admin-tab-btn active" type="button" data-admin-tab="overview" data-i18n="admin-tab-overview">Overview</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="post" data-i18n="admin-tab-post">Post Mission</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="volunteers" data-i18n="admin-tab-volunteers">Volunteers</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="analytics">Analytics</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="exports">Exports</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="audit">Audit Log</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="announcements" data-i18n="admin-tab-announcements">Announcements</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="locations" data-i18n="admin-tab-locations">Locations</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="data" data-i18n="admin-tab-data">Data Mode</button>
@@ -3518,6 +3609,11 @@
             <div class="panel-card">
               <h3 data-i18n="admin-overview-requests-title">Volunteer Mission Requests</h3>
               <p data-i18n="admin-overview-requests-subtitle">Review citizen-created missions, assign nodal departments, and publish them to the portal.</p>
+              <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+                <input type="text" id="bulkDeptInput" placeholder="Nodal Department (for bulk approve)" style="flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px">
+                <button class="btn btn-green" type="button" style="font-size:13px;padding:6px 12px" onclick="bulkReview('approve')">Approve Selected</button>
+                <button class="btn btn-danger" type="button" style="font-size:13px;padding:6px 12px" onclick="bulkReview('reject')">Reject Selected</button>
+              </div>
               <div class="announcement-stream" id="missionRequestList"></div>
             </div>
             <div class="panel-card">
@@ -3641,13 +3737,20 @@
         </div>
 
         <div class="admin-pane" id="adminPaneVolunteers">
-          <div class="section-top" style="margin-bottom:18px">
+          <div class="section-top" style="margin-bottom:12px">
             <div>
               <h3 class="form-card-title" style="font-size:20px;margin-bottom:4px" data-i18n="admin-volunteers-title">Registered Volunteers</h3>
-              <p class="form-card-subtitle" style="margin-bottom:0" data-i18n="admin-volunteers-subtitle">Export the current volunteer registry for follow-up and field planning.</p>
+              <p class="form-card-subtitle" style="margin-bottom:0" data-i18n="admin-volunteers-subtitle">Search, filter, and export the volunteer registry.</p>
             </div>
             <button class="btn btn-primary" type="button" id="exportVolunteersBtn" data-i18n="admin-volunteers-export">Export CSV</button>
           </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+            <input type="text" id="volunteerSearchQ" placeholder="Search name, phone, area…" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+            <input type="text" id="volunteerSearchWard" placeholder="Filter by area/ward" style="width:160px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+            <button class="btn btn-secondary" type="button" onclick="runVolunteerSearch()">Search</button>
+            <button class="btn btn-secondary" type="button" onclick="clearVolunteerSearch()">Clear</button>
+          </div>
+          <div id="volunteerSearchStatus" style="font-size:13px;color:var(--muted);margin-bottom:8px"></div>
           <div style="overflow:auto">
             <table class="volunteer-table">
               <thead>
@@ -3656,11 +3759,100 @@
                   <th data-i18n="table-phone">Phone</th>
                   <th data-i18n="table-area">Area</th>
                   <th data-i18n="table-skills">Skills</th>
-                  <th data-i18n="table-mission">Mission</th>
                   <th data-i18n="table-date">Registered</th>
                 </tr>
               </thead>
               <tbody id="volunteersTableBody"></tbody>
+            </table>
+          </div>
+          <div id="volunteerSearchPagination" style="margin-top:12px;text-align:center"></div>
+        </div>
+
+        <!-- Analytics pane -->
+        <div class="admin-pane" id="adminPaneAnalytics">
+          <h3 class="form-card-title" style="font-size:20px;margin-bottom:16px">Platform Analytics</h3>
+          <div id="analyticsGrid" class="admin-grid" style="margin-bottom:20px"></div>
+          <div class="admin-two-col">
+            <div class="panel-card">
+              <h4 style="margin-bottom:12px;font-size:15px">Missions by Category</h4>
+              <div id="analyticsByCategory"></div>
+            </div>
+            <div class="panel-card">
+              <h4 style="margin-bottom:12px;font-size:15px">Top 5 Missions by Participation</h4>
+              <div id="analyticsTopMissions"></div>
+            </div>
+          </div>
+          <div class="admin-two-col" style="margin-top:16px">
+            <div class="panel-card">
+              <h4 style="margin-bottom:12px;font-size:15px">Volunteers by Ward / Area</h4>
+              <div id="analyticsVolunteersByWard"></div>
+            </div>
+            <div class="panel-card">
+              <h4 style="margin-bottom:12px;font-size:15px">Monthly Registrations (Last 12 months)</h4>
+              <div id="analyticsMonthly"></div>
+            </div>
+          </div>
+          <div style="text-align:right;margin-top:12px">
+            <button class="btn btn-secondary" type="button" onclick="loadAdminAnalytics()">Refresh</button>
+          </div>
+        </div>
+
+        <!-- Exports pane -->
+        <div class="admin-pane" id="adminPaneExports">
+          <h3 class="form-card-title" style="font-size:20px;margin-bottom:8px">Data Exports</h3>
+          <p style="color:var(--muted);font-size:14px;margin-bottom:20px">Download data as CSV for offline analysis, government reporting, or field planning.</p>
+          <div style="display:flex;flex-direction:column;gap:14px;max-width:480px">
+            <div class="panel-card" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+              <div>
+                <div style="font-weight:600;font-size:15px">Volunteers CSV</div>
+                <div style="font-size:13px;color:var(--muted)">All registered volunteers with skills, area, date</div>
+              </div>
+              <button class="btn btn-secondary" type="button" id="exportVolunteersBtn2" onclick="exportVolunteers()">Download</button>
+            </div>
+            <div class="panel-card" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+              <div>
+                <div style="font-weight:600;font-size:15px">Missions CSV</div>
+                <div style="font-size:13px;color:var(--muted)">All missions with participation counts, status, department</div>
+              </div>
+              <button class="btn btn-secondary" type="button" onclick="exportMissions()">Download</button>
+            </div>
+            <div class="panel-card" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+              <div>
+                <div style="font-weight:600;font-size:15px">Stories CSV</div>
+                <div style="font-size:13px;color:var(--muted)">Citizen stories with contributor, date, likes</div>
+              </div>
+              <button class="btn btn-secondary" type="button" onclick="exportStories()">Download</button>
+            </div>
+            <div class="panel-card" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+              <div>
+                <div style="font-weight:600;font-size:15px">Newsletter Subscribers CSV</div>
+                <div style="font-size:13px;color:var(--muted)">All email subscribers with subscription date</div>
+              </div>
+              <button class="btn btn-secondary" type="button" onclick="exportSubscribers()">Download</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audit log pane -->
+        <div class="admin-pane" id="adminPaneAudit">
+          <div class="section-top" style="margin-bottom:14px">
+            <div>
+              <h3 class="form-card-title" style="font-size:20px;margin-bottom:4px">Admin Audit Log</h3>
+              <p class="form-card-subtitle" style="margin-bottom:0">Record of all admin actions — mission approvals, archives, creations.</p>
+            </div>
+            <button class="btn btn-secondary" type="button" onclick="loadAuditLog()">Refresh</button>
+          </div>
+          <div style="overflow:auto">
+            <table class="volunteer-table" id="auditLogTable">
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Target</th>
+                  <th>Detail</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="auditLogBody"></tbody>
             </table>
           </div>
         </div>
@@ -5531,21 +5723,31 @@
         return;
       }
       container.innerHTML = state.missions
-        .slice(0, 8)
+        .slice(0, 10)
         .map((mission) => `
           <div class="message-card">
             <div class="message-name">${escapeHtml(mission.title)}</div>
             <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.date)}</div>
             <div class="message-time">${escapeHtml(statusLabel(mission.status))}</div>
+            ${mission.checkInCode ? `
+            <div style="margin:8px 0;padding:8px;background:var(--surface-alt,#f5f5f5);border-radius:8px;display:flex;align-items:center;gap:12px">
+              <div id="qr-${mission.id}" style="flex-shrink:0"></div>
+              <div>
+                <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Check-in Code</div>
+                <div style="font-size:22px;font-weight:700;letter-spacing:4px">${escapeHtml(mission.checkInCode)}</div>
+                <div style="font-size:11px;color:var(--muted)">Display at venue for volunteer check-in</div>
+              </div>
+            </div>` : ""}
             <div class="message-actions">
               <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
               ${mission.status !== "completed" ? `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>` : ""}
               ${mission.status !== "closed" ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'closed')">${state.lang === "hi" ? "अस्थायी बंद" : "Close Temporarily"}</button>` : `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>`}
-              <button class="btn btn-soft" type="button" onclick="deleteMission(${mission.id})">${state.lang === "hi" ? "हटाएँ" : "Delete"}</button>
+              <button class="btn btn-soft" type="button" onclick="archiveMission(${mission.id})">${state.lang === "hi" ? "संग्रहीत करें" : "Archive"}</button>
             </div>
           </div>
         `)
         .join("");
+      renderQrCodes();
     }
 
     function renderMissionRequestList() {
@@ -5557,21 +5759,26 @@
       }
       container.innerHTML = pending
         .map((mission) => `
-          <div class="message-card">
-            <div class="message-name">${escapeHtml(mission.title)}</div>
-            <div class="message-text">${escapeHtml(mission.hostName)} · ${escapeHtml(mission.hostPhone)} · ${escapeHtml(mission.hostEmail)}</div>
-            <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.location)} · ${escapeHtml(mission.date)}</div>
-            <div class="form-group" style="margin-top:10px">
-              <label style="font-size:13px;color:var(--muted)">${state.lang === "hi" ? "नोडल विभाग (स्वीकृति के लिए अनिवार्य)" : "Nodal Department (required for approval)"}</label>
-              <select id="requestDept-${mission.id}" onchange="toggleDepartmentOtherField('requestDept-${mission.id}', 'requestDeptOtherGroup-${mission.id}', 'requestDeptOther-${mission.id}')">${document.getElementById("pmDepartment").innerHTML}</select>
-            </div>
-            <div class="form-group hidden" id="requestDeptOtherGroup-${mission.id}">
-              <input id="requestDeptOther-${mission.id}" type="text" placeholder="${escapeHtml(state.lang === "hi" ? "कस्टम नोडल विभाग लिखें" : "Type custom nodal department")}" />
-            </div>
-            <div class="message-actions">
-              <button class="btn btn-primary" type="button" onclick="reviewMissionRequest(${mission.id}, 'approved')">${state.lang === "hi" ? "स्वीकृत करें" : "Approve"}</button>
-              <button class="btn btn-soft" type="button" onclick="reviewMissionRequest(${mission.id}, 'rejected')">${state.lang === "hi" ? "अस्वीकृत करें" : "Reject"}</button>
-              <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
+          <div class="message-card" id="missionReqCard-${mission.id}">
+            <div style="display:flex;align-items:flex-start;gap:8px">
+              <input type="checkbox" class="mission-req-check" data-id="${mission.id}" style="margin-top:4px;accent-color:var(--saffron)">
+              <div style="flex:1">
+                <div class="message-name">${escapeHtml(mission.title)}</div>
+                <div class="message-text">${escapeHtml(mission.hostName)} · ${escapeHtml(mission.hostPhone)} · ${escapeHtml(mission.hostEmail)}</div>
+                <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.location)} · ${escapeHtml(mission.date)}</div>
+                <div class="form-group" style="margin-top:10px">
+                  <label style="font-size:13px;color:var(--muted)">${state.lang === "hi" ? "नोडल विभाग (स्वीकृति के लिए अनिवार्य)" : "Nodal Department (required for approval)"}</label>
+                  <select id="requestDept-${mission.id}" onchange="toggleDepartmentOtherField('requestDept-${mission.id}', 'requestDeptOtherGroup-${mission.id}', 'requestDeptOther-${mission.id}')">${document.getElementById("pmDepartment").innerHTML}</select>
+                </div>
+                <div class="form-group hidden" id="requestDeptOtherGroup-${mission.id}">
+                  <input id="requestDeptOther-${mission.id}" type="text" placeholder="${escapeHtml(state.lang === "hi" ? "कस्टम नोडल विभाग लिखें" : "Type custom nodal department")}" />
+                </div>
+                <div class="message-actions">
+                  <button class="btn btn-primary" type="button" onclick="reviewMissionRequest(${mission.id}, 'approved')">${state.lang === "hi" ? "स्वीकृत करें" : "Approve"}</button>
+                  <button class="btn btn-soft" type="button" onclick="reviewMissionRequest(${mission.id}, 'rejected')">${state.lang === "hi" ? "अस्वीकृत करें" : "Reject"}</button>
+                  <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
+                </div>
+              </div>
             </div>
           </div>
         `)
@@ -5589,32 +5796,21 @@
     function renderVolunteerTable() {
       const tbody = document.getElementById("volunteersTableBody");
       if (!state.volunteers.length) {
-        tbody.innerHTML = `<tr><td colspan="6">${state.lang === "hi" ? "अभी तक कोई स्वयंसेवक पंजीकृत नहीं है।" : "No volunteers have registered yet."}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5">${state.lang === "hi" ? "अभी तक कोई स्वयंसेवक पंजीकृत नहीं है।" : "No volunteers have registered yet. Use the search above to look up specific volunteers."}</td></tr>`;
+        document.getElementById("volunteerSearchStatus").textContent = `${state.volunteers.length} volunteers loaded`;
         return;
       }
-      const latestMissionByVolunteer = new Map();
-      (state.volunteerEvents || []).forEach((event) => {
-        const key = `${String(event.name || "").trim().toLowerCase()}::${String(event.phone || "").replace(/\D+/g, "").slice(-10)}`;
-        if (!latestMissionByVolunteer.has(key)) {
-          latestMissionByVolunteer.set(key, { mission: event.mission, date: event.date });
-        }
-      });
+      document.getElementById("volunteerSearchStatus").textContent = `${state.volunteers.length} volunteers (use search to filter)`;
       tbody.innerHTML = state.volunteers
+        .slice(0, 100)
         .map((volunteer) => `
-          ${(() => {
-            const key = `${String(volunteer.name || "").trim().toLowerCase()}::${String(volunteer.phone || "").replace(/\D+/g, "").slice(-10)}`;
-            const latest = latestMissionByVolunteer.get(key);
-            return `
           <tr>
             <td>${escapeHtml(volunteer.name)}</td>
             <td>${escapeHtml(volunteer.phone)}</td>
-            <td>${escapeHtml(volunteer.area)}</td>
+            <td>${escapeHtml(volunteer.area || "-")}</td>
             <td>${escapeHtml(volunteer.skills.join(", ") || "-")}</td>
-            <td>${escapeHtml(latest?.mission || (state.lang === "hi" ? "सामान्य स्वयंसेवक" : "General volunteer"))}</td>
-            <td>${escapeHtml(latest?.date || volunteer.date)}</td>
+            <td>${escapeHtml(volunteer.date)}</td>
           </tr>
-            `;
-          })()}
         `)
         .join("");
     }
@@ -6710,13 +6906,20 @@
         overview: "adminPaneOverview",
         post: "adminPanePost",
         volunteers: "adminPaneVolunteers",
+        analytics: "adminPaneAnalytics",
+        exports: "adminPaneExports",
+        audit: "adminPaneAudit",
         announcements: "adminPaneAnnouncements",
         locations: "adminPaneLocations",
         data: "adminPaneData",
         newsletter: "adminPaneNewsletter"
       };
-      Object.values(map).forEach((id) => document.getElementById(id).classList.remove("active"));
-      document.getElementById(map[tab]).classList.add("active");
+      Object.values(map).forEach((id) => { const el = document.getElementById(id); if (el) el.classList.remove("active"); });
+      const pane = document.getElementById(map[tab]);
+      if (pane) pane.classList.add("active");
+
+      if (tab === "analytics") loadAdminAnalytics();
+      if (tab === "audit") loadAuditLog();
     }
 
     function applyMissionTemplate(templateKey) {
@@ -7002,9 +7205,23 @@
       document.getElementById("newsletterBody").addEventListener("input", renderNewsletterPreview);
       document.getElementById("sendNewsletterBtn").addEventListener("click", sendNewsletter);
       document.getElementById("downloadCertificateBtn").addEventListener("click", downloadCertificate);
+      document.getElementById("downloadIdCardBtn").addEventListener("click", downloadIdCard);
+      document.getElementById("sharePassportWhatsAppBtn").addEventListener("click", sharePassportWhatsApp);
 
       document.querySelectorAll("[data-admin-tab]").forEach((button) => {
         button.addEventListener("click", () => switchAdminTab(button.getAttribute("data-admin-tab")));
+      });
+
+      // QR Star rating init
+      document.getElementById("feedbackStars").addEventListener("click", (e) => {
+        const star = e.target.closest("[data-star]");
+        if (!star) return;
+        const rating = Number(star.dataset.star);
+        document.getElementById("feedbackRating").value = rating;
+        document.querySelectorAll("#feedbackStars [data-star]").forEach((s) => {
+          s.textContent = Number(s.dataset.star) <= rating ? "★" : "☆";
+          s.style.color = Number(s.dataset.star) <= rating ? "#FCA44D" : "var(--muted)";
+        });
       });
 
       document.addEventListener("keydown", (event) => {
@@ -7041,6 +7258,418 @@
     }
 
     init();
+
+    // ── Volunteer search (admin) ───────────────────────────────────────────────
+
+    let volunteerSearchPage = 1;
+
+    async function runVolunteerSearch(page = 1) {
+      volunteerSearchPage = page;
+      const q = (document.getElementById("volunteerSearchQ").value || "").trim();
+      const ward = (document.getElementById("volunteerSearchWard").value || "").trim();
+      const token = state.adminToken;
+      if (!token) return;
+      try {
+        const params = new URLSearchParams({ q, ward, page, limit: 50 });
+        const data = await apiRequest(`/api/admin/volunteers/search?${params}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const tbody = document.getElementById("volunteersTableBody");
+        const status = document.getElementById("volunteerSearchStatus");
+        status.textContent = `Showing ${data.volunteers.length} of ${data.total} volunteers`;
+        tbody.innerHTML = data.volunteers.map((v) => `
+          <tr>
+            <td>${escapeHtml(v.name)}</td>
+            <td>${escapeHtml(v.phone)}</td>
+            <td>${escapeHtml(v.area || "-")}</td>
+            <td>${escapeHtml(v.skills.join(", ") || "-")}</td>
+            <td>${escapeHtml(v.joinedDate)}</td>
+          </tr>
+        `).join("");
+        const pagination = document.getElementById("volunteerSearchPagination");
+        const totalPages = Math.ceil(data.total / data.limit);
+        pagination.innerHTML = totalPages > 1
+          ? `<button class="btn btn-secondary" ${page <= 1 ? "disabled" : ""} onclick="runVolunteerSearch(${page - 1})">← Prev</button>
+             <span style="margin:0 12px;font-size:14px">Page ${page} / ${totalPages}</span>
+             <button class="btn btn-secondary" ${page >= totalPages ? "disabled" : ""} onclick="runVolunteerSearch(${page + 1})">Next →</button>`
+          : "";
+      } catch (e) { handleRequestError(e); }
+    }
+
+    function clearVolunteerSearch() {
+      document.getElementById("volunteerSearchQ").value = "";
+      document.getElementById("volunteerSearchWard").value = "";
+      document.getElementById("volunteerSearchStatus").textContent = "";
+      document.getElementById("volunteerSearchPagination").innerHTML = "";
+      renderVolunteerTable();
+    }
+
+    function exportVolunteers() {
+      exportVolunteersCsv();
+    }
+
+    function exportMissions() {
+      const token = state.adminToken;
+      if (!token) return showToast("Admin login required.", "⚠️");
+      fetch("/api/admin/export/missions.csv", { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.blob())
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url; link.download = "prayas_missions.csv"; link.click();
+          URL.revokeObjectURL(url);
+          showToast("Missions CSV downloaded.", "📄");
+        });
+    }
+
+    function exportStories() {
+      const token = state.adminToken;
+      if (!token) return showToast("Admin login required.", "⚠️");
+      fetch("/api/admin/export/stories.csv", { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.blob())
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url; link.download = "prayas_stories.csv"; link.click();
+          URL.revokeObjectURL(url);
+          showToast("Stories CSV downloaded.", "📄");
+        });
+    }
+
+    function exportSubscribers() {
+      const token = state.adminToken;
+      if (!token) return showToast("Admin login required.", "⚠️");
+      fetch("/api/admin/export/subscribers.csv", { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.blob())
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url; link.download = "prayas_subscribers.csv"; link.click();
+          URL.revokeObjectURL(url);
+          showToast("Subscribers CSV downloaded.", "📄");
+        });
+    }
+
+    // ── Bulk approve/reject community missions ────────────────────────────────
+
+    async function bulkReview(action) {
+      const checks = Array.from(document.querySelectorAll(".mission-req-check:checked"));
+      if (!checks.length) return showToast("Select at least one mission first.", "⚠️");
+      const ids = checks.map((c) => Number(c.dataset.id));
+      const deptInput = document.getElementById("bulkDeptInput");
+      const nodalDepartment = deptInput ? deptInput.value.trim() : "";
+      if (action === "approve" && !nodalDepartment) return showToast("Enter a Nodal Department before bulk approval.", "⚠️");
+      if (!confirm(`${action === "approve" ? "Approve" : "Reject"} ${ids.length} mission(s)?`)) return;
+      try {
+        const data = await apiRequest("/api/admin/community-missions/bulk", {
+          method: "POST",
+          body: JSON.stringify({ ids, action, nodalDepartment }),
+          headers: { Authorization: `Bearer ${state.adminToken}` }
+        });
+        showToast(`${data.processed} mission(s) ${action === "approve" ? "approved" : "rejected"}.`, "✅");
+        await refreshPortalData();
+        renderAll();
+      } catch (e) { handleRequestError(e); }
+    }
+
+    // ── Analytics ─────────────────────────────────────────────────────────────
+
+    async function loadAdminAnalytics() {
+      const token = state.adminToken;
+      if (!token) return;
+      try {
+        const data = await apiRequest("/api/admin/analytics", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        document.getElementById("analyticsGrid").innerHTML = [
+          { label: "Total Volunteers", value: data.totalVolunteers, emoji: "👥" },
+          { label: "Total Missions", value: data.totalMissions, emoji: "🎯" },
+          { label: "Completed Missions", value: data.completedMissions, emoji: "✅" },
+          { label: "Completion Rate", value: `${data.completionRate}%`, emoji: "📊" },
+          { label: "Total Participations", value: data.totalParticipations, emoji: "🙌" },
+          { label: "Avg Feedback Rating", value: data.avgFeedbackRating ? `${data.avgFeedbackRating}/5` : "—", emoji: "⭐" },
+          { label: "Pending Requests", value: data.pendingRequests, emoji: "⏳" },
+        ].map((s) => `
+          <div class="stat-chip">
+            <div style="font-size:22px">${s.emoji}</div>
+            <div class="stat-num">${s.value}</div>
+            <div class="stat-label">${s.label}</div>
+          </div>
+        `).join("");
+
+        document.getElementById("analyticsByCategory").innerHTML = data.byCategory.length
+          ? `<table class="volunteer-table" style="font-size:13px"><thead><tr><th>Category</th><th>Missions</th><th>Participants</th></tr></thead><tbody>${
+              data.byCategory.map((r) => `<tr><td>${escapeHtml(r.category)}</td><td>${r.missions}</td><td>${r.participants}</td></tr>`).join("")
+            }</tbody></table>` : "<p style='color:var(--muted);font-size:13px'>No data yet.</p>";
+
+        document.getElementById("analyticsTopMissions").innerHTML = data.top5Missions.length
+          ? `<table class="volunteer-table" style="font-size:13px"><thead><tr><th>Mission</th><th>Registered</th><th>Status</th></tr></thead><tbody>${
+              data.top5Missions.map((m) => `<tr><td>${escapeHtml(m.title)}</td><td>${m.volunteers}/${m.total}</td><td>${escapeHtml(m.status)}</td></tr>`).join("")
+            }</tbody></table>` : "<p style='color:var(--muted);font-size:13px'>No data yet.</p>";
+
+        document.getElementById("analyticsVolunteersByWard").innerHTML = data.volunteersByWard.length
+          ? `<table class="volunteer-table" style="font-size:13px"><thead><tr><th>Ward / Area</th><th>Volunteers</th></tr></thead><tbody>${
+              data.volunteersByWard.map((r) => `<tr><td>${escapeHtml(r.area)}</td><td>${r.count}</td></tr>`).join("")
+            }</tbody></table>` : "<p style='color:var(--muted);font-size:13px'>No ward data yet.</p>";
+
+        document.getElementById("analyticsMonthly").innerHTML = data.monthlyRegistrations.length
+          ? `<table class="volunteer-table" style="font-size:13px"><thead><tr><th>Month</th><th>New Volunteers</th></tr></thead><tbody>${
+              data.monthlyRegistrations.map((r) => `<tr><td>${escapeHtml(r.month)}</td><td>${r.count}</td></tr>`).join("")
+            }</tbody></table>` : "<p style='color:var(--muted);font-size:13px'>No registration data yet.</p>";
+      } catch (e) { handleRequestError(e); }
+    }
+
+    // ── Admin audit log ───────────────────────────────────────────────────────
+
+    async function loadAuditLog() {
+      const token = state.adminToken;
+      if (!token) return;
+      try {
+        const data = await apiRequest("/api/admin/audit-log", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const tbody = document.getElementById("auditLogBody");
+        if (!data.entries.length) {
+          tbody.innerHTML = `<tr><td colspan="4" style="color:var(--muted);text-align:center">No admin actions recorded yet.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = data.entries.map((e) => `
+          <tr>
+            <td style="font-size:13px;font-family:monospace">${escapeHtml(e.action)}</td>
+            <td style="font-size:13px">${escapeHtml(e.target_type)} ${e.target_id ? `#${e.target_id}` : ""}</td>
+            <td style="font-size:13px">${escapeHtml(e.detail)}</td>
+            <td style="font-size:12px;color:var(--muted);white-space:nowrap">${escapeHtml(e.created_at.slice(0, 16).replace("T", " "))}</td>
+          </tr>
+        `).join("");
+      } catch (e) { handleRequestError(e); }
+    }
+
+    // ── Archive mission ───────────────────────────────────────────────────────
+
+    async function archiveMission(missionId) {
+      if (!confirm("Archive this mission? It will be hidden from the public portal but not deleted.")) return;
+      try {
+        await apiRequest(`/api/admin/missions/${missionId}/archive`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${state.adminToken}` }
+        });
+        showToast("Mission archived.", "📦");
+        await refreshPortalData();
+        renderAll();
+      } catch (e) { handleRequestError(e); }
+    }
+
+    // ── Track My Mission Request ──────────────────────────────────────────────
+
+    async function trackMyMissions() {
+      const phone = (document.getElementById("trackMissionPhone").value || "").trim();
+      if (!phone) return showToast("Enter your mobile number.", "⚠️");
+      const results = document.getElementById("trackMissionResults");
+      results.innerHTML = "<p style='color:var(--muted);font-size:14px'>Looking up…</p>";
+      try {
+        const data = await apiRequest(`/api/my-missions?phone=${encodeURIComponent(phone)}`, { method: "GET" });
+        if (!data.missions.length) {
+          results.innerHTML = `<p style='color:var(--muted);font-size:14px'>No mission requests found for this number.</p>`;
+          return;
+        }
+        const statusColor = { pending: "#D97706", approved: "#059669", rejected: "#DC2626" };
+        results.innerHTML = data.missions.map((m) => `
+          <div style="padding:12px;border:1px solid var(--border);border-radius:10px;margin-bottom:10px">
+            <div style="font-weight:600;font-size:15px;margin-bottom:4px">${escapeHtml(m.title)}</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:6px">${escapeHtml(m.date)} · ${escapeHtml(m.location)}</div>
+            <div style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;background:${statusColor[m.approvalStatus] || "#666"}22;color:${statusColor[m.approvalStatus] || "#666"}">
+              ${m.approvalStatus === "pending" ? "⏳ Pending Review" : m.approvalStatus === "approved" ? "✅ Approved" : "❌ Rejected"}
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">Submitted: ${escapeHtml(m.createdAt)}</div>
+          </div>
+        `).join("");
+      } catch (e) { handleRequestError(e); }
+    }
+
+    // ── QR code check-in ──────────────────────────────────────────────────────
+
+    async function submitCheckIn(event) {
+      event.preventDefault();
+      const code = (document.getElementById("checkInCode").value || "").trim().toUpperCase();
+      const phone = (document.getElementById("checkInPhone").value || "").trim();
+      try {
+        const data = await apiRequest("/api/checkin", {
+          method: "POST",
+          body: JSON.stringify({ code, phone })
+        });
+        if (data.alreadyCheckedIn) {
+          showToast(`Already checked in for: ${data.missionTitle}`, "✅");
+        } else {
+          showToast(`Attendance confirmed for: ${data.missionTitle}!`, "✅");
+        }
+        closeModal("checkInModal");
+        document.getElementById("checkInForm").reset();
+      } catch (e) { handleRequestError(e); }
+    }
+
+    function renderQrCodes() {
+      if (typeof QRCode === "undefined") return;
+      state.missions.forEach((m) => {
+        if (!m.checkInCode) return;
+        const el = document.getElementById(`qr-${m.id}`);
+        if (!el || el.innerHTML) return;
+        new QRCode(el, {
+          text: m.checkInCode,
+          width: 64,
+          height: 64,
+          colorDark: "#000",
+          colorLight: "#fff",
+          correctLevel: QRCode.CorrectLevel.L
+        });
+      });
+    }
+
+    // ── Post-mission feedback ─────────────────────────────────────────────────
+
+    function openFeedbackModal() {
+      const phone = state.volunteerLookup?.profile?.phone || "";
+      const select = document.getElementById("feedbackMissionId");
+      select.innerHTML = `<option value="">Choose a mission you attended…</option>` +
+        state.missions
+          .filter((m) => m.status === "completed" || m.status === "open" || m.status === "closed")
+          .map((m) => `<option value="${m.id}">${escapeHtml(m.title)} (${escapeHtml(m.date)})</option>`)
+          .join("");
+      document.getElementById("feedbackRating").value = "";
+      document.querySelectorAll("#feedbackStars [data-star]").forEach((s) => {
+        s.textContent = "☆"; s.style.color = "var(--muted)";
+      });
+      document.getElementById("feedbackComment").value = "";
+      openModal("feedbackModal");
+    }
+
+    async function submitFeedback(event) {
+      event.preventDefault();
+      const missionId = Number(document.getElementById("feedbackMissionId").value);
+      const rating = Number(document.getElementById("feedbackRating").value);
+      const comment = document.getElementById("feedbackComment").value.trim();
+      const phone = (state.volunteerLookup?.profile?.phone ||
+        document.getElementById("volPhone")?.value || "").trim();
+      if (!phone) return showToast("Please look up your volunteer profile first (enter name + phone on the register form).", "⚠️");
+      if (!missionId) return showToast("Please select a mission.", "⚠️");
+      if (!rating) return showToast("Please select a star rating.", "⚠️");
+      try {
+        await apiRequest("/api/feedback", {
+          method: "POST",
+          body: JSON.stringify({ missionId, phone, rating, comment })
+        });
+        showToast("Thank you for your feedback!", "⭐");
+        closeModal("feedbackModal");
+      } catch (e) { handleRequestError(e); }
+    }
+
+    // ── Volunteer ID card (canvas) ────────────────────────────────────────────
+
+    function downloadIdCard() {
+      const name = document.getElementById("passportName").textContent || "Volunteer";
+      const area = document.getElementById("passportArea").textContent || "";
+      const rank = document.getElementById("passportCivicRank").textContent || "";
+      const phone = (state.volunteerLookup?.profile?.phone || "").replace(/(\d{6})(\d{4})/, "XXXXXX$2");
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 680;
+      canvas.height = 430;
+      const ctx = canvas.getContext("2d");
+
+      // Card background
+      const grad = ctx.createLinearGradient(0, 0, 680, 430);
+      grad.addColorStop(0, "#1B2A4A");
+      grad.addColorStop(1, "#0D3B6E");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, 680, 430, 20);
+      ctx.fill();
+
+      // Saffron stripe
+      ctx.fillStyle = "#FF9933";
+      ctx.fillRect(0, 380, 680, 50);
+
+      // White stripe
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 400, 680, 10);
+
+      // Green stripe
+      ctx.fillStyle = "#138808";
+      ctx.fillRect(0, 410, 680, 20);
+
+      // Logo circle
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      ctx.beginPath();
+      ctx.arc(80, 100, 50, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#FF9933";
+      ctx.font = "bold 38px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("🇮🇳", 80, 115);
+
+      // Title
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "bold 22px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("PRAYAS — Citizen Volunteer", 150, 80);
+      ctx.fillStyle = "rgba(255,255,255,0.65)";
+      ctx.font = "14px sans-serif";
+      ctx.fillText((state.districtName || "District") + " · " + (state.stateName || "State"), 150, 108);
+
+      // Avatar circle
+      const initials = name.split(" ").slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "PV";
+      ctx.fillStyle = "#FF9933";
+      ctx.beginPath();
+      ctx.arc(100, 260, 60, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "bold 36px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(initials, 100, 274);
+
+      // Name & details
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "bold 28px sans-serif";
+      ctx.fillText(name, 180, 230);
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      ctx.font = "16px sans-serif";
+      ctx.fillText(area || "Citizen Volunteer", 180, 258);
+      if (phone) { ctx.fillText("📱 " + phone, 180, 282); }
+      ctx.fillStyle = "#FFC36B";
+      ctx.font = "bold 15px sans-serif";
+      ctx.fillText(rank || "Nagarik", 180, 308);
+
+      // ID number
+      const idNum = `PRAYAS-${new Date().getFullYear()}-${Math.floor(Math.random() * 90000) + 10000}`;
+      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.font = "12px monospace";
+      ctx.textAlign = "right";
+      ctx.fillText(idNum, 650, 370);
+
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `prayas-id-card-${name.replace(/\s+/g, "-").toLowerCase()}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    // ── Share passport on WhatsApp ────────────────────────────────────────────
+
+    function sharePassportWhatsApp() {
+      const name = document.getElementById("passportName").textContent || "a Prayas volunteer";
+      const rank = document.getElementById("passportCivicRank").textContent || "";
+      const district = state.districtName || "our district";
+      const text = `I'm ${name}, a civic volunteer in ${district} with Prayas! ${rank ? `Civic Rank: ${rank}.` : ""} Join me in making our district better. Register at ${window.location.origin}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+    }
+
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
 </body>
 </html>
