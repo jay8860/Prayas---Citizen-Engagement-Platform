@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>प्रयास – स्वयंसेवक बनें</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans Devanagari', 'Noto Sans', Arial, sans-serif;
+    background: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .poster {
+    width: 794px;
+    min-height: 1123px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── SAFFRON HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #FF9933 0%, #E8821A 100%);
+    color: #fff;
+    text-align: center;
+    padding: 36px 40px 30px;
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: -1px;
+    left: 0; right: 0;
+    height: 28px;
+    background: #fff;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+
+  .header .flag-strip {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 26px;
+    letter-spacing: 4px;
+  }
+
+  .header h1 {
+    font-size: 62px;
+    font-weight: 900;
+    letter-spacing: 8px;
+    text-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .header .tagline {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    opacity: 0.95;
+    margin-bottom: 5px;
+  }
+
+  .header .district {
+    font-size: 14px;
+    font-weight: 400;
+    opacity: 0.88;
+  }
+
+  /* ── BODY ── */
+  .body {
+    flex: 1;
+    padding: 48px 60px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .join-heading {
+    font-size: 32px;
+    font-weight: 900;
+    color: #1a1a1a;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .join-sub {
+    font-size: 15px;
+    color: #555;
+    text-align: center;
+    margin-bottom: 30px;
+    line-height: 1.7;
+  }
+
+  .benefits {
+    width: 100%;
+    max-width: 570px;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    margin-bottom: 32px;
+  }
+
+  .benefit-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: #FFF8F0;
+    border-left: 4px solid #FF9933;
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+
+  .benefit-icon {
+    font-size: 24px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .benefit-text {
+    font-size: 15px;
+    color: #2a2a2a;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  .benefit-text span {
+    display: block;
+    font-weight: 400;
+    color: #666;
+    font-size: 13px;
+    margin-top: 2px;
+  }
+
+  /* ── STEPS ── */
+  .steps {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 128px;
+    text-align: center;
+  }
+
+  .step-num {
+    width: 36px;
+    height: 36px;
+    background: #FF9933;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .step-label {
+    font-size: 12.5px;
+    color: #444;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  /* ── QR + URL ── */
+  .scan-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 26px;
+  }
+
+  .scan-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #888;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  #qr-box {
+    width: 155px;
+    height: 155px;
+    border: 3px solid #FF9933;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    padding: 8px;
+    overflow: hidden;
+  }
+
+  #qr-box canvas, #qr-box img { width: 100% !important; height: 100% !important; }
+
+  .url-box {
+    background: #FF9933;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 10px 28px;
+    border-radius: 30px;
+    text-align: center;
+    word-break: break-all;
+  }
+
+  .or-text {
+    font-size: 12px;
+    color: #aaa;
+    letter-spacing: 2px;
+  }
+
+  /* ── FREE BADGE ── */
+  .free-badge {
+    background: #138808;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 7px 22px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  /* ── GREEN FOOTER ── */
+  .footer {
+    background: linear-gradient(135deg, #138808 0%, #0e6a06 100%);
+    color: #fff;
+    text-align: center;
+    padding: 22px 40px;
+    position: relative;
+  }
+
+  .footer::before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: -1px;
+    left: 0; right: 0;
+    height: 24px;
+    background: #fff;
+    clip-path: ellipse(55% 100% at 50% 0%);
+  }
+
+  .footer .contact {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    padding-top: 4px;
+  }
+
+  .footer .contact span {
+    opacity: 0.85;
+    font-weight: 400;
+    font-size: 15px;
+  }
+
+  .footer .initiative {
+    font-size: 12px;
+    opacity: 0.75;
+    margin-top: 4px;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: none; padding: 0; }
+    .poster { box-shadow: none; width: 100%; min-height: 100vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="poster">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="flag-strip">🇮🇳 &nbsp; &nbsp; 🇮🇳</div>
+    <h1>प्रयास</h1>
+    <div class="tagline">नागरिक सहभागिता मंच &nbsp;·&nbsp; Citizen Engagement Platform</div>
+    <div class="district">[जिला] जिला &nbsp;·&nbsp; [राज्य]</div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <div class="join-heading">आज ही जुड़ें — बदलाव की शुरुआत करें</div>
+    <div class="join-sub">
+      <strong>प्रयास स्वयंसेवक</strong> बनें — पंजीकरण में सिर्फ <strong>2 मिनट</strong> लगते हैं।<br>
+      अपने वार्ड में बदलाव लाएं, समाज सेवा करें, और पहचान पाएं।
+    </div>
+
+    <div class="benefits">
+      <div class="benefit-item">
+        <div class="benefit-icon">🌱</div>
+        <div class="benefit-text">
+          अपने वार्ड में नागरिक अभियानों से जुड़ें
+          <span>पेड़-पौधे लगाना, बाज़ार सफ़ाई, बच्चों को पढ़ाना और भी बहुत कुछ</span>
+        </div>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">🏅</div>
+        <div class="benefit-text">
+          नागरिक बैज और पद प्राप्त करें
+          <span>सेवक → प्रभात → युवा शक्ति → नागरिक रत्न — अपनी रैंक बढ़ाएं</span>
+        </div>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">📜</div>
+        <div class="benefit-text">
+          सरकारी प्रमाणपत्र पाएं
+          <span>जिला प्रशासन द्वारा हस्ताक्षरित और मुद्रित प्रमाणपत्र</span>
+        </div>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">🤝</div>
+        <div class="benefit-text">
+          [जिला] के सक्रिय नागरिकों से जुड़ें
+          <span>अपनी कहानी साझा करें, दूसरों को प्रेरित करें और एक नागरिक नेटवर्क बनाएं</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEPS -->
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">१</div>
+        <div class="step-label">QR कोड स्कैन करें या नीचे दिया लिंक खोलें</div>
+      </div>
+      <div class="step">
+        <div class="step-num">२</div>
+        <div class="step-label">नाम, मोबाइल नंबर और वार्ड भरें</div>
+      </div>
+      <div class="step">
+        <div class="step-num">३</div>
+        <div class="step-label">Register करें — बस हो गया!</div>
+      </div>
+    </div>
+
+    <!-- QR CODE -->
+    <div class="scan-section">
+      <div class="scan-label">QR कोड स्कैन करें</div>
+      <div id="qr-box">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;opacity:0.25">
+          <rect x="5" y="5" width="35" height="35" rx="4" fill="none" stroke="#333" stroke-width="6"/>
+          <rect x="15" y="15" width="15" height="15" fill="#333"/>
+          <rect x="60" y="5" width="35" height="35" rx="4" fill="none" stroke="#333" stroke-width="6"/>
+          <rect x="70" y="15" width="15" height="15" fill="#333"/>
+          <rect x="5" y="60" width="35" height="35" rx="4" fill="none" stroke="#333" stroke-width="6"/>
+          <rect x="15" y="70" width="15" height="15" fill="#333"/>
+          <rect x="60" y="60" width="8" height="8" fill="#333"/>
+          <rect x="72" y="60" width="8" height="8" fill="#333"/>
+          <rect x="84" y="60" width="8" height="8" fill="#333"/>
+          <rect x="60" y="72" width="8" height="8" fill="#333"/>
+          <rect x="84" y="72" width="8" height="8" fill="#333"/>
+          <rect x="72" y="84" width="8" height="8" fill="#333"/>
+          <rect x="84" y="84" width="8" height="8" fill="#333"/>
+          <text x="50" y="52" text-anchor="middle" font-size="7" fill="#888">QR CODE</text>
+          <text x="50" y="60" text-anchor="middle" font-size="6" fill="#aaa">URL डालें</text>
+        </svg>
+      </div>
+      <div class="or-text">— या —</div>
+      <div class="url-box">🔗 [YOUR_RAILWAY_URL]</div>
+    </div>
+
+    <div class="free-badge">✅ बिल्कुल मुफ़्त &nbsp;·&nbsp; कोई App Download नहीं &nbsp;·&nbsp; किसी भी फ़ोन पर काम करता है</div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="contact">
+      📞 संपर्क: <strong>[संपर्क व्यक्ति का नाम]</strong> &nbsp;·&nbsp; <span>[मोबाइल नंबर]</span>
+    </div>
+    <div class="initiative">
+      प्रयास, [जिला] जिला प्रशासन, [राज्य] की एक निःशुल्क नागरिक पहल है
+    </div>
+  </div>
+
+</div>
+
+<!--
+  इस पोस्टर का उपयोग कैसे करें
+  ─────────────────────────────
+  1. हर [PLACEHOLDER] को असली जानकारी से बदलें:
+       [जिला]              → आपके जिले का नाम, जैसे "दंतेवाड़ा"
+       [राज्य]             → आपके राज्य का नाम, जैसे "छत्तीसगढ़"
+       [YOUR_RAILWAY_URL]  → Railway ऐप का URL, जैसे "prayas-dantewada.railway.app"
+       [संपर्क व्यक्ति का नाम] → नोडल अधिकारी का नाम
+       [मोबाइल नंबर]      → WhatsApp नंबर
+
+  2. QR कोड जोड़ने के लिए:
+       - https://qr.io या https://www.qr-code-generator.com पर जाएं
+       - Railway URL डालें और QR PNG डाउनलोड करें
+       - #qr-box में SVG की जगह: <img src="your-qr.png" /> लगाएं
+
+  3. प्रिंट / इमेज बनाने के लिए:
+       - Chrome में खोलें → Ctrl+P → A4 → Margins: None → PDF सेव करें
+       - WhatsApp के लिए: Win+Shift+S (Windows) या Cmd+Shift+4 (Mac) से screenshot लें
+
+  4. WhatsApp पर शेयर:
+       - Screenshot को सीधे WhatsApp group में भेजें
+       - पोस्टर पोर्ट्रेट फ़ॉर्मेट में WhatsApp Status के लिए परफेक्ट है
+-->
+
+</body>
+</html>
