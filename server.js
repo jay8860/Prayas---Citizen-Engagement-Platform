@@ -804,6 +804,19 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(mission_id, volunteer_phone)
   );
+
+  CREATE TABLE IF NOT EXISTS admin_users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    password_salt TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'coordinator',
+    scope_ward TEXT NOT NULL DEFAULT '',
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_login_at TEXT
+  );
 `);
 
 try {
@@ -868,6 +881,7 @@ seedDatabase();
 migrateLegacyDemoRecords();
 migrateVolunteerRegistry();
 migrateCheckInCodes();
+seedAdminUsers();
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
@@ -899,21 +913,49 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 429, { error: "Too many failed login attempts. Please wait 15 minutes before trying again." });
       }
       const body = await readJsonBody(req);
+      const username = String(body.username || "").trim().toLowerCase();
       const provided = String(body.password || "");
-      if (!provided) {
-        return sendJson(res, 400, { error: "Password is required." });
+      if (!username || !provided) {
+        return sendJson(res, 400, { error: "Username and password are required." });
       }
-      const providedBuf = Buffer.from(provided);
-      const expectedBuf = Buffer.from(ADMIN_PASSWORD);
-      const match =
-        providedBuf.length === expectedBuf.length &&
-        crypto.timingSafeEqual(providedBuf, expectedBuf);
+      const user = db.prepare("SELECT * FROM admin_users WHERE username = ?").get(username);
+      const match = user && user.active && verifyPassword(provided, user.password_hash, user.password_salt);
       if (!match) {
         recordLoginFailure(ip);
-        return sendJson(res, 401, { error: "Invalid password." });
+        return sendJson(res, 401, { error: "Invalid username or password." });
       }
       resetLoginAttempts(ip);
-      return sendJson(res, 200, { token: createAdminToken() });
+      db.prepare("UPDATE admin_users SET last_login_at = ? WHERE id = ?").run(isoNow(), user.id);
+      return sendJson(res, 200, { token: createAdminToken(user), user: sanitizeUserRow(user) });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/admin/me") {
+      const admin = requireAdmin(req);
+      return sendJson(res, 200, { name: admin.name, username: admin.username, role: admin.role, scope: admin.scope || "" });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/admin/users") {
+      requireSuperAdmin(req);
+      return sendJson(res, 200, { users: listAdminUsers() });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/admin/users") {
+      requireSuperAdmin(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, createAdminUser(body));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/users\/\d+\/toggle$/.test(url.pathname)) {
+      const admin = requireSuperAdmin(req);
+      const userId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, toggleAdminUser(userId, admin));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/users\/\d+\/reset-password$/.test(url.pathname)) {
+      requireSuperAdmin(req);
+      const body = await readJsonBody(req);
+      const userId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, resetAdminUserPassword(userId, body));
     }
 
     if (req.method === "POST" && url.pathname === "/api/volunteers") {
@@ -1016,9 +1058,9 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/missions") {
-      requireAdmin(req);
+      const admin = requireAdmin(req);
       const body = await readJsonBody(req);
-      return sendJson(res, 200, createMission(body));
+      return sendJson(res, 200, createMission(body, admin));
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/announcements") {
@@ -1027,41 +1069,54 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, createAnnouncement(body));
     }
 
-    if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/status$/.test(url.pathname)) {
+    if (req.method === "POST" && /^\/api\/admin\/announcements\/\d+\/update$/.test(url.pathname)) {
       requireAdmin(req);
       const body = await readJsonBody(req);
+      const announcementId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, updateAnnouncement(announcementId, body));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/announcements\/\d+\/delete$/.test(url.pathname)) {
+      requireAdmin(req);
+      const announcementId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, deleteAnnouncement(announcementId));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/status$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const body = await readJsonBody(req);
       const missionId = Number(url.pathname.split("/")[4]);
-      return sendJson(res, 200, updateMissionStatus(missionId, body));
+      return sendJson(res, 200, updateMissionStatus(missionId, body, admin));
     }
 
     if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/review$/.test(url.pathname)) {
-      requireAdmin(req);
+      const admin = requireAdmin(req);
       const body = await readJsonBody(req);
       const missionId = Number(url.pathname.split("/")[4]);
-      return sendJson(res, 200, reviewMissionRequest(missionId, body));
+      return sendJson(res, 200, reviewMissionRequest(missionId, body, admin));
     }
 
     if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/update$/.test(url.pathname)) {
-      requireAdmin(req);
+      const admin = requireAdmin(req);
       const body = await readJsonBody(req);
       const missionId = Number(url.pathname.split("/")[4]);
-      return sendJson(res, 200, updateMission(missionId, body));
+      return sendJson(res, 200, updateMission(missionId, body, admin));
     }
 
     if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/delete$/.test(url.pathname)) {
-      requireAdmin(req);
+      const admin = requireAdmin(req);
       const missionId = Number(url.pathname.split("/")[4]);
-      return sendJson(res, 200, deleteMission(missionId));
+      return sendJson(res, 200, deleteMission(missionId, admin));
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/data-mode") {
-      requireAdmin(req);
+      requireSuperAdmin(req);
       const body = await readJsonBody(req);
       return sendJson(res, 200, setPortalDataMode(body));
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/locations") {
-      requireAdmin(req);
+      requireSuperAdmin(req);
       const body = await readJsonBody(req);
       return sendJson(res, 200, saveLocationCatalog(body));
     }
@@ -1073,13 +1128,13 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/newsletter") {
-      requireAdmin(req);
+      requireSuperAdmin(req);
       const body = await readJsonBody(req);
       return sendJson(res, 200, saveNewsletterDraft(body));
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/newsletter/send") {
-      requireAdmin(req);
+      requireSuperAdmin(req);
       const body = await readJsonBody(req);
       // Save draft first
       saveNewsletterDraft(body);
@@ -1101,23 +1156,23 @@ const server = http.createServer(async (req, res) => {
 
     // ── Bulk approve/reject community missions ────────────────────────────────
     if (req.method === "POST" && url.pathname === "/api/admin/community-missions/bulk") {
-      requireAdmin(req);
+      const admin = requireAdmin(req);
       const body = await readJsonBody(req);
-      return sendJson(res, 200, bulkReviewMissions(body));
+      return sendJson(res, 200, bulkReviewMissions(body, admin));
     }
 
     // ── Soft-delete (archive) a mission ──────────────────────────────────────
     if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/archive$/.test(url.pathname)) {
-      requireAdmin(req);
+      const admin = requireAdmin(req);
       const missionId = Number(url.pathname.split("/")[4]);
-      return sendJson(res, 200, archiveMission(missionId));
+      return sendJson(res, 200, archiveMission(missionId, admin));
     }
 
     // ── Restore an archived mission ───────────────────────────────────────────
     if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/restore$/.test(url.pathname)) {
-      requireAdmin(req);
+      const admin = requireAdmin(req);
       const missionId = Number(url.pathname.split("/")[4]);
-      return sendJson(res, 200, restoreArchivedMission(missionId));
+      return sendJson(res, 200, restoreArchivedMission(missionId, admin));
     }
 
     // ── Analytics dashboard ───────────────────────────────────────────────────
@@ -1454,9 +1509,13 @@ function migrateLegacyDemoRecords() {
   });
 }
 
-function createAdminToken() {
+function createAdminToken(user) {
   const payload = {
-    role: "admin",
+    uid: user.id,
+    name: user.name,
+    username: user.username,
+    role: user.role,
+    scope: user.scope_ward || "",
     exp: Date.now() + TOKEN_TTL_MS
   };
   const encodedPayload = base64Url(JSON.stringify(payload));
@@ -1470,7 +1529,26 @@ function requireAdmin(req) {
   if (!token) {
     throw publicError(401, "Admin authentication required.");
   }
-  verifyAdminToken(token);
+  return verifyAdminToken(token);
+}
+
+function requireSuperAdmin(req) {
+  const admin = requireAdmin(req);
+  if (admin.role !== "super_admin") {
+    throw publicError(403, "Only the district administrator can do this.");
+  }
+  return admin;
+}
+
+// Coordinators may only act on missions in their own ward/block. Super admins
+// (district / CEO Janpad level) are unrestricted.
+function assertMissionScope(admin, missionId) {
+  if (!admin || admin.role !== "coordinator") return;
+  const row = db.prepare("SELECT ward FROM missions WHERE id = ?").get(missionId);
+  if (!row) throw publicError(404, "Mission not found.");
+  if (String(row.ward || "").trim() !== String(admin.scope || "").trim()) {
+    throw publicError(403, "This mission belongs to a different block. You can only manage missions in your own block.");
+  }
 }
 
 function verifyAdminToken(token) {
@@ -1491,6 +1569,107 @@ function verifyAdminToken(token) {
   return payload;
 }
 
+// ── Admin user accounts (district admin + block/ward coordinators) ──────────
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(String(password), salt, 64).toString("hex");
+  return { hash, salt };
+}
+
+function verifyPassword(password, hash, salt) {
+  const attempt = crypto.scryptSync(String(password), salt, 64).toString("hex");
+  const a = Buffer.from(attempt, "hex");
+  const b = Buffer.from(hash, "hex");
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function seedAdminUsers() {
+  const count = db.prepare("SELECT COUNT(*) AS n FROM admin_users").get().n;
+  if (count > 0) return;
+  const { hash, salt } = hashPassword(ADMIN_PASSWORD);
+  db.prepare(`
+    INSERT INTO admin_users (name, username, password_hash, password_salt, role, scope_ward, active, created_at)
+    VALUES (?, 'admin', ?, ?, 'super_admin', '', 1, ?)
+  `).run(`${DISTRICT_NAME} District Admin`, hash, salt, isoNow());
+  console.log('[INFO] Seeded default super admin login — username "admin", password is your PRAYAS_ADMIN_PASSWORD value.');
+}
+
+function sanitizeUserRow(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    username: row.username,
+    role: row.role,
+    scope: row.scope_ward || "",
+    active: Boolean(row.active),
+    createdAt: row.created_at,
+    lastLoginAt: row.last_login_at || null
+  };
+}
+
+function listAdminUsers() {
+  const rows = db.prepare("SELECT * FROM admin_users ORDER BY role DESC, name ASC").all();
+  return rows.map(sanitizeUserRow);
+}
+
+function createAdminUser(body) {
+  const name = String(body.name || "").trim().slice(0, 100);
+  const username = String(body.username || "").trim().toLowerCase().slice(0, 60);
+  const password = String(body.password || "");
+  const role = body.role === "super_admin" ? "super_admin" : "coordinator";
+  const scopeWard = role === "coordinator" ? String(body.scope || "").trim() : "";
+  if (!name || !username || !password) {
+    throw publicError(400, "Name, username, and password are required.");
+  }
+  if (!/^[a-z0-9._-]{3,60}$/.test(username)) {
+    throw publicError(400, "Username must be 3-60 characters: letters, numbers, dots, dashes, underscores only.");
+  }
+  if (password.length < 6) {
+    throw publicError(400, "Password must be at least 6 characters.");
+  }
+  if (role === "coordinator" && !scopeWard) {
+    throw publicError(400, "Select the ward/block this coordinator is responsible for.");
+  }
+  const existing = db.prepare("SELECT id FROM admin_users WHERE username = ?").get(username);
+  if (existing) {
+    throw publicError(409, "That username is already taken.");
+  }
+  const { hash, salt } = hashPassword(password);
+  db.prepare(`
+    INSERT INTO admin_users (name, username, password_hash, password_salt, role, scope_ward, active, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+  `).run(name, username, hash, salt, role, scopeWard, isoNow());
+  const newId = Number(db.prepare("SELECT last_insert_rowid() AS id").get().id);
+  writeAuditLog("create_user", "admin_user", newId, `Login created for ${name} (${username}) — ${role}${scopeWard ? ", " + scopeWard : ""}`);
+  return { ok: true, id: newId };
+}
+
+function toggleAdminUser(userId, admin) {
+  const row = db.prepare("SELECT * FROM admin_users WHERE id = ?").get(userId);
+  if (!row) throw publicError(404, "Login not found.");
+  if (row.username === "admin" || row.id === admin.uid) {
+    throw publicError(400, "You can't deactivate the primary admin login or your own account.");
+  }
+  const nextActive = row.active ? 0 : 1;
+  db.prepare("UPDATE admin_users SET active = ? WHERE id = ?").run(nextActive, userId);
+  writeAuditLog(nextActive ? "activate_user" : "deactivate_user", "admin_user", userId, `${row.name} (${row.username}) ${nextActive ? "activated" : "deactivated"}`);
+  return { ok: true, active: Boolean(nextActive) };
+}
+
+function resetAdminUserPassword(userId, body) {
+  const row = db.prepare("SELECT * FROM admin_users WHERE id = ?").get(userId);
+  if (!row) throw publicError(404, "Login not found.");
+  const password = String(body.password || "");
+  if (password.length < 6) {
+    throw publicError(400, "Password must be at least 6 characters.");
+  }
+  const { hash, salt } = hashPassword(password);
+  db.prepare("UPDATE admin_users SET password_hash = ?, password_salt = ? WHERE id = ?").run(hash, salt, userId);
+  writeAuditLog("reset_password", "admin_user", userId, `Password reset for ${row.name} (${row.username})`);
+  return { ok: true };
+}
+
 function signValue(value) {
   return crypto.createHmac("sha256", TOKEN_SECRET).update(value).digest("base64url");
 }
@@ -1504,7 +1683,7 @@ function buildBootstrapPayload() {
   const demoFlag = dataMode === "demo" ? 1 : 0;
   const locations = safeJsonArray(getSetting("location_catalog_json", "[]"));
   const departments = safeJsonArray(getSetting("department_catalog_json", "[]"));
-  const announcementRows = db.prepare("SELECT text FROM announcements WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
+  const announcementRows = db.prepare("SELECT id, text FROM announcements WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
   const missionRows = db.prepare("SELECT * FROM missions WHERE is_demo = ? AND archived_at IS NULL ORDER BY id DESC").all(demoFlag);
   const discussionStmt = db.prepare("SELECT name, text, time_label FROM mission_discussions WHERE mission_id = ? ORDER BY id DESC");
   const fundRows = [];
@@ -1680,6 +1859,7 @@ function buildBootstrapPayload() {
     locations,
     departments,
     announcements: announcementRows.map((row) => row.text),
+    announcementRecords: announcementRows.map((row) => ({ id: row.id, text: row.text })),
     missions,
     funds,
     stories,
@@ -2086,9 +2266,13 @@ function recordSponsor(body) {
   return { ok: true };
 }
 
-function createMission(body) {
+function createMission(body, admin) {
   const category = String(body.category || "other").trim() || "other";
-  const ward = String(body.ward || body.area || "").trim();
+  // Block/ward coordinators can only post missions in their own ward — the ward
+  // is locked server-side to their assigned scope regardless of what the form sent.
+  const ward = admin && admin.role === "coordinator"
+    ? String(admin.scope || "").trim()
+    : String(body.ward || body.area || "").trim();
   const title = String(body.title || "").trim();
   const desc = String(body.desc || "").trim();
   const date = String(body.date || "").trim();
@@ -2128,7 +2312,7 @@ function createMission(body) {
   );
   const newMissionId = Number(db.prepare("SELECT last_insert_rowid() AS id").get().id);
   ensureCheckInCode(newMissionId);
-  writeAuditLog("create_mission", "mission", newMissionId, `New mission created: ${title}`);
+  writeAuditLog("create_mission", "mission", newMissionId, `New mission created: ${title}${admin ? ` by ${admin.name} (${admin.role === "coordinator" ? admin.scope : "district admin"})` : ""}`);
 
   return { ok: true };
 }
@@ -2188,8 +2372,27 @@ function createAnnouncement(body) {
   return { ok: true };
 }
 
-function updateMissionStatus(missionId, body) {
+function updateAnnouncement(announcementId, body) {
+  ensureRowExists("announcements", announcementId, "Announcement not found.");
+  const text = String(body.text || "").trim();
+  if (!text) {
+    throw publicError(400, "Announcement text is required.");
+  }
+  db.prepare("UPDATE announcements SET text = ? WHERE id = ?").run(text, announcementId);
+  writeAuditLog("update_announcement", "announcement", announcementId, `Announcement updated: ${text.slice(0, 80)}`);
+  return { ok: true };
+}
+
+function deleteAnnouncement(announcementId) {
+  ensureRowExists("announcements", announcementId, "Announcement not found.");
+  db.prepare("DELETE FROM announcements WHERE id = ?").run(announcementId);
+  writeAuditLog("delete_announcement", "announcement", announcementId, `Announcement #${announcementId} deleted`);
+  return { ok: true };
+}
+
+function updateMissionStatus(missionId, body, admin) {
   ensureRowExists("missions", missionId, "Mission not found.");
+  assertMissionScope(admin, missionId);
   const status = String(body.status || "").trim();
   const allowed = new Set(["open", "upcoming", "full", "completed", "closed"]);
   if (!allowed.has(status)) {
@@ -2207,8 +2410,9 @@ function updateMissionStatus(missionId, body) {
   return { ok: true };
 }
 
-function reviewMissionRequest(missionId, body) {
+function reviewMissionRequest(missionId, body, admin) {
   ensureRowExists("missions", missionId, "Mission not found.");
+  assertMissionScope(admin, missionId);
   const approvalStatus = String(body.approvalStatus || "").trim();
   const nodalDepartment = String(body.nodalDepartment || "").trim();
   const status = String(body.status || "open").trim();
@@ -2230,7 +2434,7 @@ function reviewMissionRequest(missionId, body) {
     newStatus,
     missionId
   );
-  writeAuditLog(`${approvalStatus}_mission`, "mission", missionId, `Mission ${approvalStatus} by admin, dept: ${nodalDepartment}`);
+  writeAuditLog(`${approvalStatus}_mission`, "mission", missionId, `Mission ${approvalStatus} by ${admin ? admin.name : "admin"}, dept: ${nodalDepartment}`);
   return { ok: true };
 }
 
@@ -2265,8 +2469,9 @@ function appendDepartmentCatalog(departmentName) {
   setSetting("department_catalog_json", JSON.stringify([...existing, value]));
 }
 
-function updateMission(missionId, body) {
+function updateMission(missionId, body, admin) {
   ensureRowExists("missions", missionId, "Mission not found.");
+  assertMissionScope(admin, missionId);
   const category = String(body.category || "").trim();
   const ward = String(body.ward || body.area || "").trim();
   const title = String(body.title || "").trim();
@@ -2307,22 +2512,24 @@ function updateMission(missionId, body) {
   return { ok: true };
 }
 
-function deleteMission(missionId) {
-  return archiveMission(missionId);
+function deleteMission(missionId, admin) {
+  return archiveMission(missionId, admin);
 }
 
-function archiveMission(missionId) {
+function archiveMission(missionId, admin) {
   ensureRowExists("missions", missionId, "Mission not found.");
+  assertMissionScope(admin, missionId);
   db.prepare("UPDATE missions SET archived_at = ? WHERE id = ?").run(isoNow(), missionId);
-  writeAuditLog("archive_mission", "mission", missionId, `Mission ${missionId} archived`);
+  writeAuditLog("archive_mission", "mission", missionId, `Mission ${missionId} archived by ${admin ? admin.name : "admin"}`);
   return { ok: true };
 }
 
-function restoreArchivedMission(missionId) {
+function restoreArchivedMission(missionId, admin) {
   const row = db.prepare("SELECT id FROM missions WHERE id = ?").get(missionId);
   if (!row) throw publicError(404, "Mission not found.");
+  assertMissionScope(admin, missionId);
   db.prepare("UPDATE missions SET archived_at = NULL WHERE id = ?").run(missionId);
-  writeAuditLog("restore_mission", "mission", missionId, `Mission ${missionId} restored`);
+  writeAuditLog("restore_mission", "mission", missionId, `Mission ${missionId} restored by ${admin ? admin.name : "admin"}`);
   return { ok: true };
 }
 
@@ -2337,7 +2544,7 @@ function saveNewsletterDraft(body) {
   return { ok: true };
 }
 
-const ALLOWED_TABLES = new Set(["stories", "missions", "funds"]);
+const ALLOWED_TABLES = new Set(["stories", "missions", "funds", "announcements"]);
 
 function ensureRowExists(table, id, message) {
   if (!ALLOWED_TABLES.has(table)) {
@@ -2469,13 +2676,14 @@ function searchVolunteers(params) {
 
 // ── Bulk approve/reject community missions ────────────────────────────────────
 
-function bulkReviewMissions(body) {
+function bulkReviewMissions(body, admin) {
   const ids = Array.isArray(body.ids) ? body.ids.map(Number).filter(Boolean) : [];
   const action = String(body.action || "").trim();
   const nodalDepartment = String(body.nodalDepartment || "").trim();
   if (!ids.length) throw publicError(400, "No mission IDs provided.");
   if (!["approve", "reject"].includes(action)) throw publicError(400, "Action must be 'approve' or 'reject'.");
   if (action === "approve" && !nodalDepartment) throw publicError(400, "Select a nodal department for bulk approval.");
+  ids.forEach((id) => assertMissionScope(admin, id));
 
   const approvalStatus = action === "approve" ? "approved" : "rejected";
   const missionStatus = action === "approve" ? "open" : "upcoming";
@@ -2487,7 +2695,7 @@ function bulkReviewMissions(body) {
     );
     ids.forEach((id) => {
       stmt.run(approvalStatus, action === "approve" ? nodalDepartment : "", missionStatus, id);
-      writeAuditLog(`bulk_${action}_mission`, "mission", id, `Bulk ${action} by admin`);
+      writeAuditLog(`bulk_${action}_mission`, "mission", id, `Bulk ${action} by ${admin ? admin.name : "admin"}`);
     });
     if (action === "approve" && nodalDepartment) appendDepartmentCatalog(nodalDepartment);
     db.exec("COMMIT");

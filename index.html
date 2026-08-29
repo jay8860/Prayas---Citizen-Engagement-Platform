@@ -3571,9 +3571,14 @@
       <div class="modal-body">
         <form id="adminLoginForm">
           <div class="form-group">
-            <label for="adminPassword" data-i18n="admin-password-label">Password</label>
-            <input id="adminPassword" type="password" required />
+            <label for="adminUsername" data-i18n="admin-username-label">Username</label>
+            <input id="adminUsername" type="text" autocomplete="username" required />
           </div>
+          <div class="form-group">
+            <label for="adminPassword" data-i18n="admin-password-label">Password</label>
+            <input id="adminPassword" type="password" autocomplete="current-password" required />
+          </div>
+          <div id="adminLoginError" style="color:#c0392b;font-size:13px;margin-bottom:8px"></div>
           <button class="btn btn-primary" type="submit" style="width:100%" data-i18n="admin-login-submit">Login</button>
         </form>
       </div>
@@ -3585,22 +3590,28 @@
       <div class="modal-header">
         <div>
           <h2 class="modal-title" data-i18n="admin-panel-title">Admin Control Panel</h2>
-          <p class="modal-subtitle" data-i18n="admin-panel-subtitle">Manage missions, volunteers, announcements, and newsletter communication.</p>
+          <p class="modal-subtitle" id="adminPanelSubtitle" data-i18n="admin-panel-subtitle">Manage missions, volunteers, announcements, and newsletter communication.</p>
         </div>
         <button class="modal-close" type="button" data-close-modal="adminPanelModal">✕</button>
       </div>
       <div class="modal-body">
+        <div id="adminIdentityBar" style="display:none;align-items:center;justify-content:space-between;gap:10px;background:var(--surface-2,#f4f4f6);border-radius:10px;padding:8px 14px;margin-bottom:14px;font-size:13px">
+          <div><strong id="adminIdentityName"></strong> <span id="adminIdentityRole" style="color:var(--muted)"></span></div>
+          <button class="btn btn-soft" type="button" style="font-size:12px;padding:4px 10px" onclick="logoutAdmin()" data-i18n="admin-logout">Log out</button>
+        </div>
         <div class="admin-tabbar">
           <button class="admin-tab-btn active" type="button" data-admin-tab="overview" data-i18n="admin-tab-overview">Overview</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="post" data-i18n="admin-tab-post">Post Mission</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="poster" data-i18n="admin-tab-poster">Poster Maker</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="volunteers" data-i18n="admin-tab-volunteers">Volunteers</button>
-          <button class="admin-tab-btn" type="button" data-admin-tab="analytics">Analytics</button>
-          <button class="admin-tab-btn" type="button" data-admin-tab="exports">Exports</button>
-          <button class="admin-tab-btn" type="button" data-admin-tab="audit">Audit Log</button>
+          <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="analytics">Analytics</button>
+          <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="exports">Exports</button>
+          <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="audit">Audit Log</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="announcements" data-i18n="admin-tab-announcements">Announcements</button>
-          <button class="admin-tab-btn" type="button" data-admin-tab="locations" data-i18n="admin-tab-locations">Locations</button>
-          <button class="admin-tab-btn" type="button" data-admin-tab="data" data-i18n="admin-tab-data">Data Mode</button>
-          <button class="admin-tab-btn" type="button" data-admin-tab="newsletter" data-i18n="admin-tab-newsletter">Newsletter</button>
+          <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="locations" data-i18n="admin-tab-locations">Locations</button>
+          <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="data" data-i18n="admin-tab-data">Data Mode</button>
+          <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="newsletter" data-i18n="admin-tab-newsletter">Newsletter</button>
+          <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="users" data-i18n="admin-tab-users">Users &amp; Delegation</button>
         </div>
 
         <div class="admin-pane active" id="adminPaneOverview">
@@ -3672,6 +3683,7 @@
               <div class="form-group">
                 <label for="pmWard" data-i18n="pm-ward-label">Ward / Area <span class="req">*</span></label>
                 <input id="pmWard" type="text" list="locationSuggestions" maxlength="100" required data-i18n-placeholder="pm-area-placeholder" placeholder="Enter ward, gram panchayat, city, town or village" />
+                <div id="pmWardLockNote" class="hidden" style="font-size:12px;color:var(--muted);margin-top:4px"></div>
               </div>
               <div class="form-group">
                 <label for="pmLocation" data-i18n="pm-location-label">Exact Location <span class="req">*</span></label>
@@ -3862,7 +3874,7 @@
             <div class="panel-card">
               <h3 data-i18n="admin-announcement-title">Current Announcements</h3>
               <p data-i18n="admin-announcement-subtitle">These items power the live ticker above the portal.</p>
-              <div class="announcement-stream" id="announcementList"></div>
+              <div class="announcement-stream" id="announcementManageList"></div>
             </div>
             <div class="panel-card">
               <h3 data-i18n="admin-announcement-form-title">Post New Announcement</h3>
@@ -3942,6 +3954,110 @@
                 <p style="font-size:14px;color:var(--muted);margin-bottom:14px" data-i18n="admin-newsletter-subscribers-subtitle">Most recent email signups collected on this browser.</p>
                 <div class="announcement-stream" id="subscriberList"></div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Poster Maker pane -->
+        <div class="admin-pane" id="adminPanePoster">
+          <div class="admin-two-col">
+            <div class="panel-card">
+              <h3 data-i18n="poster-form-title">Create an Event Poster</h3>
+              <p data-i18n="poster-form-subtitle">Auto-fill from an existing mission, or type your own event details. Download a ready-to-share poster for WhatsApp, print, or notice boards.</p>
+              <div class="form-group">
+                <label for="posterMissionPicker" data-i18n="poster-pick-mission">Load From Mission (optional)</label>
+                <select id="posterMissionPicker" onchange="applyPosterMissionSelection()"></select>
+              </div>
+              <div class="form-group">
+                <label for="posterLang" data-i18n="poster-language">Poster Language</label>
+                <select id="posterLang">
+                  <option value="en">English</option>
+                  <option value="hi">हिन्दी (Hindi)</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="posterTitle" data-i18n="poster-title-label">Event Title <span class="req">*</span></label>
+                  <input id="posterTitle" type="text" maxlength="80" required />
+                </div>
+                <div class="form-group">
+                  <label for="posterCategory" data-i18n="poster-category-label">Category</label>
+                  <select id="posterCategory"></select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="posterDate" data-i18n="poster-date-label">Date <span class="req">*</span></label>
+                  <input id="posterDate" type="text" maxlength="60" placeholder="e.g. 5 September 2026" required />
+                </div>
+                <div class="form-group">
+                  <label for="posterTime" data-i18n="poster-time-label">Time</label>
+                  <input id="posterTime" type="text" maxlength="60" placeholder="e.g. 9:00 AM – 12:00 PM" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="posterVenue" data-i18n="poster-venue-label">Venue / Location <span class="req">*</span></label>
+                  <input id="posterVenue" type="text" maxlength="120" required />
+                </div>
+                <div class="form-group">
+                  <label for="posterWard" data-i18n="poster-ward-label">Ward / Block</label>
+                  <input id="posterWard" type="text" list="locationSuggestions" maxlength="100" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="posterContact" data-i18n="poster-contact-label">Contact / Coordinator</label>
+                <input id="posterContact" type="text" maxlength="120" placeholder="Name, phone or department" />
+              </div>
+              <div class="form-group">
+                <label for="posterCta" data-i18n="poster-cta-label">Call To Action</label>
+                <input id="posterCta" type="text" maxlength="90" placeholder="e.g. All citizens are welcome to join" />
+              </div>
+              <button class="btn btn-primary" type="button" style="width:100%" onclick="generateEventPoster()" data-i18n="poster-generate">Generate &amp; Download Poster</button>
+            </div>
+            <div class="panel-card" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+              <h3 style="align-self:flex-start" data-i18n="poster-preview-title">Preview</h3>
+              <canvas id="posterCanvas" width="1080" height="1350" style="width:100%;max-width:340px;height:auto;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,0.18);background:#fff"></canvas>
+              <p style="font-size:12px;color:var(--muted);text-align:center" data-i18n="poster-preview-note">Preview updates when you click Generate. Downloaded file is full resolution (1080×1350px) — ready for WhatsApp, Instagram, or A4 printing.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Users & Delegation pane (district admin only) -->
+        <div class="admin-pane" id="adminPaneUsers">
+          <div class="admin-two-col">
+            <div class="panel-card">
+              <h3 data-i18n="users-current-title">Coordinator &amp; Admin Logins</h3>
+              <p data-i18n="users-current-subtitle">Each block/ward coordinator gets their own login. They can post missions and approve/reject citizen requests only for their own ward — everything else stays with you.</p>
+              <div class="announcement-stream" id="adminUsersList"></div>
+            </div>
+            <div class="panel-card">
+              <h3 data-i18n="users-create-title">Create a New Login</h3>
+              <p data-i18n="users-create-subtitle">Give a block coordinator, intern, or volunteer their own account so mission approvals don't depend on you.</p>
+              <div class="form-group">
+                <label for="newUserName" data-i18n="users-name-label">Full Name</label>
+                <input id="newUserName" type="text" maxlength="100" placeholder="e.g. Ramesh Nag" />
+              </div>
+              <div class="form-group">
+                <label for="newUserUsername" data-i18n="users-username-label">Username</label>
+                <input id="newUserUsername" type="text" maxlength="60" placeholder="e.g. ramesh.geedam" />
+              </div>
+              <div class="form-group">
+                <label for="newUserPassword" data-i18n="users-password-label">Temporary Password</label>
+                <input id="newUserPassword" type="text" maxlength="60" placeholder="Share this with them, ask them to keep it safe" />
+              </div>
+              <div class="form-group">
+                <label for="newUserRole" data-i18n="users-role-label">Role</label>
+                <select id="newUserRole" onchange="toggleNewUserScopeField()">
+                  <option value="coordinator" data-i18n="users-role-coordinator">Block / Ward Coordinator</option>
+                  <option value="super_admin" data-i18n="users-role-superadmin">District Administrator (full access)</option>
+                </select>
+              </div>
+              <div class="form-group" id="newUserScopeGroup">
+                <label for="newUserScope" data-i18n="users-scope-label">Assigned Ward / Block <span class="req">*</span></label>
+                <input id="newUserScope" type="text" list="locationSuggestions" maxlength="100" data-i18n-placeholder="pm-area-placeholder" placeholder="Enter ward, gram panchayat, city, town or village" />
+              </div>
+              <button class="btn btn-primary" type="button" style="width:100%" onclick="submitCreateAdminUser()" data-i18n="users-create-submit">Create Login</button>
             </div>
           </div>
         </div>
@@ -4460,18 +4576,49 @@
       "my-missions-lookup": { en: "Find My Missions", hi: "मेरे अभियान खोजें" },
       "my-missions-open-btn": { en: "View My Missions", hi: "मेरे अभियान देखें" },
       "admin-login-title": { en: "Admin Login", hi: "प्रशासक लॉगिन" },
-      "admin-login-subtitle": { en: "Enter any password during this testing phase to open the control panel.", hi: "टेस्टिंग चरण में कंट्रोल पैनल खोलने के लिए कोई भी पासवर्ड दर्ज करें।" },
+      "admin-login-subtitle": { en: "Sign in with your personal district or block coordinator login.", hi: "अपने व्यक्तिगत जिला या ब्लॉक समन्वयक लॉगिन से साइन इन करें।" },
+      "admin-username-label": { en: "Username", hi: "उपयोगकर्ता नाम" },
       "admin-password-label": { en: "Password", hi: "पासवर्ड" },
       "admin-login-submit": { en: "Login", hi: "लॉगिन" },
+      "admin-logout": { en: "Log out", hi: "लॉगआउट" },
       "admin-panel-title": { en: "Admin Control Panel", hi: "प्रशासक नियंत्रण पैनल" },
       "admin-panel-subtitle": { en: "Manage missions, volunteers, announcements, and newsletter communication.", hi: "अभियान, स्वयंसेवक, घोषणाएँ और न्यूज़लेटर प्रबंधन करें।" },
       "admin-tab-overview": { en: "Overview", hi: "अवलोकन" },
       "admin-tab-post": { en: "Post Mission", hi: "अभियान पोस्ट करें" },
+      "admin-tab-poster": { en: "Poster Maker", hi: "पोस्टर बनाएं" },
       "admin-tab-volunteers": { en: "Volunteers", hi: "स्वयंसेवक" },
       "admin-tab-announcements": { en: "Announcements", hi: "घोषणाएँ" },
       "admin-tab-locations": { en: "Locations", hi: "स्थान" },
       "admin-tab-data": { en: "Data Mode", hi: "डेटा मोड" },
       "admin-tab-newsletter": { en: "Newsletter", hi: "न्यूज़लेटर" },
+      "admin-tab-users": { en: "Users & Delegation", hi: "उपयोगकर्ता और प्रत्यायोजन" },
+      "poster-form-title": { en: "Create an Event Poster", hi: "एक कार्यक्रम पोस्टर बनाएं" },
+      "poster-form-subtitle": { en: "Auto-fill from an existing mission, or type your own event details. Download a ready-to-share poster for WhatsApp, print, or notice boards.", hi: "किसी मौजूदा अभियान से जानकारी भरें, या स्वयं विवरण टाइप करें। WhatsApp, प्रिंट या नोटिस बोर्ड के लिए तैयार पोस्टर डाउनलोड करें।" },
+      "poster-pick-mission": { en: "Load From Mission (optional)", hi: "अभियान से जानकारी लें (वैकल्पिक)" },
+      "poster-language": { en: "Poster Language", hi: "पोस्टर की भाषा" },
+      "poster-title-label": { en: "Event Title", hi: "कार्यक्रम शीर्षक" },
+      "poster-category-label": { en: "Category", hi: "श्रेणी" },
+      "poster-date-label": { en: "Date", hi: "तिथि" },
+      "poster-time-label": { en: "Time", hi: "समय" },
+      "poster-venue-label": { en: "Venue / Location", hi: "स्थान" },
+      "poster-ward-label": { en: "Ward / Block", hi: "वार्ड / ब्लॉक" },
+      "poster-contact-label": { en: "Contact / Coordinator", hi: "संपर्क / समन्वयक" },
+      "poster-cta-label": { en: "Call To Action", hi: "आह्वान संदेश" },
+      "poster-generate": { en: "Generate & Download Poster", hi: "पोस्टर बनाएं और डाउनलोड करें" },
+      "poster-preview-title": { en: "Preview", hi: "पूर्वावलोकन" },
+      "poster-preview-note": { en: "Preview updates when you click Generate. Downloaded file is full resolution (1080×1350px) — ready for WhatsApp, Instagram, or A4 printing.", hi: "जनरेट पर क्लिक करने पर पूर्वावलोकन अपडेट होता है। डाउनलोड की गई फ़ाइल पूर्ण रिज़ॉल्यूशन (1080×1350px) में है — WhatsApp, Instagram या A4 प्रिंट के लिए तैयार।" },
+      "users-current-title": { en: "Coordinator & Admin Logins", hi: "समन्वयक और प्रशासक लॉगिन" },
+      "users-current-subtitle": { en: "Each block/ward coordinator gets their own login. They can post missions and approve/reject citizen requests only for their own ward — everything else stays with you.", hi: "प्रत्येक ब्लॉक/वार्ड समन्वयक को अपना लॉगिन मिलता है। वे केवल अपने वार्ड के लिए अभियान पोस्ट और नागरिक अनुरोध स्वीकृत/अस्वीकृत कर सकते हैं — बाकी सब आपके पास रहता है।" },
+      "users-create-title": { en: "Create a New Login", hi: "नया लॉगिन बनाएं" },
+      "users-create-subtitle": { en: "Give a block coordinator, intern, or volunteer their own account so mission approvals don't depend on you.", hi: "ब्लॉक समन्वयक, इंटर्न या स्वयंसेवक को अपना अकाउंट दें ताकि मिशन स्वीकृति आप पर निर्भर न रहे।" },
+      "users-name-label": { en: "Full Name", hi: "पूरा नाम" },
+      "users-username-label": { en: "Username", hi: "उपयोगकर्ता नाम" },
+      "users-password-label": { en: "Temporary Password", hi: "अस्थायी पासवर्ड" },
+      "users-role-label": { en: "Role", hi: "भूमिका" },
+      "users-role-coordinator": { en: "Block / Ward Coordinator", hi: "ब्लॉक / वार्ड समन्वयक" },
+      "users-role-superadmin": { en: "District Administrator (full access)", hi: "जिला प्रशासक (पूर्ण अधिकार)" },
+      "users-scope-label": { en: "Assigned Ward / Block", hi: "नियुक्त वार्ड / ब्लॉक" },
+      "users-create-submit": { en: "Create Login", hi: "लॉगिन बनाएं" },
       "pm-template-label": { en: "Activity Type Template", hi: "गतिविधि प्रकार टेम्पलेट" },
       "pm-department-label": { en: "Nodal Department", hi: "नोडल विभाग" },
       "pm-department-other-label": { en: "Other Department Name", hi: "अन्य विभाग का नाम" },
@@ -4682,6 +4829,7 @@
 
     const UI_STORAGE_KEY = "prayas-portal-ui-v2";
     const ADMIN_TOKEN_KEY = "prayas-admin-token-v1";
+    const ADMIN_USER_KEY = "prayas-admin-user-v1";
     const persistKeys = ["lang", "theme", "newsletterDraft"];
 
     function deepClone(value) {
@@ -4701,6 +4849,7 @@
         announcements: [
           "Prayas portal is ready for district deployment."
         ],
+        announcementRecords: [],
         missions: [],
         stories: [],
         leaders: [],
@@ -4720,6 +4869,7 @@
         activeLeaderId: null,
         selectedMissionId: null,
         adminLoggedIn: Boolean(window.localStorage.getItem(ADMIN_TOKEN_KEY)),
+        adminUser: null,
         currentAdminTab: "overview",
         statsAnimated: false,
         pendingMissionDepartment: {},
@@ -4745,6 +4895,379 @@
 
     function clearAdminToken() {
       window.localStorage.removeItem(ADMIN_TOKEN_KEY);
+    }
+
+    function getAdminUser() {
+      try {
+        const raw = window.localStorage.getItem(ADMIN_USER_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function setAdminUser(user) {
+      state.adminUser = user || null;
+      if (!user) {
+        window.localStorage.removeItem(ADMIN_USER_KEY);
+        return;
+      }
+      window.localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(user));
+    }
+
+    function isSuperAdmin() {
+      return Boolean(state.adminUser && state.adminUser.role === "super_admin");
+    }
+
+    function adminScope() {
+      return state.adminUser && state.adminUser.role === "coordinator" ? String(state.adminUser.scope || "") : "";
+    }
+
+    function logoutAdmin() {
+      clearAdminToken();
+      setAdminUser(null);
+      state.adminLoggedIn = false;
+      closeModal("adminPanelModal");
+      showToast(state.lang === "hi" ? "लॉगआउट हो गया।" : "Logged out.", "👋");
+    }
+
+    // Applies role-based visibility (block coordinator vs. district admin) across the admin panel.
+    function applyAdminRoleUI() {
+      const superAdmin = isSuperAdmin();
+      document.querySelectorAll(".super-admin-only").forEach((el) => {
+        el.style.display = superAdmin ? "" : "none";
+      });
+      const identityBar = document.getElementById("adminIdentityBar");
+      if (state.adminUser) {
+        identityBar.style.display = "flex";
+        document.getElementById("adminIdentityName").textContent = state.adminUser.name;
+        document.getElementById("adminIdentityRole").textContent = superAdmin
+          ? (state.lang === "hi" ? "· जिला प्रशासक" : "· District Administrator")
+          : (state.lang === "hi" ? `· ब्लॉक समन्वयक — ${state.adminUser.scope}` : `· Block Coordinator — ${state.adminUser.scope}`);
+      } else {
+        identityBar.style.display = "none";
+      }
+      // If a coordinator is currently sitting on a hidden tab (e.g. after a super
+      // admin session ended), snap back to the Overview tab.
+      if (!superAdmin && ["analytics", "exports", "audit", "locations", "data", "newsletter", "users"].includes(state.currentAdminTab)) {
+        switchAdminTab("overview");
+      }
+      applyCoordinatorPostLock();
+    }
+
+    // Locks the Post Mission ward field to the coordinator's own block so they can
+    // only ever post missions there — mirrors the server-side lock in createMission().
+    function applyCoordinatorPostLock() {
+      const wardInput = document.getElementById("pmWard");
+      const note = document.getElementById("pmWardLockNote");
+      if (!wardInput || !note) return;
+      const scope = adminScope();
+      if (scope) {
+        wardInput.value = scope;
+        wardInput.readOnly = true;
+        note.classList.remove("hidden");
+        note.textContent = state.lang === "hi"
+          ? `आपका लॉगिन केवल ${scope} के लिए अभियान पोस्ट कर सकता है।`
+          : `Your login can only post missions for ${scope}.`;
+      } else {
+        wardInput.readOnly = false;
+        note.classList.add("hidden");
+      }
+    }
+
+    // ── Users & Delegation (district admin only) ─────────────────────────────
+
+    async function loadAdminUsersList() {
+      if (!isSuperAdmin()) return;
+      try {
+        const data = await apiRequest("/api/admin/users");
+        renderAdminUsersList(data.users || []);
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function renderAdminUsersList(users) {
+      const container = document.getElementById("adminUsersList");
+      if (!container) return;
+      if (!users.length) {
+        container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "अभी तक कोई लॉगिन नहीं है।" : "No logins yet."}</div></div>`;
+        return;
+      }
+      container.innerHTML = users
+        .map((u) => `
+          <div class="message-card">
+            <div class="message-name">${escapeHtml(u.name)} ${u.active ? "" : `<span style="color:#c0392b;font-size:12px">(${state.lang === "hi" ? "निष्क्रिय" : "inactive"})</span>`}</div>
+            <div class="message-text">@${escapeHtml(u.username)} · ${u.role === "super_admin" ? (state.lang === "hi" ? "जिला प्रशासक" : "District Administrator") : `${state.lang === "hi" ? "समन्वयक" : "Coordinator"} — ${escapeHtml(u.scope)}`}</div>
+            <div class="message-time">${u.lastLoginAt ? `${state.lang === "hi" ? "अंतिम लॉगिन" : "Last login"}: ${formatDate(new Date(u.lastLoginAt), state.lang)}` : (state.lang === "hi" ? "अभी तक लॉगिन नहीं हुआ" : "Never logged in")}</div>
+            <div class="message-actions">
+              ${u.username === "admin" ? "" : `<button class="btn btn-soft" type="button" onclick="toggleAdminUserAccount(${u.id})">${u.active ? (state.lang === "hi" ? "निष्क्रिय करें" : "Deactivate") : (state.lang === "hi" ? "सक्रिय करें" : "Activate")}</button>`}
+              <button class="btn btn-soft" type="button" onclick="promptResetPassword(${u.id}, ${JSON.stringify(u.name)})">${state.lang === "hi" ? "पासवर्ड रीसेट करें" : "Reset Password"}</button>
+            </div>
+          </div>
+        `)
+        .join("");
+    }
+
+    function toggleNewUserScopeField() {
+      const role = document.getElementById("newUserRole").value;
+      document.getElementById("newUserScopeGroup").style.display = role === "coordinator" ? "" : "none";
+    }
+
+    async function submitCreateAdminUser() {
+      const name = document.getElementById("newUserName").value.trim();
+      const username = document.getElementById("newUserUsername").value.trim();
+      const password = document.getElementById("newUserPassword").value;
+      const role = document.getElementById("newUserRole").value;
+      const scope = document.getElementById("newUserScope").value.trim();
+      try {
+        await apiRequest("/api/admin/users", {
+          method: "POST",
+          body: JSON.stringify({ name, username, password, role, scope })
+        });
+        ["newUserName", "newUserUsername", "newUserPassword", "newUserScope"].forEach((id) => {
+          document.getElementById(id).value = "";
+        });
+        await loadAdminUsersList();
+        showToast(state.lang === "hi" ? "नया लॉगिन बना दिया गया।" : "New login created.", "✅");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function toggleAdminUserAccount(userId) {
+      try {
+        await apiRequest(`/api/admin/users/${userId}/toggle`, { method: "POST" });
+        await loadAdminUsersList();
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function promptResetPassword(userId, name) {
+      const password = window.prompt(
+        state.lang === "hi"
+          ? `${name} के लिए नया पासवर्ड दर्ज करें (कम से कम 6 अक्षर):`
+          : `Enter a new password for ${name} (min 6 characters):`
+      );
+      if (!password) return;
+      try {
+        await apiRequest(`/api/admin/users/${userId}/reset-password`, {
+          method: "POST",
+          body: JSON.stringify({ password })
+        });
+        showToast(state.lang === "hi" ? "पासवर्ड रीसेट हो गया।" : "Password reset.", "🔑");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    // ── Poster Maker ──────────────────────────────────────────────────────────
+
+    function renderPosterMissionOptions() {
+      const picker = document.getElementById("posterMissionPicker");
+      if (!picker) return;
+      const scope = adminScope();
+      const missions = state.missions
+        .filter((m) => m.approvalStatus !== "rejected" && (!scope || missionArea(m) === scope))
+        .sort((a, b) => (b.id || 0) - (a.id || 0));
+      picker.innerHTML = `<option value="">${state.lang === "hi" ? "-- मैन्युअल रूप से टाइप करें --" : "-- Type details manually --"}</option>` +
+        missions.map((m) => `<option value="${m.id}">${escapeHtml(m.title)} (${escapeHtml(missionArea(m))})</option>`).join("");
+    }
+
+    function applyPosterMissionSelection() {
+      const id = Number(document.getElementById("posterMissionPicker").value || 0);
+      const mission = state.missions.find((m) => m.id === id);
+      if (!mission) return;
+      document.getElementById("posterTitle").value = mission.title;
+      document.getElementById("posterCategory").value = mission.category || "";
+      document.getElementById("posterDate").value = mission.date || "";
+      document.getElementById("posterVenue").value = mission.location || "";
+      document.getElementById("posterWard").value = missionArea(mission);
+      document.getElementById("posterContact").value = mission.coordinator || "";
+      document.getElementById("posterCta").value = state.lang === "hi"
+        ? "सभी नागरिक शामिल होने के लिए आमंत्रित हैं"
+        : "All citizens are welcome to join";
+    }
+
+    // Wraps text across multiple lines within maxWidth; returns the y position after the last line.
+    function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 4) {
+      const words = String(text || "").split(/\s+/).filter(Boolean);
+      let line = "";
+      let lines = [];
+      words.forEach((word) => {
+        const test = line ? `${line} ${word}` : word;
+        if (ctx.measureText(test).width > maxWidth && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = test;
+        }
+      });
+      if (line) lines.push(line);
+      if (lines.length > maxLines) {
+        lines = lines.slice(0, maxLines);
+        lines[maxLines - 1] = lines[maxLines - 1].replace(/\s*\S*$/, "") + "…";
+      }
+      lines.forEach((l, index) => ctx.fillText(l, x, y + index * lineHeight));
+      return y + lines.length * lineHeight;
+    }
+
+    function generateEventPoster() {
+      const lang = document.getElementById("posterLang").value || "en";
+      const title = document.getElementById("posterTitle").value.trim();
+      const date = document.getElementById("posterDate").value.trim();
+      const time = document.getElementById("posterTime").value.trim();
+      const venue = document.getElementById("posterVenue").value.trim();
+      const ward = document.getElementById("posterWard").value.trim();
+      const contact = document.getElementById("posterContact").value.trim();
+      const cta = document.getElementById("posterCta").value.trim();
+      const category = document.getElementById("posterCategory").value || "other";
+
+      if (!title || !date || !venue) {
+        showToast(
+          lang === "hi" ? "शीर्षक, तिथि और स्थान आवश्यक हैं।" : "Title, date, and venue are required.",
+          "⚠️"
+        );
+        return;
+      }
+
+      const canvas = document.getElementById("posterCanvas");
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width, H = canvas.height;
+
+      // Background
+      ctx.fillStyle = "#FBF7EE";
+      ctx.fillRect(0, 0, W, H);
+
+      // Tricolor strip
+      ctx.fillStyle = "#FF9933"; ctx.fillRect(0, 0, W, 14);
+      ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 14, W, 8);
+      ctx.fillStyle = "#138808"; ctx.fillRect(0, 22, W, 14);
+
+      // Navy header band
+      const headerH = 300;
+      const grad = ctx.createLinearGradient(0, 36, 0, headerH);
+      grad.addColorStop(0, "#0D3B6E");
+      grad.addColorStop(1, "#1B3A6B");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 36, W, headerH - 36);
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#FFC36B";
+      ctx.font = "700 26px Inter";
+      ctx.fillText(
+        lang === "hi" ? `${state.districtName} जिला प्रशासन` : `${state.districtName} District Administration`,
+        W / 2, 96
+      );
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "700 22px Inter";
+      ctx.fillText(lang === "hi" ? "प्रयास नागरिक सहभागिता मंच प्रस्तुत करता है" : "Prayas Citizen Engagement Platform Presents", W / 2, 134);
+
+      ctx.font = "800 78px Georgia";
+      ctx.fillText(categoryEmoji(category), W / 2, 230);
+
+      // Title block
+      ctx.fillStyle = "#1B3A6B";
+      ctx.font = "800 58px Georgia";
+      const titleEndY = wrapCanvasText(ctx, title, W / 2, headerH + 90, W - 140, 66, 3);
+
+      // Details card
+      const cardY = titleEndY + 40;
+      const cardH = H - cardY - 260;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.strokeStyle = "#C8A96A";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(70, cardY, W - 140, Math.max(cardH, 260), 18);
+      ctx.fill();
+      ctx.stroke();
+
+      const rows = [
+        ["📅", lang === "hi" ? "तिथि" : "Date", date],
+        ...(time ? [["🕒", lang === "hi" ? "समय" : "Time", time]] : []),
+        ["📍", lang === "hi" ? "स्थान" : "Venue", venue],
+        ...(ward ? [["🏘️", lang === "hi" ? "वार्ड / ब्लॉक" : "Ward / Block", ward]] : []),
+        ...(contact ? [["📞", lang === "hi" ? "संपर्क" : "Contact", contact]] : [])
+      ];
+
+      let rowY = cardY + 66;
+      ctx.textAlign = "left";
+      rows.forEach(([icon, label, value]) => {
+        ctx.font = "36px sans-serif";
+        ctx.fillText(icon, 108, rowY);
+        ctx.fillStyle = "#6B7280";
+        ctx.font = "600 22px Inter";
+        ctx.fillText(label.toUpperCase(), 168, rowY - 12);
+        ctx.fillStyle = "#1F2937";
+        ctx.font = "700 30px Inter";
+        wrapCanvasText(ctx, value, 168, rowY + 20, W - 380, 34, 2);
+        rowY += 84;
+      });
+
+      // CTA ribbon
+      if (cta) {
+        ctx.fillStyle = "#FF9933";
+        ctx.beginPath();
+        ctx.roundRect(70, cardY + Math.max(cardH, 260) + 24, W - 140, 76, 14);
+        ctx.fill();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "700 30px Inter";
+        ctx.textAlign = "center";
+        wrapCanvasText(ctx, cta, W / 2, cardY + Math.max(cardH, 260) + 72, W - 220, 34, 1);
+      }
+
+      // Footer
+      ctx.fillStyle = "#1B3A6B";
+      ctx.fillRect(0, H - 90, W, 90);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "700 22px Inter";
+      ctx.textAlign = "left";
+      ctx.fillText(
+        (state.districtName || "District") + " · " + (state.stateName || "State"),
+        60, H - 46
+      );
+      ctx.textAlign = "right";
+      ctx.font = "16px Inter";
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      ctx.fillText(
+        lang === "hi" ? "अधिक जानकारी और पंजीकरण के लिए पोर्टल देखें" : "See the portal for details and registration",
+        W - 60, H - 46
+      );
+
+      // QR code linking back to the portal (or the mission page if one was picked)
+      const missionId = Number(document.getElementById("posterMissionPicker").value || 0);
+      const qrTarget = missionId ? `${window.location.origin}/#mission-${missionId}` : window.location.origin;
+      const qrHost = document.createElement("div");
+      qrHost.style.position = "fixed";
+      qrHost.style.left = "-9999px";
+      document.body.appendChild(qrHost);
+      try {
+        new QRCode(qrHost, { text: qrTarget, width: 200, height: 200, colorDark: "#1B3A6B", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+      } catch (error) {
+        // QR generation is a nice-to-have; never block the poster download on it.
+      }
+      setTimeout(() => {
+        const qrCanvas = qrHost.querySelector("canvas");
+        const qrImg = qrHost.querySelector("img");
+        const qrSize = 168;
+        const qrX = W - qrSize - 70;
+        const qrY = H - 90 - qrSize - 24;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
+        if (qrCanvas) {
+          ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+        } else if (qrImg) {
+          ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+        }
+        document.body.removeChild(qrHost);
+
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = `${title.replace(/\s+/g, "_").slice(0, 60)}_poster.png`;
+        link.click();
+        showToast(lang === "hi" ? "पोस्टर डाउनलोड हो गया।" : "Poster downloaded.", "🖼️");
+      }, 120);
     }
 
     function loadState() {
@@ -4782,6 +5305,7 @@
 
     const state = loadState();
     state.adminLoggedIn = Boolean(getAdminToken());
+    state.adminUser = getAdminUser();
 
     async function apiRequest(url, options = {}) {
       const token = getAdminToken();
@@ -4816,6 +5340,7 @@
       state.locations = Array.isArray(payload.locations) ? payload.locations : [];
       state.departments = Array.isArray(payload.departments) ? payload.departments : [];
       state.announcements = Array.isArray(payload.announcements) ? payload.announcements : [];
+      state.announcementRecords = Array.isArray(payload.announcementRecords) ? payload.announcementRecords : [];
       state.missions = Array.isArray(payload.missions) ? payload.missions : [];
       state.stories = Array.isArray(payload.stories) ? payload.stories : [];
       state.leaders = Array.isArray(payload.leaders) ? payload.leaders : deepClone(leaders);
@@ -5010,6 +5535,10 @@
       document.getElementById("storyCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें" : "Select Category"}</option>${options}`;
       document.getElementById("pmCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें (वैकल्पिक)" : "Select Category (Optional)"}</option>${options}`;
       document.getElementById("hostMissionCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें (वैकल्पिक)" : "Select Category (Optional)"}</option>${options}`;
+      const posterCategoryEl = document.getElementById("posterCategory");
+      if (posterCategoryEl) {
+        posterCategoryEl.innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें (वैकल्पिक)" : "Select Category (Optional)"}</option>${options}`;
+      }
     }
 
     function renderDepartmentOptions() {
@@ -5752,7 +6281,12 @@
 
     function renderMissionRequestList() {
       const container = document.getElementById("missionRequestList");
-      const pending = state.missions.filter((mission) => mission.sourceType === "community" && mission.approvalStatus === "pending");
+      const scope = adminScope();
+      const pending = state.missions.filter((mission) =>
+        mission.sourceType === "community" &&
+        mission.approvalStatus === "pending" &&
+        (!scope || missionArea(mission) === scope)
+      );
       if (!pending.length) {
         container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "कोई लंबित नागरिक मिशन अनुरोध नहीं है।" : "No pending community mission requests."}</div></div>`;
         return;
@@ -5819,6 +6353,59 @@
       document.getElementById("announcementList").innerHTML = state.announcements
         .map((item) => `<div class="message-card"><div class="message-name">${state.lang === "hi" ? "घोषणा" : "Announcement"}</div><div class="message-text">${escapeHtml(item)}</div></div>`)
         .join("");
+      renderAnnouncementManageList();
+    }
+
+    // Editable/deletable version of the announcement list, shown in the Announcements admin tab.
+    function renderAnnouncementManageList() {
+      const container = document.getElementById("announcementManageList");
+      if (!container) return;
+      if (!state.announcementRecords.length) {
+        container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "अभी तक कोई घोषणा नहीं है।" : "No announcements yet."}</div></div>`;
+        return;
+      }
+      container.innerHTML = state.announcementRecords
+        .map((item) => `
+          <div class="message-card">
+            <div class="message-name">${state.lang === "hi" ? "घोषणा" : "Announcement"}</div>
+            <div class="message-text">${escapeHtml(item.text)}</div>
+            <div class="message-actions">
+              <button class="btn btn-soft" type="button" onclick="startEditAnnouncement(${item.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
+              <button class="btn btn-soft" type="button" onclick="deleteAnnouncementItem(${item.id})">${state.lang === "hi" ? "हटाएं" : "Delete"}</button>
+            </div>
+          </div>
+        `)
+        .join("");
+    }
+
+    async function startEditAnnouncement(id) {
+      const record = state.announcementRecords.find((item) => item.id === id);
+      if (!record) return;
+      const updated = window.prompt(state.lang === "hi" ? "घोषणा संपादित करें:" : "Edit announcement text:", record.text);
+      if (updated === null) return;
+      const text = updated.trim();
+      if (!text) return;
+      try {
+        await apiRequest(`/api/admin/announcements/${id}/update`, {
+          method: "POST",
+          body: JSON.stringify({ text })
+        });
+        await refreshPortalData();
+        showToast(state.lang === "hi" ? "घोषणा अपडेट हो गई।" : "Announcement updated.", "✅");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function deleteAnnouncementItem(id) {
+      if (!confirm(state.lang === "hi" ? "इस घोषणा को हटाएं?" : "Delete this announcement?")) return;
+      try {
+        await apiRequest(`/api/admin/announcements/${id}/delete`, { method: "POST" });
+        await refreshPortalData();
+        showToast(state.lang === "hi" ? "घोषणा हटा दी गई।" : "Announcement deleted.", "🗑️");
+      } catch (error) {
+        handleRequestError(error);
+      }
     }
 
     function renderRecentVolunteerList() {
@@ -6072,6 +6659,7 @@
       updateVolunteerFormMode();
       renderAdminStats();
       renderMissionRequestList();
+      if (state.adminLoggedIn) renderPosterMissionOptions();
       renderMissionStatusList();
       renderVolunteerTable();
       renderAnnouncementList();
@@ -6129,6 +6717,7 @@
     function handleRequestError(error) {
       if (error?.status === 401) {
         clearAdminToken();
+        setAdminUser(null);
         state.adminLoggedIn = false;
         closeModal("adminPanelModal");
       }
@@ -6868,32 +7457,44 @@
     }
 
     function openAdminLogin() {
-      if (getAdminToken()) {
+      if (getAdminToken() && state.adminUser) {
         state.adminLoggedIn = true;
+        applyAdminRoleUI();
+        renderPosterMissionOptions();
+        if (isSuperAdmin()) loadAdminUsersList();
         openModal("adminPanelModal");
         return;
       }
+      document.getElementById("adminUsername").value = "";
       document.getElementById("adminPassword").value = "";
+      document.getElementById("adminLoginError").textContent = "";
       openModal("adminLoginModal");
     }
 
     async function submitAdminLogin(event) {
       event.preventDefault();
+      document.getElementById("adminLoginError").textContent = "";
       try {
         const payload = await apiRequest("/api/admin/login", {
           method: "POST",
           body: JSON.stringify({
+            username: document.getElementById("adminUsername").value.trim(),
             password: document.getElementById("adminPassword").value
           })
         });
         setAdminToken(payload.token);
+        setAdminUser(payload.user);
         state.adminLoggedIn = true;
         closeModal("adminLoginModal");
         switchAdminTab("overview");
         await refreshPortalData();
+        applyAdminRoleUI();
+        if (isSuperAdmin()) loadAdminUsersList();
+        renderPosterMissionOptions();
         openModal("adminPanelModal");
       } catch (error) {
-        handleRequestError(error);
+        document.getElementById("adminLoginError").textContent =
+          error?.message || (state.lang === "hi" ? "लॉगिन विफल रहा।" : "Login failed.");
       }
     }
 
@@ -6905,6 +7506,7 @@
       const map = {
         overview: "adminPaneOverview",
         post: "adminPanePost",
+        poster: "adminPanePoster",
         volunteers: "adminPaneVolunteers",
         analytics: "adminPaneAnalytics",
         exports: "adminPaneExports",
@@ -6912,7 +7514,8 @@
         announcements: "adminPaneAnnouncements",
         locations: "adminPaneLocations",
         data: "adminPaneData",
-        newsletter: "adminPaneNewsletter"
+        newsletter: "adminPaneNewsletter",
+        users: "adminPaneUsers"
       };
       Object.values(map).forEach((id) => { const el = document.getElementById(id); if (el) el.classList.remove("active"); });
       const pane = document.getElementById(map[tab]);
@@ -6920,6 +7523,16 @@
 
       if (tab === "analytics") loadAdminAnalytics();
       if (tab === "audit") loadAuditLog();
+      if (tab === "users") loadAdminUsersList();
+      if (tab === "poster") renderPosterMissionOptions();
+      if (tab === "post") applyCoordinatorPostLock();
+      if (tab === "volunteers" && adminScope()) {
+        const wardFilter = document.getElementById("volunteerSearchWard");
+        if (wardFilter && !wardFilter.value) {
+          wardFilter.value = adminScope();
+          runVolunteerSearch();
+        }
+      }
     }
 
     function applyMissionTemplate(templateKey) {
@@ -7267,7 +7880,7 @@
       volunteerSearchPage = page;
       const q = (document.getElementById("volunteerSearchQ").value || "").trim();
       const ward = (document.getElementById("volunteerSearchWard").value || "").trim();
-      const token = state.adminToken;
+      const token = getAdminToken();
       if (!token) return;
       try {
         const params = new URLSearchParams({ q, ward, page, limit: 50 });
@@ -7310,7 +7923,7 @@
     }
 
     function exportMissions() {
-      const token = state.adminToken;
+      const token = getAdminToken();
       if (!token) return showToast("Admin login required.", "⚠️");
       fetch("/api/admin/export/missions.csv", { headers: { Authorization: `Bearer ${token}` } })
         .then((r) => r.blob())
@@ -7324,7 +7937,7 @@
     }
 
     function exportStories() {
-      const token = state.adminToken;
+      const token = getAdminToken();
       if (!token) return showToast("Admin login required.", "⚠️");
       fetch("/api/admin/export/stories.csv", { headers: { Authorization: `Bearer ${token}` } })
         .then((r) => r.blob())
@@ -7338,7 +7951,7 @@
     }
 
     function exportSubscribers() {
-      const token = state.adminToken;
+      const token = getAdminToken();
       if (!token) return showToast("Admin login required.", "⚠️");
       fetch("/api/admin/export/subscribers.csv", { headers: { Authorization: `Bearer ${token}` } })
         .then((r) => r.blob())
@@ -7365,7 +7978,7 @@
         const data = await apiRequest("/api/admin/community-missions/bulk", {
           method: "POST",
           body: JSON.stringify({ ids, action, nodalDepartment }),
-          headers: { Authorization: `Bearer ${state.adminToken}` }
+          headers: { Authorization: `Bearer ${getAdminToken()}` }
         });
         showToast(`${data.processed} mission(s) ${action === "approve" ? "approved" : "rejected"}.`, "✅");
         await refreshPortalData();
@@ -7376,7 +7989,7 @@
     // ── Analytics ─────────────────────────────────────────────────────────────
 
     async function loadAdminAnalytics() {
-      const token = state.adminToken;
+      const token = getAdminToken();
       if (!token) return;
       try {
         const data = await apiRequest("/api/admin/analytics", {
@@ -7424,7 +8037,7 @@
     // ── Admin audit log ───────────────────────────────────────────────────────
 
     async function loadAuditLog() {
-      const token = state.adminToken;
+      const token = getAdminToken();
       if (!token) return;
       try {
         const data = await apiRequest("/api/admin/audit-log", {
@@ -7454,7 +8067,7 @@
       try {
         await apiRequest(`/api/admin/missions/${missionId}/archive`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${state.adminToken}` }
+          headers: { Authorization: `Bearer ${getAdminToken()}` }
         });
         showToast("Mission archived.", "📦");
         await refreshPortalData();
