@@ -918,6 +918,129 @@
       margin-bottom: 16px;
     }
 
+    .mission-timing-badge {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.92);
+      color: #B45309;
+    }
+    .mission-timing-badge.tone-live { color: #B91C1C; }
+
+    .mission-checkin {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface-alt, #f5f6f8);
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 14px;
+    }
+    .mission-checkin-qr {
+      flex-shrink: 0;
+      width: 52px;
+      height: 52px;
+      line-height: 0;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .mission-checkin-qr img { display: block; }
+    .mission-checkin-info { flex: 1; min-width: 0; }
+    .mission-checkin-label {
+      display: block;
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .mission-checkin-code {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+    .mission-checkin-btn {
+      flex-shrink: 0;
+      border: 1px solid var(--navy);
+      background: #fff;
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .mission-checkin-btn:hover { background: var(--navy); color: #fff; }
+
+    /* Mission calendar (month view) */
+    .mission-calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .mission-calendar-header h3 { margin: 0; min-width: 190px; text-align: center; font-size: 18px; }
+    .mission-calendar-header .btn { padding: 6px 14px; font-size: 16px; line-height: 1; }
+    .mission-calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-bottom: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+    }
+    .mission-calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    .cal-day {
+      min-height: 92px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface, #fff);
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: default;
+    }
+    .cal-day.empty { background: transparent; border-color: transparent; }
+    .cal-day.has-missions { cursor: pointer; }
+    .cal-day.has-missions:hover { border-color: var(--navy); box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    .cal-day.is-today { border-color: var(--saffron); background: var(--saffron-light, #FFF7ED); }
+    .cal-day-num { font-size: 12px; font-weight: 700; color: var(--muted); }
+    .cal-day.is-today .cal-day-num { color: var(--saffron-dark, #B45309); }
+    .cal-day-chip {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: var(--navy-light, #E8EEF8);
+      color: var(--navy);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cal-day-more { font-size: 10px; color: var(--muted); font-weight: 600; }
+    @media (max-width: 640px) {
+      .cal-day { min-height: 64px; padding: 4px; }
+      .cal-day-chip { font-size: 9px; }
+    }
+
     .volunteers-avatars {
       display: flex;
       align-items: center;
@@ -2906,11 +3029,32 @@
         <div class="filters" id="missionViewToggle" style="margin-bottom:10px">
           <button class="filter-btn" type="button" data-mission-view="active" onclick="setMissionView('active')">🟢 <span data-i18n="missions-view-active">Active &amp; Upcoming</span></button>
           <button class="filter-btn" type="button" data-mission-view="completed" onclick="setMissionView('completed')">✅ <span data-i18n="missions-view-completed">Completed</span></button>
+          <button class="filter-btn" type="button" data-mission-view="calendar" onclick="setMissionView('calendar')">📅 <span data-i18n="missions-view-calendar">Calendar</span></button>
         </div>
         <div class="filters" id="categoryFilters"></div>
         <div class="missions-grid" id="missionsGrid"></div>
+        <div class="mission-calendar hidden" id="missionCalendar">
+          <div class="mission-calendar-header">
+            <button type="button" class="btn btn-soft" onclick="changeCalendarMonth(-1)" aria-label="Previous month">‹</button>
+            <h3 id="missionCalendarLabel"></h3>
+            <button type="button" class="btn btn-soft" onclick="changeCalendarMonth(1)" aria-label="Next month">›</button>
+          </div>
+          <div class="mission-calendar-weekdays" id="missionCalendarWeekdays"></div>
+          <div class="mission-calendar-grid" id="missionCalendarGrid"></div>
+        </div>
       </div>
     </section>
+
+    <!-- A day's activities, shown when its calendar cell is clicked -->
+    <div class="modal-overlay" id="calendarDayModal">
+      <div class="modal-shell narrow">
+        <div class="modal-header">
+          <div><h2 class="modal-title" id="calendarDayModalTitle">Activities</h2></div>
+          <button class="modal-close" type="button" data-close-modal="calendarDayModal">✕</button>
+        </div>
+        <div class="modal-body" id="calendarDayModalBody"></div>
+      </div>
+    </div>
 
     <section class="section alt" id="host-mission">
       <div class="section-inner">
@@ -4216,6 +4360,32 @@
     </div>
   </div>
 
+  <!-- Full-screen photo viewer: clicking any mission activity photo opens it
+       here (zoomed, closable) instead of trying to navigate to a data: URL
+       in a new tab, which browsers block. -->
+  <div class="modal-overlay" id="photoLightbox" onclick="if(event.target===this) closePhotoLightbox()" style="z-index:1200">
+    <button type="button" onclick="closePhotoLightbox()" aria-label="Close"
+      style="position:absolute;top:18px;right:22px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:20px;cursor:pointer;z-index:1">✕</button>
+    <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:24px" onclick="event.stopPropagation()">
+      <img id="photoLightboxImg" src="" alt="" style="max-width:min(92vw,900px);max-height:88vh;object-fit:contain;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,0.5)" />
+    </div>
+  </div>
+
+  <!-- Generic confirmation card, used before any destructive/reversible admin
+       action (deleting a volunteer, unmarking a mission as completed, etc.)
+       instead of the browser's native confirm() dialog. -->
+  <div class="modal-overlay" id="confirmActionModal">
+    <div class="modal-shell narrow" style="max-width:400px;text-align:center;padding:28px 24px">
+      <div style="font-size:34px;margin-bottom:6px" id="confirmActionIcon">⚠️</div>
+      <h3 id="confirmActionTitle" style="margin:0 0 8px">Are you sure?</h3>
+      <p id="confirmActionMessage" style="color:var(--muted);font-size:14px;margin:0 0 20px">This action cannot be undone.</p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-soft" type="button" onclick="closeModal('confirmActionModal')">Cancel</button>
+        <button class="btn btn-primary" type="button" id="confirmActionConfirmBtn" style="background:var(--danger,#DC2626);border-color:var(--danger,#DC2626)">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast">
     <span class="toast-icon" id="toastIcon">✅</span>
     <span id="toastText"></span>
@@ -4570,6 +4740,9 @@
       "missions-title": { en: "Choose your cause. Make your mark.", hi: "अपना उद्देश्य चुनें। अपनी पहचान बनाएं।" },
       "missions-subtitle": { en: "From cleanliness drives to district teaching programs, explore missions that match your time, location, and skills.", hi: "स्वच्छता अभियान से लेकर शिक्षण कार्यक्रम तक, अपने समय, स्थान और कौशल के अनुसार अभियान चुनें।" },
       "missions-post": { en: "Post a Mission", hi: "अभियान पोस्ट करें" },
+      "missions-view-active": { en: "Active & Upcoming", hi: "सक्रिय और आगामी" },
+      "missions-view-completed": { en: "Completed", hi: "पूर्ण" },
+      "missions-view-calendar": { en: "Calendar", hi: "कैलेंडर" },
       "funding-badge": { en: "Host a Mission", hi: "मिशन होस्ट करें" },
       "funding-title": { en: "Launch a citizen-led mission in your own area", hi: "अपने इलाके में नागरिक-नेतृत्व वाला मिशन शुरू करें" },
       "funding-subtitle": { en: "Citizens, groups, schools, and resident bodies can propose missions. Phone number and email are mandatory so the administration can coordinate quickly.", hi: "नागरिक, समूह, स्कूल और स्थानीय संगठन मिशन प्रस्तावित कर सकते हैं। त्वरित समन्वय के लिए फोन और ईमेल अनिवार्य हैं।" },
@@ -5818,6 +5991,53 @@
       return `${n} ${label}`;
     }
 
+    // Parses the mission's free-text "date" string (e.g. "4 September 2026,
+    // 9:00 AM – 12:00 PM") into real Date objects for the start and end time.
+    // Used by the "starting soon" badge and the mission calendar. Returns
+    // null if the string doesn't match the expected admin-form format
+    // (community-submitted missions occasionally have looser text).
+    function parseMissionDateRange(dateStr) {
+      if (!dateStr) return null;
+      const m = String(dateStr).match(/^(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)[^0-9]*(\d{1,2}):(\d{2}) (AM|PM)/i);
+      if (!m) return null;
+      const monthIdx = MONTHS_EN.indexOf(m[2]);
+      if (monthIdx === -1) return null;
+      const day = Number(m[1]);
+      const year = Number(m[3]);
+      const to24 = (h, period) => {
+        h = Number(h) % 12;
+        if (/pm/i.test(period)) h += 12;
+        return h;
+      };
+      const start = new Date(year, monthIdx, day, to24(m[4], m[6]), Number(m[5]));
+      const end = new Date(year, monthIdx, day, to24(m[7], m[9]), Number(m[8]));
+      return { start, end, day, monthIdx, year };
+    }
+
+    // Returns a short badge {label, tone} if a mission is starting soon or
+    // already underway today, otherwise null. Only meaningful for missions
+    // that are still open (not completed/closed/pending review).
+    function missionTimingBadge(mission) {
+      if (!mission || ["completed", "closed"].includes(mission.status)) return null;
+      if (mission.approvalStatus === "pending" || mission.approvalStatus === "rejected") return null;
+      const range = parseMissionDateRange(mission.date);
+      if (!range) return null;
+      const now = new Date();
+      const hi = state.lang === "hi";
+      const msToStart = range.start - now;
+      const hoursToStart = msToStart / 3600000;
+      if (now >= range.start && now <= range.end) {
+        return { label: hi ? "🔴 अभी चल रहा है" : "🔴 Happening now", tone: "live" };
+      }
+      if (hoursToStart > 0 && hoursToStart <= 24) {
+        return { label: hi ? "🕒 आज शुरू हो रहा है" : "🕒 Starting today", tone: "soon" };
+      }
+      if (hoursToStart > 24 && hoursToStart <= 48) {
+        return { label: hi ? "🕒 कल शुरू हो रहा है" : "🕒 Starting tomorrow", tone: "soon" };
+      }
+      return null;
+    }
+
     function parseMissionDateToFields(dateStr, pfx) {
       // Try to match: "12 April 2025, 9:00 AM – 12:00 PM"
       const m = dateStr.match(/^(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)[^0-9]*(\d{1,2}):(\d{2}) (AM|PM)/i);
@@ -5981,7 +6201,9 @@
       const view = state.missionView || "active";
       return state.missions.filter((mission) => {
         const publicOk = mission.approvalStatus !== "pending" && mission.approvalStatus !== "rejected";
-        const viewOk = view === "completed" ? mission.status === "completed" : mission.status !== "completed";
+        // The calendar is a timeline of everything, not a completed/active
+        // filter — a completed activity still deserves a spot on its date.
+        const viewOk = view === "calendar" ? true : (view === "completed" ? mission.status === "completed" : mission.status !== "completed");
         const categoryOk = state.currentCategory === "all" || mission.category === state.currentCategory;
         const searchOk = !q ||
           mission.title.toLowerCase().includes(q) ||
@@ -5997,6 +6219,9 @@
       document.querySelectorAll("[data-mission-view]").forEach((button) => {
         button.classList.toggle("active", button.getAttribute("data-mission-view") === view);
       });
+      document.getElementById("missionsGrid")?.classList.toggle("hidden", view === "calendar");
+      document.getElementById("categoryFilters")?.classList.toggle("hidden", view === "calendar");
+      document.getElementById("missionCalendar")?.classList.toggle("hidden", view !== "calendar");
       renderMissions();
     }
 
@@ -6004,6 +6229,10 @@
       document.querySelectorAll("[data-mission-view]").forEach((button) => {
         button.classList.toggle("active", button.getAttribute("data-mission-view") === (state.missionView || "active"));
       });
+      if ((state.missionView || "active") === "calendar") {
+        renderMissionCalendar();
+        return;
+      }
       const missions = filteredMissions();
       const grid = document.getElementById("missionsGrid");
       if (!missions.length) {
@@ -6027,6 +6256,13 @@
             ? preview.map((p) => `<div class="avatar" style="background:${escapeHtml(p.color)}" title="${escapeHtml(p.initials)}">${escapeHtml(p.initials)}</div>`).join("") +
               (mission.volunteers > preview.length ? `<div class="avatar" style="background:#94A3B8;font-size:9px">+${mission.volunteers - preview.length}</div>` : "")
             : "";
+          const timing = missionTimingBadge(mission);
+          const hi = state.lang === "hi";
+          // The QR + code are shown right on the public card (not just in the
+          // admin panel) so any volunteer can scan or tap it on their own
+          // phone to check in — no need to find an admin or open a separate
+          // screen. Hidden once a mission is closed/completed.
+          const showCheckin = mission.checkInCode && !["completed", "closed"].includes(mission.status);
 
           return `
             <article class="mission-card">
@@ -6034,6 +6270,7 @@
                 ${mission.emoji}
                 <span class="mission-tag">${escapeHtml(categoryLabel(mission.category))}</span>
                 <span class="mission-status status-${mission.status}">${escapeHtml(statusLabel(mission.status))}</span>
+                ${timing ? `<span class="mission-timing-badge tone-${timing.tone}">${timing.label}</span>` : ""}
               </div>
               <div class="mission-body">
                 <h3 class="mission-title">${escapeHtml(mission.title)}</h3>
@@ -6041,12 +6278,21 @@
                 <div class="mission-meta">
                   <span><i class="fa-solid fa-calendar-days"></i> ${escapeHtml(mission.date)}</span>
                   <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.location)}</span>
-                  <span><i class="fa-solid fa-comments"></i> ${mission.discussion.length} ${state.lang === "hi" ? "चर्चा" : "comments"}</span>
+                  <span><i class="fa-solid fa-comments"></i> ${mission.discussion.length} ${hi ? "चर्चा" : "comments"}</span>
                 </div>
                 <div class="progress-info">
-                  <span><strong>${mission.volunteers}</strong> ${state.lang === "hi" ? "स्वयंसेवक" : "volunteers"} · ${percentage}% ${state.lang === "hi" ? "भरा" : "filled"}</span>
+                  <span><strong>${mission.volunteers}</strong> ${hi ? "स्वयंसेवक जुड़े" : "volunteers joined"} · ${percentage}% ${hi ? "भरा" : "filled"}</span>
                 </div>
                 <div class="progress-bar"><div class="progress-fill" style="width:${percentage}%"></div></div>
+                ${showCheckin ? `
+                <div class="mission-checkin">
+                  <div id="qr-card-${mission.id}" class="mission-checkin-qr" title="${hi ? "चेक-इन के लिए स्कैन करें" : "Scan with your phone to check in"}"></div>
+                  <div class="mission-checkin-info">
+                    <span class="mission-checkin-label">${hi ? "चेक-इन कोड" : "Check-in code"}</span>
+                    <span class="mission-checkin-code">${escapeHtml(mission.checkInCode)}</span>
+                  </div>
+                  <button type="button" class="mission-checkin-btn" onclick="openMissionCheckIn('${escapeHtml(mission.checkInCode)}')">${hi ? "चेक इन" : "Check In"}</button>
+                </div>` : ""}
                 <div class="mission-footer" style="${avatars ? "" : "justify-content:flex-end"}">
                   ${avatars ? `<div class="volunteers-avatars">${avatars}</div>` : ""}
                   <div class="mission-actions">
@@ -6063,6 +6309,99 @@
           `;
         })
         .join("");
+      renderQrCodes();
+    }
+
+    // ── Mission calendar (month view) ───────────────────────────────────────────
+    // Not persisted — always opens on the current month.
+    let calendarCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+    function changeCalendarMonth(delta) {
+      calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
+      renderMissionCalendar();
+    }
+
+    function renderMissionCalendar() {
+      const grid = document.getElementById("missionCalendarGrid");
+      const weekdaysEl = document.getElementById("missionCalendarWeekdays");
+      const label = document.getElementById("missionCalendarLabel");
+      if (!grid || !weekdaysEl || !label) return;
+      const hi = state.lang === "hi";
+
+      const monthNamesHi = ["जनवरी","फ़रवरी","मार्च","अप्रैल","मई","जून","जुलाई","अगस्त","सितंबर","अक्टूबर","नवंबर","दिसंबर"];
+      label.textContent = `${hi ? monthNamesHi[calendarCursor.getMonth()] : MONTHS_EN[calendarCursor.getMonth()]} ${calendarCursor.getFullYear()}`;
+
+      const weekdayNames = hi
+        ? ["रवि","सोम","मंगल","बुध","गुरु","शुक्र","शनि"]
+        : ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      weekdaysEl.innerHTML = weekdayNames.map((d) => `<div>${d}</div>`).join("");
+
+      // Group every publicly-visible mission with a parseable date onto its
+      // calendar day, regardless of the active/completed filter — the
+      // calendar is meant to show the whole activity timeline at a glance.
+      const byDate = new Map();
+      state.missions.forEach((mission) => {
+        if (mission.approvalStatus === "pending" || mission.approvalStatus === "rejected") return;
+        const range = parseMissionDateRange(mission.date);
+        if (!range) return;
+        const key = `${range.year}-${String(range.monthIdx + 1).padStart(2, "0")}-${String(range.day).padStart(2, "0")}`;
+        if (!byDate.has(key)) byDate.set(key, []);
+        byDate.get(key).push(mission);
+      });
+
+      const year = calendarCursor.getFullYear();
+      const month = calendarCursor.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const todayKey = (() => {
+        const t = new Date();
+        return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+      })();
+
+      let cells = "";
+      for (let i = 0; i < firstDay; i++) cells += `<div class="cal-day empty"></div>`;
+      for (let day = 1; day <= daysInMonth; day++) {
+        const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const dayMissions = byDate.get(key) || [];
+        const isToday = key === todayKey;
+        const maxChips = 2;
+        const chips = dayMissions.slice(0, maxChips).map((m) => `<div class="cal-day-chip" title="${escapeHtml(m.title)}">${escapeHtml(m.title)}</div>`).join("");
+        const more = dayMissions.length > maxChips ? `<div class="cal-day-more">+${dayMissions.length - maxChips} ${hi ? "और" : "more"}</div>` : "";
+        cells += `
+          <div class="cal-day ${dayMissions.length ? "has-missions" : ""} ${isToday ? "is-today" : ""}"
+               ${dayMissions.length ? `onclick="openCalendarDay('${key}')"` : ""}
+               title="${dayMissions.length ? escapeHtml(dayMissions.map((m) => m.title).join(", ")) : ""}">
+            <div class="cal-day-num">${day}</div>
+            ${chips}
+            ${more}
+          </div>`;
+      }
+      grid.innerHTML = cells;
+    }
+
+    function openCalendarDay(dateKey) {
+      const missions = state.missions.filter((mission) => {
+        if (mission.approvalStatus === "pending" || mission.approvalStatus === "rejected") return false;
+        const range = parseMissionDateRange(mission.date);
+        if (!range) return false;
+        const key = `${range.year}-${String(range.monthIdx + 1).padStart(2, "0")}-${String(range.day).padStart(2, "0")}`;
+        return key === dateKey;
+      });
+      const hi = state.lang === "hi";
+      const [y, mo, d] = dateKey.split("-").map(Number);
+      const prettyDate = new Date(y, mo - 1, d).toLocaleDateString(hi ? "hi-IN" : "en-IN", { day: "numeric", month: "long", year: "numeric" });
+      document.getElementById("calendarDayModalTitle").textContent = `${hi ? "गतिविधियाँ" : "Activities"} · ${prettyDate}`;
+      document.getElementById("calendarDayModalBody").innerHTML = missions.map((mission) => `
+        <div class="message-card">
+          <div class="message-name">${mission.emoji || ""} ${escapeHtml(mission.title)}</div>
+          <div class="message-text">${escapeHtml(mission.date)}</div>
+          <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.location)}</div>
+          <div class="message-actions">
+            <button class="btn btn-primary" type="button" onclick="closeModal('calendarDayModal'); openMissionModal(${mission.id})">${hi ? "विवरण देखें" : "View Details"}</button>
+          </div>
+        </div>
+      `).join("") || `<div class="message-card"><div class="message-text">${hi ? "इस दिन कोई गतिविधि नहीं है।" : "No activities on this day."}</div></div>`;
+      openModal("calendarDayModal");
     }
 
     function renderWardGrid() {
@@ -6489,7 +6828,7 @@
             </div>` : ""}
             <div class="message-actions">
               <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
-              ${mission.status !== "completed" ? `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>` : ""}
+              ${mission.status !== "completed" ? `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>` : `<button class="btn btn-soft" type="button" onclick="confirmUnmarkCompleted(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्न हटाएं" : "Unmark Completed"}</button>`}
               ${mission.status !== "closed" ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'closed')">${state.lang === "hi" ? "अस्थायी बंद" : "Close Temporarily"}</button>` : `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>`}
               <button class="btn btn-soft" type="button" onclick="archiveMission(${mission.id})">${state.lang === "hi" ? "संग्रहीत करें" : "Archive"}</button>
             </div>
@@ -6652,15 +6991,22 @@
       }
     }
 
-    async function deleteAnnouncementItem(id) {
-      if (!confirm(state.lang === "hi" ? "इस घोषणा को हटाएं?" : "Delete this announcement?")) return;
-      try {
-        await apiRequest(`/api/admin/announcements/${id}/delete`, { method: "POST" });
-        await refreshPortalData();
-        showToast(state.lang === "hi" ? "घोषणा हटा दी गई।" : "Announcement deleted.", "🗑️");
-      } catch (error) {
-        handleRequestError(error);
-      }
+    function deleteAnnouncementItem(id) {
+      const hi = state.lang === "hi";
+      openConfirmModal({
+        icon: "🗑️",
+        title: hi ? "इस घोषणा को हटाएं?" : "Delete this announcement?",
+        confirmLabel: hi ? "हटाएं" : "Delete",
+        onConfirm: async () => {
+          try {
+            await apiRequest(`/api/admin/announcements/${id}/delete`, { method: "POST" });
+            await refreshPortalData();
+            showToast(hi ? "घोषणा हटा दी गई।" : "Announcement deleted.", "🗑️");
+          } catch (error) {
+            handleRequestError(error);
+          }
+        }
+      });
     }
 
     function renderRecentVolunteerList() {
@@ -6819,7 +7165,7 @@
             ${photos.map((photo) => `
               <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);aspect-ratio:1/1">
                 <img src="${escapeHtml(photo.dataUrl)}" alt="${escapeHtml(photo.caption || mission.title)}" loading="lazy"
-                     style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="window.open('${escapeHtml(photo.dataUrl)}', '_blank')" />
+                     style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="openPhotoLightbox(this.src, this.alt)" />
                 ${photo.uploadedBy ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:#fff;font-size:10px;padding:3px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(photo.uploadedBy)}</div>` : ""}
                 ${state.adminLoggedIn ? `<button type="button" onclick="deleteMissionPhotoAsAdmin(${photo.id})" title="${hi ? "फोटो हटाएं" : "Delete photo"}"
                     style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(220,38,38,0.9);color:#fff;font-size:12px;line-height:1;cursor:pointer">✕</button>` : ""}
@@ -6919,14 +7265,22 @@
       });
     }
 
-    async function deleteMissionPhotoAsAdmin(photoId) {
-      if (!confirm(state.lang === "hi" ? "क्या आप इस फोटो को हटाना चाहते हैं?" : "Delete this photo?")) return;
-      try {
-        await apiRequest(`/api/admin/photos/${photoId}/delete`, { method: "POST" });
-        showToast(state.lang === "hi" ? "फोटो हटा दी गई।" : "Photo deleted.", "🗑️");
-        await refreshPortalData();
-        renderAll();
-      } catch (error) { handleRequestError(error); }
+    function deleteMissionPhotoAsAdmin(photoId) {
+      const hi = state.lang === "hi";
+      openConfirmModal({
+        icon: "🗑️",
+        title: hi ? "फोटो हटाएं?" : "Delete this photo?",
+        message: hi ? "यह फोटो स्थायी रूप से हट जाएगी।" : "This photo will be permanently removed.",
+        confirmLabel: hi ? "हटाएं" : "Delete",
+        onConfirm: async () => {
+          try {
+            await apiRequest(`/api/admin/photos/${photoId}/delete`, { method: "POST" });
+            showToast(hi ? "फोटो हटा दी गई।" : "Photo deleted.", "🗑️");
+            await refreshPortalData();
+            renderAll();
+          } catch (error) { handleRequestError(error); }
+        }
+      });
     }
 
     // ── Citizen/admin-requested mission completion ──────────────────────────────
@@ -8089,6 +8443,19 @@
       }
     }
 
+    function confirmUnmarkCompleted(missionId) {
+      const hi = state.lang === "hi";
+      openConfirmModal({
+        icon: "↩️",
+        title: hi ? "पूर्ण चिह्न हटाएं?" : "Unmark this activity as completed?",
+        message: hi
+          ? "गतिविधि फिर से 'खुली' स्थिति में चली जाएगी। दर्ज किया गया परिणाम विवरण सुरक्षित रहेगा और आप बाद में इसे दोबारा पूर्ण चिह्नित कर सकते हैं।"
+          : "The activity goes back to \"open\" status. Its recorded outcome details are kept, and you can mark it completed again later.",
+        confirmLabel: hi ? "पूर्ण चिह्न हटाएं" : "Unmark Completed",
+        onConfirm: () => updateMissionStatus(missionId, "open")
+      });
+    }
+
     async function deleteMission(missionId) {
       try {
         await apiRequest(`/api/admin/missions/${missionId}/delete`, { method: "POST" });
@@ -8768,25 +9135,64 @@
       }
     }
 
-    async function confirmDeleteVolunteer(id) {
-      const ok = confirm(state.lang === "hi"
-        ? "इस स्वयंसेवक को हटाएं? इससे उनके सभी अंक और भागीदारी रिकॉर्ड भी हट जाएंगे। यह पूर्ववत नहीं किया जा सकता।"
-        : "Delete this volunteer? This also removes all their points and participation records. This cannot be undone.");
-      if (!ok) return;
-      const token = getAdminToken();
-      if (!token) return;
-      try {
-        await apiRequest(`/api/admin/volunteers/${id}/delete`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        showToast(state.lang === "hi" ? "स्वयंसेवक हटाया गया।" : "Volunteer deleted.", "🗑️");
-        await refreshPortalData();
-        renderAll();
-        runVolunteerSearch(volunteerSearchPage);
-      } catch (error) {
-        handleRequestError(error);
-      }
+    function confirmDeleteVolunteer(id) {
+      const hi = state.lang === "hi";
+      openConfirmModal({
+        icon: "🗑️",
+        title: hi ? "स्वयंसेवक हटाएं?" : "Delete this volunteer?",
+        message: hi
+          ? "इससे उनके सभी अंक और भागीदारी रिकॉर्ड भी हट जाएंगे। यह पूर्ववत नहीं किया जा सकता।"
+          : "This also removes all their points and participation records. This cannot be undone.",
+        confirmLabel: hi ? "हटाएं" : "Delete",
+        onConfirm: async () => {
+          const token = getAdminToken();
+          if (!token) return;
+          try {
+            await apiRequest(`/api/admin/volunteers/${id}/delete`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            showToast(hi ? "स्वयंसेवक हटाया गया।" : "Volunteer deleted.", "🗑️");
+            await refreshPortalData();
+            renderAll();
+            runVolunteerSearch(volunteerSearchPage);
+          } catch (error) {
+            handleRequestError(error);
+          }
+        }
+      });
+    }
+
+    // ── Generic confirmation card (replaces window.confirm() everywhere) ───────
+    // Usage: openConfirmModal({ title, message, icon, confirmLabel, onConfirm })
+    let pendingConfirmAction = null;
+    function openConfirmModal({ title, message, icon = "⚠️", confirmLabel = "Confirm", onConfirm }) {
+      document.getElementById("confirmActionIcon").textContent = icon;
+      document.getElementById("confirmActionTitle").textContent = title || "Are you sure?";
+      document.getElementById("confirmActionMessage").textContent = message || "This action cannot be undone.";
+      const btn = document.getElementById("confirmActionConfirmBtn");
+      btn.textContent = confirmLabel;
+      pendingConfirmAction = onConfirm || null;
+      openModal("confirmActionModal");
+    }
+    document.getElementById("confirmActionConfirmBtn")?.addEventListener("click", () => {
+      const action = pendingConfirmAction;
+      pendingConfirmAction = null;
+      closeModal("confirmActionModal");
+      if (typeof action === "function") action();
+    });
+
+    // ── Full-screen photo lightbox ──────────────────────────────────────────────
+    function openPhotoLightbox(src, caption) {
+      const img = document.getElementById("photoLightboxImg");
+      img.src = src;
+      img.alt = caption || "";
+      openModal("photoLightbox");
+    }
+    function closePhotoLightbox() {
+      closeModal("photoLightbox");
+      const img = document.getElementById("photoLightboxImg");
+      img.src = "";
     }
 
     function exportVolunteers() {
@@ -8933,17 +9339,24 @@
 
     // ── Archive mission ───────────────────────────────────────────────────────
 
-    async function archiveMission(missionId) {
-      if (!confirm("Archive this mission? It will be hidden from the public portal but not deleted.")) return;
-      try {
-        await apiRequest(`/api/admin/missions/${missionId}/archive`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${getAdminToken()}` }
-        });
-        showToast("Mission archived.", "📦");
-        await refreshPortalData();
-        renderAll();
-      } catch (e) { handleRequestError(e); }
+    function archiveMission(missionId) {
+      openConfirmModal({
+        icon: "📦",
+        title: "Archive this mission?",
+        message: "It will be hidden from the public portal but not deleted.",
+        confirmLabel: "Archive",
+        onConfirm: async () => {
+          try {
+            await apiRequest(`/api/admin/missions/${missionId}/archive`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${getAdminToken()}` }
+            });
+            showToast("Mission archived.", "📦");
+            await refreshPortalData();
+            renderAll();
+          } catch (e) { handleRequestError(e); }
+        }
+      });
     }
 
     // ── Track My Mission Request ──────────────────────────────────────────────
@@ -8999,21 +9412,42 @@
       if (typeof QRCode === "undefined") return;
       state.missions.forEach((m) => {
         if (!m.checkInCode) return;
-        const el = document.getElementById(`qr-${m.id}`);
-        if (!el || el.innerHTML) return;
         // Scanning this opens the portal directly with the check-in modal
         // pre-filled — a volunteer just has to add their phone number and
         // tap Check In, instead of retyping a 6-character code by hand.
         const checkinUrl = `${window.location.origin}${window.location.pathname}?checkin=${m.checkInCode}`;
-        new QRCode(el, {
-          text: checkinUrl,
-          width: 64,
-          height: 64,
-          colorDark: "#000",
-          colorLight: "#fff",
-          correctLevel: QRCode.CorrectLevel.L
+        // Two possible homes for the same QR: the admin panel's mission
+        // status list (`qr-{id}`) and the public mission card, visible to
+        // every visitor (`qr-card-{id}`).
+        ["qr-" + m.id, "qr-card-" + m.id].forEach((elId) => {
+          const el = document.getElementById(elId);
+          if (!el || el.innerHTML) return;
+          new QRCode(el, {
+            text: checkinUrl,
+            width: elId.startsWith("qr-card-") ? 52 : 64,
+            height: elId.startsWith("qr-card-") ? 52 : 64,
+            colorDark: "#000",
+            colorLight: "#fff",
+            correctLevel: QRCode.CorrectLevel.L
+          });
         });
       });
+    }
+
+    // Tapping "Check In" directly on a mission card: prefill the code (and a
+    // remembered phone number, for returning volunteers) and open the same
+    // check-in modal used by the QR flow and the "Check in at venue" link.
+    function openMissionCheckIn(code) {
+      const codeField = document.getElementById("checkInCode");
+      if (codeField) codeField.value = code;
+      const phoneField = document.getElementById("checkInPhone");
+      if (phoneField) {
+        try {
+          const lastPhone = window.localStorage.getItem("prayasLastCheckinPhone");
+          if (lastPhone) phoneField.value = lastPhone;
+        } catch (error) {}
+      }
+      openModal("checkInModal");
     }
 
     // ── Post-mission feedback ─────────────────────────────────────────────────
