@@ -547,6 +547,31 @@
       flex-wrap: wrap;
     }
 
+    .hero-utility {
+      margin-top: 18px;
+      display: flex;
+      gap: 8px 18px;
+      flex-wrap: wrap;
+      align-items: center;
+      font-size: 13px;
+      color: rgba(255,255,255,0.68);
+    }
+
+    .hero-utility button {
+      background: none;
+      border: none;
+      padding: 0;
+      color: rgba(255,255,255,0.78);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: rgba(255,255,255,0.35);
+    }
+
+    .hero-utility button:hover { color: #fff; }
+
     .hero-visual {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -1443,6 +1468,12 @@
       font-size: 14px;
       margin-bottom: 18px;
       line-height: 1.6;
+    }
+
+    .feed-scroll {
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 4px;
     }
 
     .activity-feed,
@@ -2784,9 +2815,12 @@
           <div class="hero-actions">
             <a class="btn btn-saffron" href="#missions" data-i18n="hero-explore">Explore Missions</a>
             <a class="btn btn-soft" href="#volunteer" data-i18n="hero-register">Register as Volunteer</a>
-            <button class="btn btn-soft" type="button" onclick="openModal('checkInModal')" style="background:rgba(255,255,255,0.18)">Check In at Venue</button>
-            <button class="btn btn-soft" type="button" onclick="openModal('trackMissionModal')" style="background:rgba(255,255,255,0.18)">Track My Request</button>
-            <button class="btn btn-soft" type="button" onclick="openModal('myPassportModal')" style="background:rgba(255,255,255,0.18)">🎖️ My Passport &amp; Certificate</button>
+          </div>
+          <div class="hero-utility">
+            <span data-i18n="hero-utility-label">Already contributing?</span>
+            <button type="button" onclick="openModal('checkInModal')" data-i18n="hero-utility-checkin">Check in at venue</button>
+            <button type="button" onclick="openModal('trackMissionModal')" data-i18n="hero-utility-track">Track my request</button>
+            <button type="button" onclick="openModal('myPassportModal')" data-i18n="hero-utility-passport">🎖️ My passport &amp; certificate</button>
           </div>
         </div>
 
@@ -2812,26 +2846,42 @@
       </div>
     </section>
 
-    <div class="stats-bar" id="statsBar">
-      <div class="stats-inner">
-        <div class="stat-item">
-          <div class="stat-num" id="statVolunteers">0</div>
-          <div class="stat-label" data-i18n="stats-volunteers">Registered Volunteers</div>
+    <section class="section" id="how">
+      <div class="section-inner">
+        <div class="section-top center">
+          <div>
+            <div class="section-badge"><i class="fa-solid fa-route"></i> <span data-i18n="how-badge">Simple Process</span></div>
+            <h2 class="section-title" data-i18n="how-title">How Prayas works</h2>
+            <p class="section-subtitle" data-i18n="how-subtitle">
+              Register once, explore mission opportunities, contribute on-ground, and get recognised publicly for civic action.
+            </p>
+          </div>
         </div>
-        <div class="stat-item">
-          <div class="stat-num" id="statMissions">0</div>
-          <div class="stat-label" data-i18n="stats-missions">Active Missions</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num" id="statCompleted">0</div>
-          <div class="stat-label" data-i18n="stats-completed">Programs Completed</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num" id="statLives">0</div>
-          <div class="stat-label" data-i18n="stats-lives">Lives Impacted</div>
+
+        <div class="steps-grid">
+          <div class="step">
+            <div class="step-num" style="background:var(--saffron-light);color:var(--saffron-dark)">1</div>
+            <h3 data-i18n="how-step-1-title">Register Free</h3>
+            <p data-i18n="how-step-1-text">Sign up with your area, skills, and availability. It takes under two minutes and keeps you mission-ready.</p>
+          </div>
+          <div class="step">
+            <div class="step-num" style="background:var(--navy-light);color:var(--navy)">2</div>
+            <h3 data-i18n="how-step-2-title">Choose a Mission</h3>
+            <p data-i18n="how-step-2-text">Browse campaigns by ward, mission type, time requirement, and current volunteer demand.</p>
+          </div>
+          <div class="step">
+            <div class="step-num" style="background:var(--green-light);color:var(--green)">3</div>
+            <h3 data-i18n="how-step-3-title">Contribute</h3>
+            <p data-i18n="how-step-3-text">Show up, participate, donate, mentor, coordinate, or spread awareness using your strongest skills.</p>
+          </div>
+          <div class="step">
+            <div class="step-num" style="background:var(--saffron-light);color:var(--saffron-dark)">4</div>
+            <h3 data-i18n="how-step-4-title">Get Recognised</h3>
+            <p data-i18n="how-step-4-text">Share your story, climb the leaderboard, and download appreciation certificates for your contribution.</p>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
 
     <section class="section" id="missions">
       <div class="section-inner">
@@ -2875,8 +2925,12 @@
               Citizens, groups, schools, and resident bodies can propose missions. Phone number and email are mandatory so the administration can coordinate and verify the request quickly.
             </p>
           </div>
+          <button class="btn btn-saffron" type="button" id="hostMissionToggleBtn">
+            <i class="fa-solid fa-bullhorn"></i>
+            <span data-i18n="host-toggle">Propose a Mission</span>
+          </button>
         </div>
-        <div class="form-card">
+        <div class="form-card hidden" id="hostMissionFormCard">
           <h3 class="form-card-title" data-i18n="host-form-title">Propose a Community Mission</h3>
           <p class="form-card-subtitle" data-i18n="host-form-subtitle">Your request will appear in the admin dashboard for review, nodal department assignment, and publishing.</p>
           <form id="hostMissionForm">
@@ -2973,43 +3027,6 @@
         </div>
         <div class="district-grid" id="wardGrid"></div>
         <div class="map-summary" id="mapSummary"></div>
-      </div>
-    </section>
-
-    <section class="section" id="how">
-      <div class="section-inner">
-        <div class="section-top center">
-          <div>
-            <div class="section-badge"><i class="fa-solid fa-route"></i> <span data-i18n="how-badge">Simple Process</span></div>
-            <h2 class="section-title" data-i18n="how-title">How Prayas works</h2>
-            <p class="section-subtitle" data-i18n="how-subtitle">
-              Register once, explore mission opportunities, contribute on-ground, and get recognised publicly for civic action.
-            </p>
-          </div>
-        </div>
-
-        <div class="steps-grid">
-          <div class="step">
-            <div class="step-num" style="background:var(--saffron-light);color:var(--saffron-dark)">1</div>
-            <h3 data-i18n="how-step-1-title">Register Free</h3>
-            <p data-i18n="how-step-1-text">Sign up with your area, skills, and availability. It takes under two minutes and keeps you mission-ready.</p>
-          </div>
-          <div class="step">
-            <div class="step-num" style="background:var(--navy-light);color:var(--navy)">2</div>
-            <h3 data-i18n="how-step-2-title">Choose a Mission</h3>
-            <p data-i18n="how-step-2-text">Browse campaigns by ward, mission type, time requirement, and current volunteer demand.</p>
-          </div>
-          <div class="step">
-            <div class="step-num" style="background:var(--green-light);color:var(--green)">3</div>
-            <h3 data-i18n="how-step-3-title">Contribute</h3>
-            <p data-i18n="how-step-3-text">Show up, participate, donate, mentor, coordinate, or spread awareness using your strongest skills.</p>
-          </div>
-          <div class="step">
-            <div class="step-num" style="background:var(--saffron-light);color:var(--saffron-dark)">4</div>
-            <h3 data-i18n="how-step-4-title">Get Recognised</h3>
-            <p data-i18n="how-step-4-text">Share your story, climb the leaderboard, and download appreciation certificates for your contribution.</p>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -3127,15 +3144,19 @@
           <div class="pulse-report" id="leaderReportCard"></div>
           <div class="pulse-side">
             <div class="feed-card form-card">
-              <h3 class="feed-title" data-i18n="activity-feed-title">Recent Activity</h3>
-              <p class="feed-subtitle" data-i18n="activity-feed-subtitle">A quick stream of volunteer joins, public stories, and mission movements.</p>
-              <div class="activity-feed" id="recentActivityFeed"></div>
-            </div>
-            <div class="feed-card form-card">
-              <div class="history-list-label"><i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="event-history-kicker">Last 10 Events</span></div>
-              <h3 class="feed-title" data-i18n="event-history-title">Recent mission history</h3>
-              <p class="feed-subtitle" data-i18n="event-history-subtitle">Track the latest activities that were hosted, are active, or were completed recently.</p>
-              <div class="history-feed" id="recentEventHistory"></div>
+              <div class="lb-tabs" style="margin-bottom:14px">
+                <button class="lb-tab active" id="feedTabActivity" type="button" onclick="setFeedTab('activity')">
+                  <i class="fa-solid fa-bolt"></i> <span data-i18n="activity-feed-title">Recent Activity</span>
+                </button>
+                <button class="lb-tab" id="feedTabHistory" type="button" onclick="setFeedTab('history')">
+                  <i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="event-history-title">Mission History</span>
+                </button>
+              </div>
+              <p class="feed-subtitle" id="feedTabSubtitle" data-i18n="activity-feed-subtitle">A quick stream of volunteer joins, public stories, and mission movements.</p>
+              <div class="feed-scroll">
+                <div class="activity-feed" id="recentActivityFeed"></div>
+                <div class="history-feed hidden" id="recentEventHistory"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -3667,6 +3688,7 @@
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="exports">Exports</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="audit">Audit Log</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="announcements" data-i18n="admin-tab-announcements">Announcements</button>
+          <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="branding" data-i18n="admin-tab-branding">Branding</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="locations" data-i18n="admin-tab-locations">Locations</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="data" data-i18n="admin-tab-data">Data Mode</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="newsletter" data-i18n="admin-tab-newsletter">Newsletter</button>
@@ -3823,6 +3845,10 @@
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
             <input type="text" id="volunteerSearchQ" placeholder="Search name, phone, area…" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
             <input type="text" id="volunteerSearchWard" placeholder="Filter by area/ward" style="width:160px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+            <select id="volunteerSearchSort" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+              <option value="recent">Sort: Most Recent</option>
+              <option value="points">Sort: Top Contributors (Points)</option>
+            </select>
             <button class="btn btn-secondary" type="button" onclick="runVolunteerSearch()">Search</button>
             <button class="btn btn-secondary" type="button" onclick="clearVolunteerSearch()">Clear</button>
           </div>
@@ -3835,7 +3861,9 @@
                   <th data-i18n="table-phone">Phone</th>
                   <th data-i18n="table-area">Area</th>
                   <th data-i18n="table-skills">Skills</th>
+                  <th data-i18n="admin-volunteers-points">Points</th>
                   <th data-i18n="table-date">Registered</th>
+                  <th data-i18n="admin-volunteers-actions">Actions</th>
                 </tr>
               </thead>
               <tbody id="volunteersTableBody"></tbody>
@@ -3949,6 +3977,23 @@
               </div>
               <button class="btn btn-primary" type="button" id="postAnnouncementBtn" data-i18n="admin-announcement-submit">Add Announcement</button>
             </div>
+          </div>
+        </div>
+
+        <div class="admin-pane" id="adminPaneBranding">
+          <div class="panel-card" style="max-width:640px">
+            <h3 data-i18n="admin-branding-title">District Branding</h3>
+            <p data-i18n="admin-branding-subtitle">Customise the badge line shown at the top of the hero section so this deployment reads correctly for your district. This does not change the "Prayas" platform name.</p>
+            <div class="form-group">
+              <label for="brandingBadgeEn" data-i18n="admin-branding-en-label">Badge Text (English)</label>
+              <input id="brandingBadgeEn" type="text" maxlength="80" placeholder="District Administration Initiative" />
+            </div>
+            <div class="form-group">
+              <label for="brandingBadgeHi" data-i18n="admin-branding-hi-label">Badge Text (Hindi)</label>
+              <input id="brandingBadgeHi" type="text" maxlength="80" placeholder="जिला प्रशासन पहल" />
+            </div>
+            <button class="btn btn-primary" type="button" id="saveBrandingBtn" data-i18n="admin-branding-save">Save Branding</button>
+            <div id="brandingSaveStatus" style="margin-top:10px;font-size:13px;color:var(--muted)"></div>
           </div>
         </div>
 
@@ -4125,6 +4170,48 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin: edit a volunteer profile (name/phone/area/etc). Deleting a
+       profile is a direct action from the table row (with a confirm prompt),
+       not a modal. Placed after adminPanelModal in the DOM (both share the
+       same modal z-index) so it stacks visibly on top when opened from
+       within the admin panel, instead of being obscured underneath it. -->
+  <div class="modal-overlay" id="editVolunteerModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Edit Volunteer</h2>
+          <p class="modal-subtitle">Correct a registration detail. This updates their points, certificate, and leaderboard record.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="editVolunteerModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editVolunteerId" />
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editVolunteerName">Full Name</label>
+            <input id="editVolunteerName" type="text" required />
+          </div>
+          <div class="form-group">
+            <label for="editVolunteerPhone">Mobile Number</label>
+            <input id="editVolunteerPhone" type="tel" maxlength="10" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editVolunteerArea">Area / Ward</label>
+            <input id="editVolunteerArea" type="text" />
+          </div>
+          <div class="form-group">
+            <label for="editVolunteerOccupation">Occupation</label>
+            <input id="editVolunteerOccupation" type="text" />
+          </div>
+        </div>
+        <div id="editVolunteerError" style="color:var(--danger);font-size:13px;margin-bottom:8px"></div>
+        <button class="btn btn-primary" type="button" id="saveEditVolunteerBtn" style="width:100%">Save Changes</button>
       </div>
     </div>
   </div>
@@ -4467,6 +4554,10 @@
       "hero-copy": { en: "Join sanitation drives, wall art competitions, awareness marches, teaching missions, and district campaigns posted directly by the administration. Contribute your skills, fund a good cause, and get recognised for public service.", hi: "स्वच्छता अभियान, वॉल आर्ट प्रतियोगिता, जागरूकता मार्च, शिक्षण कार्यक्रम और जिला अभियानों से जुड़ें। अपने कौशल से योगदान दें, किसी अच्छे उद्देश्य को फंड करें और सार्वजनिक सेवा के लिए पहचान प्राप्त करें।" },
       "hero-explore": { en: "Explore Missions", hi: "अभियान देखें" },
       "hero-register": { en: "Register as Volunteer", hi: "स्वयंसेवक बनें" },
+      "hero-utility-label": { en: "Already contributing?", hi: "पहले से योगदान दे रहे हैं?" },
+      "hero-utility-checkin": { en: "Check in at venue", hi: "स्थल पर चेक-इन करें" },
+      "hero-utility-track": { en: "Track my request", hi: "अपना अनुरोध ट्रैक करें" },
+      "hero-utility-passport": { en: "🎖️ My passport &amp; certificate", hi: "🎖️ मेरा पासपोर्ट और प्रमाणपत्र" },
       "hero-stat-volunteers": { en: "Active Volunteers This District", hi: "इस जिले के सक्रिय स्वयंसेवक" },
       "hero-stat-trees": { en: "Trees Planted", hi: "लगाए गए पेड़" },
       "hero-stat-drives": { en: "Drives Completed", hi: "पूर्ण अभियान" },
@@ -4482,6 +4573,7 @@
       "funding-badge": { en: "Host a Mission", hi: "मिशन होस्ट करें" },
       "funding-title": { en: "Launch a citizen-led mission in your own area", hi: "अपने इलाके में नागरिक-नेतृत्व वाला मिशन शुरू करें" },
       "funding-subtitle": { en: "Citizens, groups, schools, and resident bodies can propose missions. Phone number and email are mandatory so the administration can coordinate quickly.", hi: "नागरिक, समूह, स्कूल और स्थानीय संगठन मिशन प्रस्तावित कर सकते हैं। त्वरित समन्वय के लिए फोन और ईमेल अनिवार्य हैं।" },
+      "host-toggle": { en: "Propose a Mission", hi: "मिशन प्रस्तावित करें" },
       "host-form-title": { en: "Propose a Community Mission", hi: "सामुदायिक मिशन प्रस्तावित करें" },
       "host-form-subtitle": { en: "Your request appears in the admin dashboard for review, nodal department assignment, and publishing.", hi: "आपका अनुरोध एडमिन डैशबोर्ड में समीक्षा, नोडल विभाग चयन और प्रकाशन के लिए जाएगा।" },
       "host-title-label": { en: "Mission Title", hi: "मिशन शीर्षक" },
@@ -4652,6 +4744,12 @@
       "admin-tab-poster": { en: "Poster Maker", hi: "पोस्टर बनाएं" },
       "admin-tab-volunteers": { en: "Volunteers", hi: "स्वयंसेवक" },
       "admin-tab-announcements": { en: "Announcements", hi: "घोषणाएँ" },
+      "admin-tab-branding": { en: "Branding", hi: "ब्रांडिंग" },
+      "admin-branding-title": { en: "District Branding", hi: "जिला ब्रांडिंग" },
+      "admin-branding-subtitle": { en: "Customise the badge line shown at the top of the hero section so this deployment reads correctly for your district. This does not change the \"Prayas\" platform name.", hi: "हीरो सेक्शन के ऊपर दिखने वाली बैज लाइन को अपने जिले के अनुसार बदलें। इससे \"प्रयास\" प्लेटफ़ॉर्म का नाम नहीं बदलता।" },
+      "admin-branding-en-label": { en: "Badge Text (English)", hi: "बैज टेक्स्ट (अंग्रेज़ी)" },
+      "admin-branding-hi-label": { en: "Badge Text (Hindi)", hi: "बैज टेक्स्ट (हिंदी)" },
+      "admin-branding-save": { en: "Save Branding", hi: "ब्रांडिंग सहेजें" },
       "admin-tab-locations": { en: "Locations", hi: "स्थान" },
       "admin-tab-data": { en: "Data Mode", hi: "डेटा मोड" },
       "admin-tab-newsletter": { en: "Newsletter", hi: "न्यूज़लेटर" },
@@ -4703,6 +4801,8 @@
       "admin-volunteers-title": { en: "Registered Volunteers", hi: "पंजीकृत स्वयंसेवक" },
       "admin-volunteers-subtitle": { en: "Export the current volunteer registry for follow-up and field planning.", hi: "फॉलो-अप और फील्ड प्लानिंग के लिए स्वयंसेवक रजिस्ट्री निर्यात करें।" },
       "admin-volunteers-export": { en: "Export CSV", hi: "CSV निर्यात करें" },
+      "admin-volunteers-points": { en: "Points", hi: "अंक" },
+      "admin-volunteers-actions": { en: "Actions", hi: "कार्रवाई" },
       "table-name": { en: "Name", hi: "नाम" },
       "table-phone": { en: "Phone", hi: "फोन" },
       "table-area": { en: "Area", hi: "क्षेत्र" },
@@ -4910,6 +5010,8 @@
         districtName: "Your District",
         stateName: "Your State",
         stateAbbr: "ST",
+        siteBadgeEn: "",
+        siteBadgeHi: "",
         announcements: [
           "Prayas portal is ready for district deployment."
         ],
@@ -4943,7 +5045,8 @@
         volunteerLookup: { found: false, checkedKey: "", profile: null },
         volunteerJoinMode: "general",
         wardLeaderboard: [],
-        activeLbTab: "individual"
+        activeLbTab: "individual",
+        activeFeedTab: "activity"
       };
     }
 
@@ -5442,6 +5545,8 @@
       state.districtName = payload.districtName || "Your District";
       state.stateName = payload.stateName || "Your State";
       state.stateAbbr = payload.stateAbbr || "ST";
+      state.siteBadgeEn = payload.siteBadgeEn || "";
+      state.siteBadgeHi = payload.siteBadgeHi || "";
       state.locations = Array.isArray(payload.locations) ? payload.locations : [];
       state.departments = Array.isArray(payload.departments) ? payload.departments : [];
       state.announcements = Array.isArray(payload.announcements) ? payload.announcements : [];
@@ -5497,6 +5602,15 @@
       document.documentElement.lang = state.lang === "hi" ? "hi" : "en";
       document.querySelectorAll("[data-i18n]").forEach((node) => {
         const key = node.getAttribute("data-i18n");
+        // The hero badge line is district-configurable from Admin Settings →
+        // Branding. Use the saved override when present, otherwise fall back
+        // to the default translation.
+        if (key === "hero-badge" && (state.siteBadgeEn || state.siteBadgeHi)) {
+          node.innerHTML = state.lang === "hi"
+            ? (state.siteBadgeHi || state.siteBadgeEn)
+            : (state.siteBadgeEn || state.siteBadgeHi);
+          return;
+        }
         const value = tr(key);
         node.innerHTML = value;
       });
@@ -5590,40 +5704,6 @@
       document.getElementById("heroVolunteerCount").textContent = `${formatCompact(stats.volunteerBase)}+`;
       document.getElementById("heroImpactTrees").textContent = "840";
       document.getElementById("heroImpactDrives").textContent = String(stats.completed);
-    }
-
-    function setStatText() {
-      const stats = getStats();
-      document.getElementById("statVolunteers").textContent = stats.volunteerBase.toLocaleString("en-IN");
-      document.getElementById("statMissions").textContent = stats.activeMissions.toLocaleString("en-IN");
-      document.getElementById("statCompleted").textContent = stats.completed.toLocaleString("en-IN");
-      document.getElementById("statLives").textContent = stats.lives.toLocaleString("en-IN");
-    }
-
-    function animateStats() {
-      if (state.statsAnimated) return;
-      state.statsAnimated = true;
-      const stats = getStats();
-      const config = [
-        { id: "statVolunteers", target: stats.volunteerBase },
-        { id: "statMissions", target: stats.activeMissions },
-        { id: "statCompleted", target: stats.completed },
-        { id: "statLives", target: stats.lives }
-      ];
-
-      config.forEach(({ id, target }) => {
-        const node = document.getElementById(id);
-        let current = 0;
-        const step = Math.max(1, target / 60);
-        const timer = setInterval(() => {
-          current += step;
-          if (current >= target) {
-            current = target;
-            clearInterval(timer);
-          }
-          node.textContent = Math.floor(current).toLocaleString("en-IN");
-        }, 16);
-      });
     }
 
     function renderTicker() {
@@ -5936,15 +6016,17 @@
         return;
       }
 
-      const avatarPalette = ["#E74C3C", "#3498DB", "#2ECC71", "#9B59B6", "#F39C12"];
-      const avatarLetters = ["R", "S", "A", "P", "M"];
-
       grid.innerHTML = missions
         .map((mission) => {
           const percentage = Math.min(100, Math.round((mission.volunteers / mission.total) * 100));
-          const avatars = avatarLetters
-            .map((letter, index) => `<div class="avatar" style="background:${avatarPalette[index]}">${letter}</div>`)
-            .join("") + `<div class="avatar" style="background:#94A3B8;font-size:9px">+${Math.max(0, mission.volunteers - 5)}</div>`;
+          // Real volunteers who actually joined this mission — never a fixed
+          // placeholder set. Missions with no real registrations yet (or
+          // demo/seed missions) simply show no avatar row.
+          const preview = Array.isArray(mission.participantsPreview) ? mission.participantsPreview : [];
+          const avatars = preview.length
+            ? preview.map((p) => `<div class="avatar" style="background:${escapeHtml(p.color)}" title="${escapeHtml(p.initials)}">${escapeHtml(p.initials)}</div>`).join("") +
+              (mission.volunteers > preview.length ? `<div class="avatar" style="background:#94A3B8;font-size:9px">+${mission.volunteers - preview.length}</div>` : "")
+            : "";
 
           return `
             <article class="mission-card">
@@ -5952,29 +6034,27 @@
                 ${mission.emoji}
                 <span class="mission-tag">${escapeHtml(categoryLabel(mission.category))}</span>
                 <span class="mission-status status-${mission.status}">${escapeHtml(statusLabel(mission.status))}</span>
-                <span class="mission-ward-chip">${escapeHtml(wardLabel(missionArea(mission)))}</span>
               </div>
               <div class="mission-body">
                 <h3 class="mission-title">${escapeHtml(mission.title)}</h3>
                 <p class="mission-desc">${escapeHtml(mission.desc)}</p>
                 <div class="mission-meta">
                   <span><i class="fa-solid fa-calendar-days"></i> ${escapeHtml(mission.date)}</span>
-                  <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(mission.location)}</span>
+                  <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.location)}</span>
                   <span><i class="fa-solid fa-comments"></i> ${mission.discussion.length} ${state.lang === "hi" ? "चर्चा" : "comments"}</span>
                 </div>
                 <div class="progress-info">
-                  <span><strong>${mission.volunteers}</strong> ${state.lang === "hi" ? "स्वयंसेवक जुड़े" : "volunteers joined"}</span>
-                  <span>${percentage}% ${state.lang === "hi" ? "भरा" : "filled"}</span>
+                  <span><strong>${mission.volunteers}</strong> ${state.lang === "hi" ? "स्वयंसेवक" : "volunteers"} · ${percentage}% ${state.lang === "hi" ? "भरा" : "filled"}</span>
                 </div>
                 <div class="progress-bar"><div class="progress-fill" style="width:${percentage}%"></div></div>
-                <div class="mission-footer">
-                  <div class="volunteers-avatars">${avatars}</div>
+                <div class="mission-footer" style="${avatars ? "" : "justify-content:flex-end"}">
+                  ${avatars ? `<div class="volunteers-avatars">${avatars}</div>` : ""}
                   <div class="mission-actions">
-                    <button class="btn btn-primary" type="button" onclick="openMissionModal(${mission.id})">
-                      ${state.lang === "hi" ? "विवरण" : "View Details"}
-                    </button>
                     <button class="mission-share" type="button" onclick="shareMission(${mission.id})" aria-label="Share mission">
                       <i class="fa-brands fa-whatsapp"></i>
+                    </button>
+                    <button class="btn btn-primary" type="button" onclick="openMissionModal(${mission.id})">
+                      ${state.lang === "hi" ? "विवरण" : "View Details"}
                     </button>
                   </div>
                 </div>
@@ -6110,6 +6190,17 @@
       document.getElementById("leaderboardGrid").classList.toggle("hidden", tab !== "individual");
       document.getElementById("wardLeaderboardPanel").classList.toggle("hidden", tab !== "ward");
       if (tab === "ward") renderWardLeaderboard();
+    }
+
+    function setFeedTab(tab) {
+      state.activeFeedTab = tab;
+      document.getElementById("feedTabActivity").classList.toggle("active", tab === "activity");
+      document.getElementById("feedTabHistory").classList.toggle("active", tab === "history");
+      document.getElementById("recentActivityFeed").classList.toggle("hidden", tab !== "activity");
+      document.getElementById("recentEventHistory").classList.toggle("hidden", tab !== "history");
+      document.getElementById("feedTabSubtitle").textContent = tab === "activity"
+        ? tr("activity-feed-subtitle")
+        : tr("event-history-subtitle");
     }
 
     function renderWardLeaderboard() {
@@ -6287,9 +6378,13 @@
       `;
     }
 
-    function renderRecentActivityFeed() {
-      const items = recentActivityItems();
-      const markup = items.length
+    // The public district-pulse card is a compact, scrollable preview (a
+    // handful of items); the admin overview keeps the fuller list. Both are
+    // built from the same underlying items so they never disagree.
+    const PUBLIC_FEED_PREVIEW_COUNT = 4;
+
+    function renderActivityItemsMarkup(items, emptyText) {
+      return items.length
         ? items.map((item) => `
             <div class="activity-item">
               <div class="activity-head">
@@ -6300,16 +6395,11 @@
               <div class="activity-text">${escapeHtml(item.text)}</div>
             </div>
           `).join("")
-        : `<div class="activity-item"><div class="activity-title">${state.lang === "hi" ? "अभी हाल की गतिविधि उपलब्ध नहीं है।" : "No recent activity yet."}</div></div>`;
-      const publicContainer = document.getElementById("recentActivityFeed");
-      const adminContainer = document.getElementById("adminRecentActivityList");
-      if (publicContainer) publicContainer.innerHTML = markup;
-      if (adminContainer) adminContainer.innerHTML = markup;
+        : `<div class="activity-item"><div class="activity-title">${escapeHtml(emptyText)}</div></div>`;
     }
 
-    function renderRecentEventHistory() {
-      const items = recentMissionHistory();
-      const markup = items.length
+    function renderHistoryItemsMarkup(items, emptyText) {
+      return items.length
         ? items.map((item) => `
             <div class="history-item">
               <div class="history-head">
@@ -6320,11 +6410,25 @@
               <div class="history-text">${escapeHtml(item.text)}</div>
             </div>
           `).join("")
-        : `<div class="history-item"><div class="history-title">${state.lang === "hi" ? "अभी कोई मिशन इतिहास उपलब्ध नहीं है।" : "No recent mission history yet."}</div></div>`;
+        : `<div class="history-item"><div class="history-title">${escapeHtml(emptyText)}</div></div>`;
+    }
+
+    function renderRecentActivityFeed() {
+      const items = recentActivityItems();
+      const emptyText = state.lang === "hi" ? "अभी हाल की गतिविधि उपलब्ध नहीं है।" : "No recent activity yet.";
+      const publicContainer = document.getElementById("recentActivityFeed");
+      const adminContainer = document.getElementById("adminRecentActivityList");
+      if (publicContainer) publicContainer.innerHTML = renderActivityItemsMarkup(items.slice(0, PUBLIC_FEED_PREVIEW_COUNT), emptyText);
+      if (adminContainer) adminContainer.innerHTML = renderActivityItemsMarkup(items, emptyText);
+    }
+
+    function renderRecentEventHistory() {
+      const items = recentMissionHistory();
+      const emptyText = state.lang === "hi" ? "अभी कोई मिशन इतिहास उपलब्ध नहीं है।" : "No recent mission history yet.";
       const publicContainer = document.getElementById("recentEventHistory");
       const adminContainer = document.getElementById("adminRecentEventHistoryList");
-      if (publicContainer) publicContainer.innerHTML = markup;
-      if (adminContainer) adminContainer.innerHTML = markup;
+      if (publicContainer) publicContainer.innerHTML = renderHistoryItemsMarkup(items.slice(0, PUBLIC_FEED_PREVIEW_COUNT), emptyText);
+      if (adminContainer) adminContainer.innerHTML = renderHistoryItemsMarkup(items, emptyText);
     }
 
     function renderSelectedMissionBox() {
@@ -6469,10 +6573,17 @@
         : "Only real field data is visible. Dummy seeded content is hidden.";
     }
 
+    function volunteerRowActions(id) {
+      return `
+        <button class="btn btn-soft" type="button" style="padding:5px 10px;font-size:12px" onclick="openEditVolunteerModal(${id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
+        <button class="btn btn-soft" type="button" style="padding:5px 10px;font-size:12px;color:var(--danger)" onclick="confirmDeleteVolunteer(${id})">${state.lang === "hi" ? "हटाएं" : "Delete"}</button>
+      `;
+    }
+
     function renderVolunteerTable() {
       const tbody = document.getElementById("volunteersTableBody");
       if (!state.volunteers.length) {
-        tbody.innerHTML = `<tr><td colspan="5">${state.lang === "hi" ? "अभी तक कोई स्वयंसेवक पंजीकृत नहीं है।" : "No volunteers have registered yet. Use the search above to look up specific volunteers."}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7">${state.lang === "hi" ? "अभी तक कोई स्वयंसेवक पंजीकृत नहीं है।" : "No volunteers have registered yet. Use the search above to look up specific volunteers."}</td></tr>`;
         document.getElementById("volunteerSearchStatus").textContent = `${state.volunteers.length} volunteers loaded`;
         return;
       }
@@ -6485,7 +6596,9 @@
             <td>${escapeHtml(volunteer.phone)}</td>
             <td>${escapeHtml(volunteer.area || "-")}</td>
             <td>${escapeHtml(volunteer.skills.join(", ") || "-")}</td>
+            <td>⚡ ${volunteer.points || 0}</td>
             <td>${escapeHtml(volunteer.date)}</td>
+            <td style="white-space:nowrap">${volunteerRowActions(volunteer.id)}</td>
           </tr>
         `)
         .join("");
@@ -6984,9 +7097,6 @@
       applyTranslations();
       renderTicker();
       renderHeroStats();
-      if (state.statsAnimated) {
-        setStatText();
-      }
       renderCategorySelectOptions();
       renderDepartmentOptions();
       renderActivityTemplateOptions();
@@ -7002,6 +7112,7 @@
       if (state.activeLbTab === "ward") renderWardLeaderboard();
       renderRecentActivityFeed();
       renderRecentEventHistory();
+      setFeedTab(state.activeFeedTab || "activity");
       renderSelectedMissionBox();
       updateVolunteerFormMode();
       renderAdminStats();
@@ -7467,6 +7578,15 @@
 
     function toggleStoryForm() {
       document.getElementById("storyFormCard").classList.toggle("hidden");
+    }
+
+    function toggleHostMissionForm() {
+      const card = document.getElementById("hostMissionFormCard");
+      const nowHidden = card.classList.toggle("hidden");
+      if (!nowHidden) {
+        card.scrollIntoView({ behavior: "smooth", block: "start" });
+        document.getElementById("hostMissionTitle")?.focus();
+      }
     }
 
     async function submitStoryForm(event) {
@@ -8161,6 +8281,7 @@
         exports: "adminPaneExports",
         audit: "adminPaneAudit",
         announcements: "adminPaneAnnouncements",
+        branding: "adminPaneBranding",
         locations: "adminPaneLocations",
         data: "adminPaneData",
         newsletter: "adminPaneNewsletter",
@@ -8181,6 +8302,34 @@
           wardFilter.value = adminScope();
           runVolunteerSearch();
         }
+      }
+      if (tab === "branding") {
+        document.getElementById("brandingBadgeEn").value = state.siteBadgeEn || "";
+        document.getElementById("brandingBadgeHi").value = state.siteBadgeHi || "";
+        document.getElementById("brandingSaveStatus").textContent = "";
+      }
+    }
+
+    async function saveBranding() {
+      const badgeEn = document.getElementById("brandingBadgeEn").value.trim();
+      const badgeHi = document.getElementById("brandingBadgeHi").value.trim();
+      const status = document.getElementById("brandingSaveStatus");
+      const token = getAdminToken();
+      if (!token) return;
+      try {
+        const data = await apiRequest("/api/admin/branding", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ badgeEn, badgeHi })
+        });
+        state.siteBadgeEn = data.badgeEn;
+        state.siteBadgeHi = data.badgeHi;
+        applyTranslations();
+        status.style.color = "var(--green)";
+        status.textContent = state.lang === "hi" ? "सहेजा गया।" : "Saved.";
+      } catch (error) {
+        status.style.color = "var(--danger)";
+        status.textContent = error?.message || (state.lang === "hi" ? "सहेजने में विफल।" : "Failed to save.");
       }
     }
 
@@ -8456,6 +8605,10 @@
       });
       document.getElementById("newsletterForm").addEventListener("submit", submitNewsletterForm);
       document.getElementById("storyToggleBtn").addEventListener("click", toggleStoryForm);
+      document.getElementById("hostMissionToggleBtn").addEventListener("click", toggleHostMissionForm);
+      document.getElementById("saveBrandingBtn").addEventListener("click", saveBranding);
+      document.getElementById("saveEditVolunteerBtn").addEventListener("click", saveEditVolunteer);
+      document.getElementById("volunteerSearchSort")?.addEventListener("change", () => runVolunteerSearch());
       document.getElementById("storyForm").addEventListener("submit", submitStoryForm);
       document.getElementById("hostMissionForm").addEventListener("submit", submitHostMissionForm);
       document.getElementById("commentForm").addEventListener("submit", submitCommentForm);
@@ -8494,13 +8647,6 @@
           closeMobileMenu();
         }
       });
-
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) animateStats();
-        });
-      }, { threshold: 0.3 });
-      observer.observe(document.getElementById("statsBar"));
     }
 
     async function init() {
@@ -8511,7 +8657,6 @@
       attachCharCounters();
       attachEvents();
       renderAll();
-      setStatText();
       try {
         await refreshPortalData();
         handleMissionDeepLink();
@@ -8525,19 +8670,22 @@
     // ── Volunteer search (admin) ───────────────────────────────────────────────
 
     let volunteerSearchPage = 1;
+    let lastVolunteerSearchResults = [];
 
     async function runVolunteerSearch(page = 1) {
       volunteerSearchPage = page;
       const q = (document.getElementById("volunteerSearchQ").value || "").trim();
       const ward = (document.getElementById("volunteerSearchWard").value || "").trim();
+      const sort = document.getElementById("volunteerSearchSort")?.value || "recent";
       const token = getAdminToken();
       if (!token) return;
       try {
-        const params = new URLSearchParams({ q, ward, page, limit: 50 });
+        const params = new URLSearchParams({ q, ward, sort, page, limit: 50 });
         const data = await apiRequest(`/api/admin/volunteers/search?${params}`, {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` }
         });
+        lastVolunteerSearchResults = data.volunteers;
         const tbody = document.getElementById("volunteersTableBody");
         const status = document.getElementById("volunteerSearchStatus");
         status.textContent = `Showing ${data.volunteers.length} of ${data.total} volunteers`;
@@ -8547,7 +8695,9 @@
             <td>${escapeHtml(v.phone)}</td>
             <td>${escapeHtml(v.area || "-")}</td>
             <td>${escapeHtml(v.skills.join(", ") || "-")}</td>
+            <td>⚡ ${v.points || 0}</td>
             <td>${escapeHtml(v.joinedDate)}</td>
+            <td style="white-space:nowrap">${volunteerRowActions(v.id)}</td>
           </tr>
         `).join("");
         const pagination = document.getElementById("volunteerSearchPagination");
@@ -8563,9 +8713,80 @@
     function clearVolunteerSearch() {
       document.getElementById("volunteerSearchQ").value = "";
       document.getElementById("volunteerSearchWard").value = "";
+      const sortSelect = document.getElementById("volunteerSearchSort");
+      if (sortSelect) sortSelect.value = "recent";
       document.getElementById("volunteerSearchStatus").textContent = "";
       document.getElementById("volunteerSearchPagination").innerHTML = "";
       renderVolunteerTable();
+    }
+
+    // ── Admin: edit / delete a volunteer profile ────────────────────────────────
+    // Editing corrects a registration detail (typo'd name, wrong number).
+    // Deleting removes the profile and — via the server's ON DELETE CASCADE —
+    // all of their mission participations, which immediately drops them from
+    // the leaderboard and points totals. Both actions require an admin
+    // session; delete additionally requires super-admin, enforced server-side.
+
+    function openEditVolunteerModal(id) {
+      // Look in whichever list is currently populated (default table load or
+      // an active search result) to prefill the form without a round trip.
+      const source = [...state.volunteers, ...lastVolunteerSearchResults];
+      const volunteer = source.find((v) => v.id === id);
+      document.getElementById("editVolunteerId").value = id;
+      document.getElementById("editVolunteerName").value = volunteer?.name || "";
+      document.getElementById("editVolunteerPhone").value = volunteer?.phone || "";
+      document.getElementById("editVolunteerArea").value = volunteer?.area || "";
+      document.getElementById("editVolunteerOccupation").value = volunteer?.occupation || "";
+      document.getElementById("editVolunteerError").textContent = "";
+      openModal("editVolunteerModal");
+    }
+
+    async function saveEditVolunteer() {
+      const id = Number(document.getElementById("editVolunteerId").value);
+      const errorEl = document.getElementById("editVolunteerError");
+      errorEl.textContent = "";
+      const token = getAdminToken();
+      if (!token || !id) return;
+      try {
+        await apiRequest(`/api/admin/volunteers/${id}/update`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            name: document.getElementById("editVolunteerName").value.trim(),
+            phone: document.getElementById("editVolunteerPhone").value.trim(),
+            area: document.getElementById("editVolunteerArea").value.trim(),
+            occupation: document.getElementById("editVolunteerOccupation").value.trim()
+          })
+        });
+        closeModal("editVolunteerModal");
+        showToast(state.lang === "hi" ? "स्वयंसेवक अपडेट किया गया।" : "Volunteer updated.", "✅");
+        await refreshPortalData();
+        renderAll();
+        runVolunteerSearch(volunteerSearchPage);
+      } catch (error) {
+        errorEl.textContent = error?.message || (state.lang === "hi" ? "अपडेट विफल।" : "Update failed.");
+      }
+    }
+
+    async function confirmDeleteVolunteer(id) {
+      const ok = confirm(state.lang === "hi"
+        ? "इस स्वयंसेवक को हटाएं? इससे उनके सभी अंक और भागीदारी रिकॉर्ड भी हट जाएंगे। यह पूर्ववत नहीं किया जा सकता।"
+        : "Delete this volunteer? This also removes all their points and participation records. This cannot be undone.");
+      if (!ok) return;
+      const token = getAdminToken();
+      if (!token) return;
+      try {
+        await apiRequest(`/api/admin/volunteers/${id}/delete`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        showToast(state.lang === "hi" ? "स्वयंसेवक हटाया गया।" : "Volunteer deleted.", "🗑️");
+        await refreshPortalData();
+        renderAll();
+        runVolunteerSearch(volunteerSearchPage);
+      } catch (error) {
+        handleRequestError(error);
+      }
     }
 
     function exportVolunteers() {

@@ -1252,6 +1252,12 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, saveLocationCatalog(body));
     }
 
+    if (req.method === "POST" && url.pathname === "/api/admin/branding") {
+      requireSuperAdmin(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, saveBranding(body));
+    }
+
     if (req.method === "POST" && url.pathname === "/api/admin/departments") {
       requireAdmin(req);
       const body = await readJsonBody(req);
@@ -1283,6 +1289,19 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/admin/volunteers/search") {
       requireAdmin(req);
       return sendJson(res, 200, searchVolunteers(url.searchParams));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/volunteers\/\d+\/update$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const profileId = Number(url.pathname.split("/")[4]);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, updateVolunteerProfileAdmin(profileId, body, admin));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/volunteers\/\d+\/delete$/.test(url.pathname)) {
+      const admin = requireSuperAdmin(req);
+      const profileId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, deleteVolunteerProfileAdmin(profileId, admin));
     }
 
     // ── Bulk approve/reject community missions ────────────────────────────────
@@ -1862,6 +1881,27 @@ function buildBootstrapPayload() {
   const donationRows = [];
   const subscriberRows = db.prepare("SELECT email, date_label FROM newsletter_subscribers ORDER BY id DESC").all();
 
+  // Real volunteers who actually joined each mission — used to show genuine
+  // participant initials on the public mission card instead of fabricated
+  // placeholder avatars. Only real registrations produce rows here; demo/seed
+  // missions have none, so their cards simply show no avatars.
+  const participantsByMission = new Map();
+  db.prepare(`
+    SELECT vp.mission_id, p.id AS profile_id, p.name
+    FROM volunteer_participations vp
+    JOIN volunteer_profiles p ON p.id = vp.volunteer_profile_id
+    ORDER BY vp.created_at DESC, vp.id DESC
+  `).all().forEach((row) => {
+    const list = participantsByMission.get(row.mission_id) || [];
+    if (list.length < 5) {
+      list.push({
+        initials: buildInitials(row.name),
+        color: AVATAR_COLORS[row.profile_id % AVATAR_COLORS.length]
+      });
+      participantsByMission.set(row.mission_id, list);
+    }
+  });
+
   const missions = missionRows.map((mission) => ({
     id: mission.id,
     category: mission.category,
@@ -1892,6 +1932,7 @@ function buildBootstrapPayload() {
     completionRequested: Boolean(mission.completion_requested),
     completionRequestedBy: mission.completion_requested_by || "",
     completionRequestedNote: mission.completion_requested_note || "",
+    participantsPreview: participantsByMission.get(mission.id) || [],
     discussion: discussionStmt.all(mission.id).map((entry) => ({
       name: entry.name,
       text: entry.text,
@@ -1978,6 +2019,7 @@ function buildBootstrapPayload() {
 
   const wardLeaderboard = buildWardLeaderboard();
 
+  const volunteerStatsMap = computeAllVolunteerStats();
   const volunteers = volunteerProfileRows.map((volunteer) => ({
     id: volunteer.id,
     name: volunteer.name,
@@ -1989,6 +2031,7 @@ function buildBootstrapPayload() {
     message: volunteer.message,
     skills: safeJsonArray(volunteer.skills_json),
     mission: "",
+    points: volunteerStatsMap.get(volunteer.id)?.points || POINTS.register,
     date: new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric" }).format(new Date(volunteer.last_active_at || volunteer.first_registered_at || new Date()))
   }));
 
@@ -2041,6 +2084,8 @@ function buildBootstrapPayload() {
     districtName: DISTRICT_NAME,
     stateName: STATE_NAME,
     stateAbbr: STATE_ABBR,
+    siteBadgeEn: getSetting("site_badge_en", ""),
+    siteBadgeHi: getSetting("site_badge_hi", ""),
     locations,
     departments,
     announcements: announcementRows.map((row) => row.text),
@@ -2643,6 +2688,18 @@ function saveLocationCatalog(body) {
   return { ok: true, count: cleaned.length };
 }
 
+function saveBranding(body) {
+  const badgeEn = String(body.badgeEn || "").trim().slice(0, 80);
+  const badgeHi = String(body.badgeHi || "").trim().slice(0, 80);
+  if (!badgeEn) {
+    throw publicError(400, "The English badge line cannot be empty.");
+  }
+  setSetting("site_badge_en", badgeEn);
+  setSetting("site_badge_hi", badgeHi || badgeEn);
+  writeAuditLog("update_branding", "settings", null, `Hero badge text updated to "${badgeEn}"`);
+  return { ok: true, badgeEn, badgeHi: badgeHi || badgeEn };
+}
+
 function saveDepartmentCatalog(body) {
   const departments = Array.isArray(body.departments) ? body.departments : [];
   const cleaned = [...new Set(departments.map((item) => String(item || "").trim()).filter(Boolean))];
@@ -2814,9 +2871,9 @@ function searchVolunteers(params) {
   const q = String(params.get("q") || "").trim();
   const ward = String(params.get("ward") || "").trim();
   const skill = String(params.get("skill") || "").trim();
+  const sort = String(params.get("sort") || "recent").trim();
   const page = Math.max(1, Number(params.get("page") || 1));
   const limit = Math.min(100, Math.max(1, Number(params.get("limit") || 50)));
-  const offset = (page - 1) * limit;
 
   let where = "1=1";
   const args = [];
@@ -2835,32 +2892,89 @@ function searchVolunteers(params) {
     args.push(`%${skill}%`);
   }
 
-  const total = db.prepare(`SELECT COUNT(*) AS n FROM volunteer_profiles WHERE ${where}`).get(...args).n;
-  const rows = db.prepare(`
+  const allRows = db.prepare(`
     SELECT id, name, phone, email, area, occupation, availability, skills_json,
            first_registered_at, last_active_at
     FROM volunteer_profiles
     WHERE ${where}
-    ORDER BY last_active_at DESC, id DESC
-    LIMIT ? OFFSET ?
-  `).all(...args, limit, offset);
+  `).all(...args);
+
+  const statsMap = sort === "points" ? computeAllVolunteerStats() : null;
+  const withPoints = allRows.map((r) => ({
+    row: r,
+    points: statsMap ? (statsMap.get(r.id)?.points || POINTS.register) : null
+  }));
+
+  withPoints.sort((a, b) => {
+    if (sort === "points") return b.points - a.points;
+    return new Date(b.row.last_active_at || 0) - new Date(a.row.last_active_at || 0) || (b.row.id - a.row.id);
+  });
+
+  const total = withPoints.length;
+  const offset = (page - 1) * limit;
+  const pageRows = withPoints.slice(offset, offset + limit);
+
+  // Points are shown for every row regardless of sort mode, so reuse the
+  // stats map already computed for "points" sort, or compute it once here.
+  const pointsLookup = statsMap || computeAllVolunteerStats();
 
   return {
     total,
     page,
     limit,
-    volunteers: rows.map((r) => ({
+    volunteers: pageRows.map(({ row: r }) => ({
       id: r.id,
       name: r.name,
       phone: r.phone,
       email: r.email || "",
       area: r.area || "",
       occupation: r.occupation || "",
+      availability: r.availability || "",
       skills: safeJsonArray(r.skills_json),
+      points: pointsLookup.get(r.id)?.points || POINTS.register,
       joinedDate: new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" })
         .format(new Date(r.first_registered_at || isoNow()))
     }))
   };
+}
+
+function updateVolunteerProfileAdmin(profileId, body, admin) {
+  const existing = db.prepare("SELECT * FROM volunteer_profiles WHERE id = ?").get(profileId);
+  if (!existing) throw publicError(404, "Volunteer not found.");
+
+  const name = String(body.name || "").trim();
+  const phone = String(body.phone || "").trim();
+  if (!name || !phone) {
+    throw publicError(400, "Name and mobile number are required.");
+  }
+  const normalizedPhone = normalizeVolunteerPhone(phone);
+  if (normalizedPhone.length !== 10) {
+    throw publicError(400, "Mobile number must be a valid 10-digit number.");
+  }
+  const email = String(body.email || "").trim();
+  const area = String(body.area || "").trim();
+  const occupation = String(body.occupation || "").trim();
+  const availability = String(body.availability || "").trim();
+
+  db.prepare(`
+    UPDATE volunteer_profiles
+    SET name = ?, normalized_name = ?, phone = ?, normalized_phone = ?, email = ?, area = ?, occupation = ?, availability = ?
+    WHERE id = ?
+  `).run(name, normalizeVolunteerName(name), phone, normalizedPhone, email, area, occupation, availability, profileId);
+
+  writeAuditLog("update_volunteer", "volunteer_profile", profileId, `Volunteer #${profileId} edited by ${admin ? admin.name : "admin"}`);
+  return { ok: true };
+}
+
+function deleteVolunteerProfileAdmin(profileId, admin) {
+  const existing = db.prepare("SELECT id, name FROM volunteer_profiles WHERE id = ?").get(profileId);
+  if (!existing) throw publicError(404, "Volunteer not found.");
+  // ON DELETE CASCADE (foreign_keys = ON) also removes this volunteer's
+  // participations, so their points/leaderboard/mission counts update
+  // automatically once the profile itself is gone.
+  db.prepare("DELETE FROM volunteer_profiles WHERE id = ?").run(profileId);
+  writeAuditLog("delete_volunteer", "volunteer_profile", profileId, `Volunteer "${existing.name}" (#${profileId}) deleted by ${admin ? admin.name : "admin"}`);
+  return { ok: true };
 }
 
 // ── Bulk approve/reject community missions ────────────────────────────────────
