@@ -1252,6 +1252,23 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, saveLocationCatalog(body));
     }
 
+    if (req.method === "POST" && url.pathname === "/api/admin/locations/upload") {
+      const admin = requireSuperAdmin(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, uploadLocationStructure(body, admin));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/admin/locations/clear") {
+      const admin = requireSuperAdmin(req);
+      return sendJson(res, 200, clearLocationStructure(admin));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/admin/locations/structure") {
+      const admin = requireSuperAdmin(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, updateLocationStructure(body, admin));
+    }
+
     if (req.method === "POST" && url.pathname === "/api/admin/branding") {
       requireSuperAdmin(req);
       const body = await readJsonBody(req);
@@ -1343,6 +1360,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/admin/export/subscribers.csv") {
       requireAdmin(req);
       return sendCsv(res, exportSubscribersCsv());
+    }
+    if (req.method === "GET" && url.pathname === "/api/admin/export/location-report.csv") {
+      requireAdmin(req);
+      return sendCsv(res, buildLocationReportCsv());
     }
 
     // ── Admin audit log ───────────────────────────────────────────────────────
@@ -2087,6 +2108,7 @@ function buildBootstrapPayload() {
     siteBadgeEn: getSetting("site_badge_en", ""),
     siteBadgeHi: getSetting("site_badge_hi", ""),
     locations,
+    locationStructure: safeJsonObject(getSetting("location_structure_json", ""), { blocks: [], municipalBodies: [] }),
     departments,
     announcements: announcementRows.map((row) => row.text),
     announcementRecords: announcementRows.map((row) => ({ id: row.id, text: row.text })),
@@ -2114,6 +2136,15 @@ function safeJsonArray(value) {
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
     return [];
+  }
+}
+
+function safeJsonObject(value, fallback) {
+  try {
+    const parsed = JSON.parse(value || "null");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : fallback;
+  } catch (error) {
+    return fallback;
   }
 }
 
@@ -2686,6 +2717,172 @@ function saveLocationCatalog(body) {
   const cleaned = [...new Set(locations.map((item) => String(item || "").trim()).filter(Boolean))];
   setSetting("location_catalog_json", JSON.stringify(cleaned));
   return { ok: true, count: cleaned.length };
+}
+
+// ── District location structure: Blocks → Gram Panchayats, plus Municipal
+// Bodies (nagar panchayat / nagar nigam etc). This replaces the old flat
+// "ward" list with the real administrative hierarchy a district actually
+// has, uploaded once as a CSV. We still also maintain the old flat
+// "location_catalog_json" string list underneath it (auto-derived) so every
+// existing dropdown/datalist/filter that already reads that list keeps
+// working without change — the structure is additive, not a schema break.
+function flattenLocationLabel(entry) {
+  if (entry.type === "municipal") return `${entry.name} (Municipal)`;
+  return `${entry.name} (${entry.block})`;
+}
+
+function flattenLocationStructure(structure) {
+  const flat = [];
+  (structure.blocks || []).forEach((block) => {
+    (block.gps || []).forEach((gp) => {
+      flat.push({ type: "gp", block: block.name, name: gp, label: `${gp} (${block.name})` });
+    });
+  });
+  (structure.municipalBodies || []).forEach((name) => {
+    flat.push({ type: "municipal", block: "", name, label: `${name} (Municipal)` });
+  });
+  return flat;
+}
+
+// Parses an uploaded CSV/TSV with header row: Type,Block,Name
+// Type is "GP" (a gram panchayat inside a block) or "Municipal" (a nagar
+// panchayat/parishad/nigam, no block). Tolerant of extra whitespace, blank
+// lines, and either comma or tab separation.
+function parseLocationCsv(text) {
+  const lines = String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (!lines.length) throw publicError(400, "The uploaded file is empty.");
+
+  const splitLine = (line) => (line.includes("\t") ? line.split("\t") : line.split(","))
+    .map((cell) => cell.trim().replace(/^"|"$/g, ""));
+
+  const header = splitLine(lines[0]).map((h) => h.toLowerCase());
+  const typeIdx = header.indexOf("type");
+  const blockIdx = header.indexOf("block");
+  const nameIdx = header.indexOf("name");
+  const hasHeader = typeIdx !== -1 && nameIdx !== -1;
+  const dataLines = hasHeader ? lines.slice(1) : lines;
+  const effTypeIdx = hasHeader ? typeIdx : 0;
+  const effBlockIdx = hasHeader ? blockIdx : 1;
+  const effNameIdx = hasHeader ? nameIdx : 2;
+
+  const blockMap = new Map(); // name -> Set of GP names
+  const municipalSet = new Set();
+
+  dataLines.forEach((line) => {
+    const cells = splitLine(line);
+    const type = String(cells[effTypeIdx] || "").trim().toLowerCase();
+    const block = String(cells[effBlockIdx] || "").trim();
+    const name = String(cells[effNameIdx] || "").trim();
+    if (!name) return;
+    if (type === "municipal" || type === "municipality" || type === "nagar panchayat" || type === "nagar nigam") {
+      municipalSet.add(name);
+    } else {
+      // Default to GP when the type column is missing/unrecognised, since
+      // that's the overwhelming majority of rows in a real district list.
+      if (!block) return; // a GP row needs a block name to mean anything
+      if (!blockMap.has(block)) blockMap.set(block, new Set());
+      blockMap.get(block).add(name);
+    }
+  });
+
+  if (!blockMap.size && !municipalSet.size) {
+    throw publicError(400, "No valid rows found. Expected columns: Type (GP/Municipal), Block, Name.");
+  }
+
+  return {
+    blocks: [...blockMap.entries()].map(([name, gps]) => ({ name, gps: [...gps] })),
+    municipalBodies: [...municipalSet]
+  };
+}
+
+function persistLocationStructure(structure, admin) {
+  setSetting("location_structure_json", JSON.stringify(structure));
+  const flatLabels = flattenLocationStructure(structure).map((entry) => entry.label);
+  setSetting("location_catalog_json", JSON.stringify([...new Set(flatLabels)]));
+  const gpCount = (structure.blocks || []).reduce((sum, b) => sum + (b.gps || []).length, 0);
+  writeAuditLog(
+    "update_location_structure",
+    "settings",
+    null,
+    `Location structure updated by ${admin ? admin.name : "admin"}: ${(structure.blocks || []).length} blocks, ${gpCount} GPs, ${(structure.municipalBodies || []).length} municipal bodies`
+  );
+  return { ok: true, blocks: (structure.blocks || []).length, gps: gpCount, municipalBodies: (structure.municipalBodies || []).length };
+}
+
+function uploadLocationStructure(body, admin) {
+  const structure = parseLocationCsv(body.csvText);
+  return persistLocationStructure(structure, admin);
+}
+
+// Direct edits from the admin panel (rename/delete/add a single Block, GP, or
+// Municipal Body) send the whole edited structure back here rather than a
+// CSV — the client does the small edit locally, this just validates and
+// re-saves it the same way a fresh upload would.
+function sanitizeLocationStructure(input) {
+  const blocksIn = Array.isArray(input?.blocks) ? input.blocks : [];
+  const blocks = blocksIn
+    .map((b) => ({
+      name: String(b?.name || "").trim().slice(0, 100),
+      gps: Array.isArray(b?.gps) ? [...new Set(b.gps.map((g) => String(g || "").trim().slice(0, 100)).filter(Boolean))] : []
+    }))
+    .filter((b) => b.name);
+  const municipalBodies = [...new Set(
+    (Array.isArray(input?.municipalBodies) ? input.municipalBodies : [])
+      .map((m) => String(m || "").trim().slice(0, 100))
+      .filter(Boolean)
+  )];
+  if (!blocks.length && !municipalBodies.length) {
+    throw publicError(400, "The geography can't be saved empty — delete it with Clear Geography instead.");
+  }
+  return { blocks, municipalBodies };
+}
+
+function updateLocationStructure(body, admin) {
+  const structure = sanitizeLocationStructure(body);
+  return persistLocationStructure(structure, admin);
+}
+
+function clearLocationStructure(admin) {
+  setSetting("location_structure_json", JSON.stringify({ blocks: [], municipalBodies: [] }));
+  writeAuditLog("clear_location_structure", "settings", null, `Location structure cleared by ${admin ? admin.name : "admin"}`);
+  return { ok: true };
+}
+
+function buildLocationReportCsv() {
+  const structure = safeJsonObject(getSetting("location_structure_json", ""), { blocks: [], municipalBodies: [] });
+  const entries = flattenLocationStructure(structure);
+  const missions = db.prepare(`
+    SELECT ward, status FROM missions WHERE is_demo = 0 AND archived_at IS NULL
+  `).all();
+  const byLabel = new Map();
+  missions.forEach((m) => {
+    const key = String(m.ward || "").trim();
+    if (!key) return;
+    if (!byLabel.has(key)) byLabel.set(key, { total: 0, open: 0, completed: 0 });
+    const bucket = byLabel.get(key);
+    bucket.total += 1;
+    if (m.status === "completed") bucket.completed += 1;
+    else bucket.open += 1;
+  });
+
+  const header = "Type,Block,Location,TotalActivities,OpenOrUpcoming,Completed\n";
+  const rows = entries
+    .sort((a, b) => (a.block || "").localeCompare(b.block || "") || a.name.localeCompare(b.name))
+    .map((entry) => {
+      const stats = byLabel.get(entry.label) || { total: 0, open: 0, completed: 0 };
+      return [
+        entry.type === "municipal" ? "Municipal Body" : "Gram Panchayat",
+        entry.block,
+        entry.name,
+        stats.total,
+        stats.open,
+        stats.completed
+      ].map(csvEscape).join(",");
+    });
+  return header + rows.join("\n");
 }
 
 function saveBranding(body) {

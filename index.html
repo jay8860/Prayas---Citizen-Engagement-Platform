@@ -981,22 +981,43 @@
     }
     .mission-checkin-btn:hover { background: var(--navy); color: #fff; }
 
-    /* Mission calendar (month view) */
+    /* Mission calendar (month view), permanently docked beside the missions
+       grid so it's visible the moment a visitor scrolls to this section. */
+    .missions-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+      gap: 28px;
+      align-items: start;
+    }
+    .missions-main { min-width: 0; }
+    .mission-calendar {
+      position: sticky;
+      top: 90px;
+      background: var(--surface, #fff);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 8px 24px rgba(15,36,68,0.06);
+    }
+    @media (max-width: 980px) {
+      .missions-layout { grid-template-columns: 1fr; }
+      .mission-calendar { position: static; }
+    }
     .mission-calendar-header {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 18px;
-      margin-bottom: 18px;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 14px;
     }
-    .mission-calendar-header h3 { margin: 0; min-width: 190px; text-align: center; font-size: 18px; }
-    .mission-calendar-header .btn { padding: 6px 14px; font-size: 16px; line-height: 1; }
+    .mission-calendar-header h3 { margin: 0; text-align: center; font-size: 15px; flex: 1; }
+    .mission-calendar-header .btn { padding: 4px 10px; font-size: 14px; line-height: 1; }
     .mission-calendar-weekdays {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-      margin-bottom: 6px;
-      font-size: 11px;
+      gap: 4px;
+      margin-bottom: 4px;
+      font-size: 9.5px;
       font-weight: 700;
       text-transform: uppercase;
       color: var(--muted);
@@ -1005,41 +1026,29 @@
     .mission-calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
+      gap: 4px;
     }
     .cal-day {
-      min-height: 92px;
-      border-radius: 10px;
+      min-height: 44px;
+      border-radius: 8px;
       border: 1px solid var(--border);
       background: var(--surface, #fff);
-      padding: 6px;
+      padding: 4px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      align-items: center;
+      gap: 3px;
       cursor: default;
     }
     .cal-day.empty { background: transparent; border-color: transparent; }
     .cal-day.has-missions { cursor: pointer; }
     .cal-day.has-missions:hover { border-color: var(--navy); box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
     .cal-day.is-today { border-color: var(--saffron); background: var(--saffron-light, #FFF7ED); }
-    .cal-day-num { font-size: 12px; font-weight: 700; color: var(--muted); }
+    .cal-day-num { font-size: 11.5px; font-weight: 700; color: var(--muted); }
     .cal-day.is-today .cal-day-num { color: var(--saffron-dark, #B45309); }
-    .cal-day-chip {
-      font-size: 10px;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 6px;
-      background: var(--navy-light, #E8EEF8);
-      color: var(--navy);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .cal-day-more { font-size: 10px; color: var(--muted); font-weight: 600; }
-    @media (max-width: 640px) {
-      .cal-day { min-height: 64px; padding: 4px; }
-      .cal-day-chip { font-size: 9px; }
-    }
+    .cal-day-dots { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; }
+    .cal-day-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--navy); }
+    .cal-day-more { font-size: 9px; color: var(--muted); font-weight: 700; }
 
     .volunteers-avatars {
       display: flex;
@@ -1308,6 +1317,80 @@
       font-weight: 700;
       box-shadow: var(--shadow);
     }
+
+    /* Place-wise coverage (Blocks/GPs + Municipal Bodies), replacing the old
+       flat ward-vs-ward comparison grid. */
+    .coverage-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .coverage-grid { grid-template-columns: 1fr; }
+    }
+    .coverage-col-title {
+      font-size: 15px;
+      margin: 0 0 12px;
+      color: var(--navy);
+    }
+    .coverage-blocks {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .coverage-block {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .coverage-block-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .coverage-block-head h4 { margin: 0; font-size: 14px; }
+    .coverage-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .coverage-list-standalone {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      max-height: none;
+    }
+    .coverage-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 2px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+    .coverage-row:last-child { border-bottom: none; }
+    .coverage-row-empty { color: var(--muted); }
+    .coverage-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: var(--green-light);
+      color: var(--green);
+      font-size: 11.5px;
+      font-weight: 800;
+    }
+    .coverage-row-empty .coverage-count { background: var(--border); color: var(--muted); }
 
     .showcase-top-band,
     .story-image-shell {
@@ -3022,25 +3105,31 @@
           </button>
         </div>
 
-        <div class="mission-search-wrap">
-          <i class="fa-solid fa-magnifying-glass mission-search-icon"></i>
-          <input id="missionSearchInput" type="search" class="mission-search-input" data-i18n-placeholder="missions-search-placeholder" placeholder="Search missions by title, location or description…" />
-        </div>
-        <div class="filters" id="missionViewToggle" style="margin-bottom:10px">
-          <button class="filter-btn" type="button" data-mission-view="active" onclick="setMissionView('active')">🟢 <span data-i18n="missions-view-active">Active &amp; Upcoming</span></button>
-          <button class="filter-btn" type="button" data-mission-view="completed" onclick="setMissionView('completed')">✅ <span data-i18n="missions-view-completed">Completed</span></button>
-          <button class="filter-btn" type="button" data-mission-view="calendar" onclick="setMissionView('calendar')">📅 <span data-i18n="missions-view-calendar">Calendar</span></button>
-        </div>
-        <div class="filters" id="categoryFilters"></div>
-        <div class="missions-grid" id="missionsGrid"></div>
-        <div class="mission-calendar hidden" id="missionCalendar">
-          <div class="mission-calendar-header">
-            <button type="button" class="btn btn-soft" onclick="changeCalendarMonth(-1)" aria-label="Previous month">‹</button>
-            <h3 id="missionCalendarLabel"></h3>
-            <button type="button" class="btn btn-soft" onclick="changeCalendarMonth(1)" aria-label="Next month">›</button>
+        <div class="missions-layout">
+          <div class="missions-main">
+            <div class="mission-search-wrap">
+              <i class="fa-solid fa-magnifying-glass mission-search-icon"></i>
+              <input id="missionSearchInput" type="search" class="mission-search-input" data-i18n-placeholder="missions-search-placeholder" placeholder="Search missions by title, location or description…" />
+            </div>
+            <div class="filters" id="missionViewToggle" style="margin-bottom:10px">
+              <button class="filter-btn" type="button" data-mission-view="active" onclick="setMissionView('active')">🟢 <span data-i18n="missions-view-active">Active &amp; Upcoming</span></button>
+              <button class="filter-btn" type="button" data-mission-view="completed" onclick="setMissionView('completed')">✅ <span data-i18n="missions-view-completed">Completed</span></button>
+            </div>
+            <div class="filters" id="categoryFilters"></div>
+            <div class="missions-grid" id="missionsGrid"></div>
           </div>
-          <div class="mission-calendar-weekdays" id="missionCalendarWeekdays"></div>
-          <div class="mission-calendar-grid" id="missionCalendarGrid"></div>
+          <!-- Calendar sits permanently on the right, right where a visitor
+               lands on this section — not tucked behind a tab — so the
+               scheduled-activity timeline is visible at a glance. -->
+          <aside class="mission-calendar" id="missionCalendar">
+            <div class="mission-calendar-header">
+              <button type="button" class="btn btn-soft" onclick="changeCalendarMonth(-1)" aria-label="Previous month">‹</button>
+              <h3 id="missionCalendarLabel"></h3>
+              <button type="button" class="btn btn-soft" onclick="changeCalendarMonth(1)" aria-label="Next month">›</button>
+            </div>
+            <div class="mission-calendar-weekdays" id="missionCalendarWeekdays"></div>
+            <div class="mission-calendar-grid" id="missionCalendarGrid"></div>
+          </aside>
         </div>
       </div>
     </section>
@@ -3160,16 +3249,20 @@
 
     <section class="section alt" id="district-map">
       <div class="section-inner">
-        <div class="section-top center">
+        <div class="section-top">
           <div>
             <div class="section-badge"><i class="fa-solid fa-map-location-dot"></i> <span data-i18n="map-badge">District Overview</span></div>
-            <h2 class="section-title" data-i18n="map-title">Missions across your district</h2>
+            <h2 class="section-title" data-i18n="map-title">Activities across every block and municipal body</h2>
             <p class="section-subtitle" data-i18n="map-subtitle">
-              Track which wards are already active, where volunteer energy is concentrated, and where new missions are needed.
+              See exactly which Gram Panchayats and municipal bodies already have scheduled activity, and where none has reached yet.
             </p>
           </div>
+          <button class="btn btn-soft" type="button" id="downloadCoverageReportBtn" onclick="exportLocationReport()">
+            <i class="fa-solid fa-file-arrow-down"></i>
+            <span data-i18n="map-download-report">Download Coverage Report</span>
+          </button>
         </div>
-        <div class="district-grid" id="wardGrid"></div>
+        <div class="coverage-grid" id="coverageGrid"></div>
         <div class="map-summary" id="mapSummary"></div>
       </div>
     </section>
@@ -4142,10 +4235,59 @@
         </div>
 
         <div class="admin-pane" id="adminPaneLocations">
+          <div class="panel-card">
+            <h3 data-i18n="admin-loc-structure-title">District Geography (Blocks, GPs &amp; Municipal Bodies)</h3>
+            <p data-i18n="admin-loc-structure-subtitle">Upload a CSV with columns <strong>Type, Block, Name</strong> — one row per Gram Panchayat (Type = GP, with its Block) or municipal body (Type = Municipal, Block left blank). This becomes the district's real place list everywhere on the portal, and this district's geography is fully independent of any other district using Prayas — replace it any time your boundaries change.</p>
+            <div class="form-group">
+              <label for="locationStructureFile" data-i18n="admin-loc-structure-file-label">Upload CSV (Type, Block, Name)</label>
+              <input id="locationStructureFile" type="file" accept=".csv,.tsv" />
+            </div>
+            <div class="message-actions">
+              <button class="btn btn-secondary" type="button" id="downloadLocationTemplateBtn" data-i18n="admin-loc-structure-template">Download Blank Format (CSV)</button>
+              <button class="btn btn-primary" type="button" id="uploadLocationStructureBtn" data-i18n="admin-loc-structure-upload">Upload &amp; Replace</button>
+              <button class="btn btn-soft" type="button" id="clearLocationStructureBtn" data-i18n="admin-loc-structure-clear">Clear Geography</button>
+              <button class="btn btn-secondary" type="button" onclick="exportLocationReport()" data-i18n="map-download-report">Download Coverage Report</button>
+            </div>
+            <div id="locationStructureStatus" style="margin-top:10px;font-size:13px;color:var(--muted)"></div>
+          </div>
+
+          <div class="panel-card">
+            <div class="section-top" style="margin-bottom:6px">
+              <div>
+                <h3 data-i18n="admin-loc-structure-current-title" style="margin-bottom:2px">Current Geography</h3>
+                <p data-i18n="admin-loc-structure-current-subtitle" style="margin-bottom:0">This is what citizens see on the District Overview, and what mission forms suggest as locations. Edit names or remove a place below, or add one directly, without re-uploading the whole CSV.</p>
+              </div>
+            </div>
+            <div id="locationStructureSummary" style="font-weight:600;margin:10px 0"></div>
+            <div class="admin-two-col">
+              <div>
+                <div style="font-size:13px;color:var(--muted);margin-bottom:6px" data-i18n="admin-loc-blocks-label">Blocks &amp; Gram Panchayats</div>
+                <div id="locationBlocksEditor" style="max-height:340px;overflow-y:auto"></div>
+                <div class="form-row" style="margin-top:10px">
+                  <input id="newBlockNameInput" type="text" placeholder="New block name" style="flex:1" />
+                  <button class="btn btn-soft" type="button" id="addBlockBtn" data-i18n="admin-loc-add-block">+ Add Block</button>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:13px;color:var(--muted);margin-bottom:6px" data-i18n="admin-loc-municipal-label">Municipal Bodies</div>
+                <ul class="coverage-list coverage-list-standalone" id="locationMunicipalEditor" style="max-height:220px"></ul>
+                <div class="form-row" style="margin-top:10px">
+                  <input id="newMunicipalNameInput" type="text" placeholder="New municipal body name" style="flex:1" />
+                  <button class="btn btn-soft" type="button" id="addMunicipalBtn" data-i18n="admin-loc-add-municipal">+ Add</button>
+                </div>
+              </div>
+            </div>
+            <div class="message-actions" style="margin-top:16px">
+              <button class="btn btn-primary" type="button" id="saveLocationEditsBtn" data-i18n="admin-loc-save-edits">Save Changes</button>
+              <button class="btn btn-soft" type="button" id="discardLocationEditsBtn" data-i18n="admin-loc-discard-edits">Discard Changes</button>
+            </div>
+            <div id="locationEditStatus" style="margin-top:8px;font-size:13px;color:var(--muted)"></div>
+          </div>
+
           <div class="admin-two-col">
             <div class="panel-card">
-              <h3 data-i18n="admin-locations-title">Location Catalog</h3>
-              <p data-i18n="admin-locations-subtitle">Upload or paste gram panchayats, wards, villages, colonies, or any district-specific location list. These options will appear across the portal.</p>
+              <h3 data-i18n="admin-locations-title">Quick-Add Locations</h3>
+              <p data-i18n="admin-locations-subtitle">For a one-off place not worth a full CSV re-upload — paste names below. These are added to the suggestion list only, not to the Blocks/GP structure above.</p>
               <div class="form-group">
                 <label for="locationImportFile" data-i18n="admin-locations-file-label">Upload CSV / TSV</label>
                 <input id="locationImportFile" type="file" accept=".csv,.tsv" />
@@ -4157,7 +4299,7 @@
               <button class="btn btn-primary" type="button" id="saveLocationsBtn" data-i18n="admin-locations-save">Save Location Catalog</button>
             </div>
             <div class="panel-card">
-              <h3 data-i18n="admin-locations-current-title">Current Location Options</h3>
+              <h3 data-i18n="admin-locations-current-title">All Location Suggestions</h3>
               <p data-i18n="admin-locations-current-subtitle">These names feed the district location view, mission forms, and filters.</p>
               <div class="announcement-stream" id="locationCatalogList"></div>
             </div>
@@ -4762,8 +4904,9 @@
       "host-description-label": { en: "Description", hi: "विवरण" },
       "host-submit": { en: "Send Mission Request", hi: "मिशन अनुरोध भेजें" },
       "map-badge": { en: "District Overview", hi: "जिला अवलोकन" },
-      "map-title": { en: "Missions across your district", hi: "आपके जिले के विभिन्न इलाकों में अभियान" },
-      "map-subtitle": { en: "Track which areas are already active, where volunteer energy is concentrated, and where new missions are needed.", hi: "देखें कौन से इलाके सक्रिय हैं, स्वयंसेवी ऊर्जा कहाँ केंद्रित है, और कहाँ नए अभियानों की जरूरत है।" },
+      "map-title": { en: "Activities across every block and municipal body", hi: "हर ब्लॉक और नगरीय निकाय में गतिविधियाँ" },
+      "map-subtitle": { en: "See exactly which Gram Panchayats and municipal bodies already have scheduled activity, and where none has reached yet.", hi: "देखें किन ग्राम पंचायतों और नगरीय निकायों में गतिविधि पहले से निर्धारित है, और कहाँ अभी तक कोई नहीं पहुँची।" },
+      "map-download-report": { en: "Download Coverage Report", hi: "कवरेज रिपोर्ट डाउनलोड करें" },
       "how-badge": { en: "Simple Process", hi: "सरल प्रक्रिया" },
       "how-title": { en: "How Prayas works", hi: "प्रयास कैसे काम करता है" },
       "how-subtitle": { en: "Register once, explore mission opportunities, contribute on-ground, and get recognised publicly for civic action.", hi: "एक बार पंजीकरण करें, अभियान चुनें, ज़मीन पर योगदान दें और सार्वजनिक पहचान पाएँ।" },
@@ -5002,14 +5145,28 @@
       "admin-overview-history-subtitle": { en: "A clean history of the latest missions that were launched, running, or completed.", hi: "हाल में शुरू, चल रही या पूर्ण हुई मिशन गतिविधियों का साफ इतिहास।" },
       "admin-data-title": { en: "Deployment Data Mode", hi: "डिप्लॉयमेंट डेटा मोड" },
       "admin-data-subtitle": { en: "Use demo mode for presentations. Use real deploy mode to hide all dummy seeded records and show only actual field data.", hi: "प्रस्तुति के लिए डेमो मोड और वास्तविक उपयोग के लिए रियल डिप्लॉय मोड चुनें, जिसमें सभी डमी रिकॉर्ड छिपे रहें।" },
-      "admin-locations-title": { en: "Location Catalog", hi: "स्थान सूची" },
-      "admin-locations-subtitle": { en: "Upload or paste gram panchayats, wards, villages, colonies, or any district-specific location list. These options will appear across the portal.", hi: "ग्राम पंचायत, वार्ड, गांव, कॉलोनी या किसी भी जिला-विशिष्ट स्थान सूची को अपलोड या पेस्ट करें। ये विकल्प पूरे पोर्टल में दिखेंगे।" },
+      "admin-locations-title": { en: "Quick-Add Locations", hi: "त्वरित स्थान जोड़ें" },
+      "admin-locations-subtitle": { en: "For a one-off place not worth a full CSV re-upload — paste names below. These are added to the suggestion list only, not to the Blocks/GP structure above.", hi: "किसी एक स्थान के लिए पूरी CSV दोबारा अपलोड करना जरूरी नहीं — नीचे नाम पेस्ट करें। ये केवल सुझाव सूची में जुड़ेंगे, ऊपर की ब्लॉक/जीपी संरचना में नहीं।" },
       "admin-locations-file-label": { en: "Upload CSV / TSV", hi: "CSV / TSV अपलोड करें" },
       "admin-locations-manual-label": { en: "Paste or Type Locations", hi: "स्थान पेस्ट करें या टाइप करें" },
       "admin-locations-manual-placeholder": { en: "One location per line or comma separated", hi: "प्रत्येक पंक्ति में एक स्थान या कॉमा से अलग" },
       "admin-locations-save": { en: "Save Location Catalog", hi: "स्थान सूची सहेजें" },
-      "admin-locations-current-title": { en: "Current Location Options", hi: "वर्तमान स्थान विकल्प" },
+      "admin-locations-current-title": { en: "All Location Suggestions", hi: "सभी स्थान सुझाव" },
       "admin-locations-current-subtitle": { en: "These names appear as suggestions in mission forms and volunteer registration.", hi: "ये नाम मिशन फॉर्म और स्वयंसेवक पंजीकरण में सुझाव के रूप में दिखेंगे।" },
+      "admin-loc-structure-title": { en: "District Geography (Blocks, GPs & Municipal Bodies)", hi: "जिला भूगोल (ब्लॉक, जीपी और नगरीय निकाय)" },
+      "admin-loc-structure-subtitle": { en: "Upload a CSV with columns Type, Block, Name — one row per Gram Panchayat (Type = GP, with its Block) or municipal body (Type = Municipal, Block left blank). This becomes the district's real place list everywhere on the portal, and this district's geography is fully independent of any other district using Prayas — replace it any time your boundaries change.", hi: "Type, Block, Name कॉलम वाली CSV अपलोड करें — प्रत्येक ग्राम पंचायत के लिए एक पंक्ति (Type = GP, साथ में ब्लॉक) या नगरीय निकाय के लिए (Type = Municipal, Block खाली)। यह पूरे पोर्टल पर जिले की वास्तविक स्थान सूची बन जाती है, और यह भूगोल किसी अन्य जिले से पूरी तरह स्वतंत्र है — सीमाएं बदलने पर कभी भी बदलें।" },
+      "admin-loc-structure-file-label": { en: "Upload CSV (Type, Block, Name)", hi: "CSV अपलोड करें (Type, Block, Name)" },
+      "admin-loc-structure-upload": { en: "Upload & Replace", hi: "अपलोड करें और बदलें" },
+      "admin-loc-structure-clear": { en: "Clear Geography", hi: "भूगोल हटाएं" },
+      "admin-loc-structure-current-title": { en: "Current Geography", hi: "वर्तमान भूगोल" },
+      "admin-loc-structure-current-subtitle": { en: "This is what citizens see on the District Overview, and what mission forms suggest as locations.", hi: "यह वही है जो नागरिक जिला अवलोकन पर देखते हैं, और जो मिशन फॉर्म स्थान के रूप में सुझाते हैं।" },
+      "admin-loc-blocks-label": { en: "Blocks & Gram Panchayats", hi: "ब्लॉक और ग्राम पंचायतें" },
+      "admin-loc-municipal-label": { en: "Municipal Bodies", hi: "नगरीय निकाय" },
+      "admin-loc-structure-template": { en: "Download Blank Format (CSV)", hi: "खाली फॉर्मेट डाउनलोड करें (CSV)" },
+      "admin-loc-add-block": { en: "+ Add Block", hi: "+ ब्लॉक जोड़ें" },
+      "admin-loc-add-municipal": { en: "+ Add", hi: "+ जोड़ें" },
+      "admin-loc-save-edits": { en: "Save Changes", hi: "बदलाव सहेजें" },
+      "admin-loc-discard-edits": { en: "Discard Changes", hi: "बदलाव छोड़ें" },
       "admin-newsletter-title": { en: "Newsletter Builder", hi: "न्यूज़लेटर बिल्डर" },
       "admin-newsletter-subtitle": { en: "Prepare a district message and preview how it will read.", hi: "जिला संदेश तैयार करें और उसका पूर्वावलोकन देखें।" },
       "admin-newsletter-subject-label": { en: "Subject", hi: "विषय" },
@@ -5185,6 +5342,7 @@
         stateAbbr: "ST",
         siteBadgeEn: "",
         siteBadgeHi: "",
+        locationStructure: { blocks: [], municipalBodies: [] },
         announcements: [
           "Prayas portal is ready for district deployment."
         ],
@@ -5721,6 +5879,9 @@
       state.siteBadgeEn = payload.siteBadgeEn || "";
       state.siteBadgeHi = payload.siteBadgeHi || "";
       state.locations = Array.isArray(payload.locations) ? payload.locations : [];
+      state.locationStructure = payload.locationStructure && typeof payload.locationStructure === "object"
+        ? { blocks: Array.isArray(payload.locationStructure.blocks) ? payload.locationStructure.blocks : [], municipalBodies: Array.isArray(payload.locationStructure.municipalBodies) ? payload.locationStructure.municipalBodies : [] }
+        : { blocks: [], municipalBodies: [] };
       state.departments = Array.isArray(payload.departments) ? payload.departments : [];
       state.announcements = Array.isArray(payload.announcements) ? payload.announcements : [];
       state.announcementRecords = Array.isArray(payload.announcementRecords) ? payload.announcementRecords : [];
@@ -6141,6 +6302,252 @@
         .join("");
     }
 
+    // Editable working copy of the geography. Admin edits (rename/delete/add
+    // a Block, GP, or Municipal Body) happen on this draft only; nothing
+    // reaches the server or the public portal until "Save Changes" is
+    // clicked. "Discard Changes" re-clones from the last saved state.
+    let locationEditDraft = null;
+    // The state.locationStructure object the current draft was cloned from.
+    // applyBootstrapData() always assigns state.locationStructure a brand
+    // new object on every server refresh, so comparing by reference (not a
+    // focus/activeElement heuristic) is the reliable way to tell "the server
+    // data actually changed under us" apart from "renderAll() ran again
+    // because of some unrelated local edit or re-render" — the latter must
+    // NOT reset the draft, or every add/delete/rename click would erase
+    // itself the instant it re-renders.
+    let locationEditDraftSource = null;
+
+    function cloneLocationStructure(structure) {
+      const src = structure || { blocks: [], municipalBodies: [] };
+      return {
+        blocks: (Array.isArray(src.blocks) ? src.blocks : []).map((b) => ({ name: b.name, gps: [...(b.gps || [])] })),
+        municipalBodies: [...(Array.isArray(src.municipalBodies) ? src.municipalBodies : [])]
+      };
+    }
+
+    function renderLocationStructurePanel() {
+      if (locationEditDraft === null || locationEditDraftSource !== state.locationStructure) {
+        locationEditDraft = cloneLocationStructure(state.locationStructure);
+        locationEditDraftSource = state.locationStructure;
+      }
+      const structure = locationEditDraft;
+      const blocks = structure.blocks;
+      const municipalBodies = structure.municipalBodies;
+      const hi = state.lang === "hi";
+
+      const summaryEl = document.getElementById("locationStructureSummary");
+      if (summaryEl) {
+        const gpCount = blocks.reduce((sum, b) => sum + b.gps.length, 0);
+        summaryEl.textContent = blocks.length || municipalBodies.length
+          ? (hi
+              ? `${blocks.length} ब्लॉक · ${gpCount} ग्राम पंचायतें · ${municipalBodies.length} नगरीय निकाय`
+              : `${blocks.length} blocks · ${gpCount} Gram Panchayats · ${municipalBodies.length} municipal bodies`)
+          : (hi ? "अभी तक कोई भूगोल अपलोड नहीं हुआ है।" : "No geography uploaded yet.");
+      }
+
+      const blocksEditor = document.getElementById("locationBlocksEditor");
+      if (blocksEditor) {
+        blocksEditor.innerHTML = blocks.length
+          ? blocks.map((b, bi) => `
+              <div class="message-card">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                  <input type="text" value="${escapeHtml(b.name)}" data-block-rename="${bi}" style="flex:1;font-weight:600" />
+                  <button class="btn btn-soft" type="button" style="padding:4px 8px;color:var(--danger)" data-block-delete="${bi}" title="${hi ? "ब्लॉक हटाएं" : "Delete block"}">✕</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+                  ${b.gps.map((gp, gi) => `
+                    <span class="coverage-count" style="background:var(--navy-light);color:var(--navy);gap:6px;padding:0 4px 0 10px;height:26px">
+                      ${escapeHtml(gp)}
+                      <button type="button" data-gp-delete="${bi}:${gi}" style="border:none;background:none;color:var(--danger);cursor:pointer;font-weight:800;padding:0 4px" title="${hi ? "जीपी हटाएं" : "Remove GP"}">✕</button>
+                    </span>
+                  `).join("") || `<span style="font-size:12px;color:var(--muted)">${hi ? "कोई जीपी नहीं" : "No GPs yet"}</span>`}
+                </div>
+                <div class="form-row">
+                  <input type="text" placeholder="${hi ? "नई जीपी जोड़ें" : "Add a GP"}" data-gp-add-input="${bi}" style="flex:1" />
+                  <button class="btn btn-soft" type="button" data-gp-add-btn="${bi}">+</button>
+                </div>
+              </div>`).join("")
+          : `<div class="message-card"><div class="message-text">${hi ? "कोई ब्लॉक अपलोड नहीं हुआ।" : "No blocks uploaded."}</div></div>`;
+
+        blocksEditor.querySelectorAll("[data-block-rename]").forEach((input) => {
+          input.addEventListener("change", (e) => {
+            locationEditDraft.blocks[Number(e.target.dataset.blockRename)].name = e.target.value.trim();
+          });
+        });
+        blocksEditor.querySelectorAll("[data-block-delete]").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            locationEditDraft.blocks.splice(Number(e.target.dataset.blockDelete), 1);
+            renderLocationStructurePanel();
+          });
+        });
+        blocksEditor.querySelectorAll("[data-gp-delete]").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            const [bi, gi] = e.target.dataset.gpDelete.split(":").map(Number);
+            locationEditDraft.blocks[bi].gps.splice(gi, 1);
+            renderLocationStructurePanel();
+          });
+        });
+        const addGp = (bi) => {
+          const input = blocksEditor.querySelector(`[data-gp-add-input="${bi}"]`);
+          const value = (input?.value || "").trim();
+          if (!value) return;
+          locationEditDraft.blocks[bi].gps.push(value);
+          renderLocationStructurePanel();
+        };
+        blocksEditor.querySelectorAll("[data-gp-add-btn]").forEach((btn) => {
+          btn.addEventListener("click", (e) => addGp(Number(e.target.dataset.gpAddBtn)));
+        });
+        blocksEditor.querySelectorAll("[data-gp-add-input]").forEach((input) => {
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") { e.preventDefault(); addGp(Number(e.target.dataset.gpAddInput)); }
+          });
+        });
+      }
+
+      const municipalEditor = document.getElementById("locationMunicipalEditor");
+      if (municipalEditor) {
+        municipalEditor.innerHTML = municipalBodies.length
+          ? municipalBodies.map((name, mi) => `
+              <li class="coverage-row">
+                <input type="text" value="${escapeHtml(name)}" data-municipal-rename="${mi}" style="flex:1;border:none;background:none;font-size:13px" />
+                <button type="button" data-municipal-delete="${mi}" style="border:none;background:none;color:var(--danger);cursor:pointer;font-weight:800" title="${hi ? "हटाएं" : "Remove"}">✕</button>
+              </li>`).join("")
+          : `<li class="coverage-row-empty">${hi ? "कोई नगरीय निकाय अपलोड नहीं हुआ।" : "No municipal bodies uploaded."}</li>`;
+        municipalEditor.querySelectorAll("[data-municipal-rename]").forEach((input) => {
+          input.addEventListener("change", (e) => {
+            locationEditDraft.municipalBodies[Number(e.target.dataset.municipalRename)] = e.target.value.trim();
+          });
+        });
+        municipalEditor.querySelectorAll("[data-municipal-delete]").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            locationEditDraft.municipalBodies.splice(Number(e.target.dataset.municipalDelete), 1);
+            renderLocationStructurePanel();
+          });
+        });
+      }
+    }
+
+    function addDraftBlock() {
+      const input = document.getElementById("newBlockNameInput");
+      const value = (input?.value || "").trim();
+      if (!value) return;
+      if (!locationEditDraft) { locationEditDraft = cloneLocationStructure(state.locationStructure); locationEditDraftSource = state.locationStructure; }
+      locationEditDraft.blocks.push({ name: value, gps: [] });
+      input.value = "";
+      renderLocationStructurePanel();
+    }
+
+    function addDraftMunicipal() {
+      const input = document.getElementById("newMunicipalNameInput");
+      const value = (input?.value || "").trim();
+      if (!value) return;
+      if (!locationEditDraft) { locationEditDraft = cloneLocationStructure(state.locationStructure); locationEditDraftSource = state.locationStructure; }
+      locationEditDraft.municipalBodies.push(value);
+      input.value = "";
+      renderLocationStructurePanel();
+    }
+
+    async function saveLocationEdits() {
+      const statusEl = document.getElementById("locationEditStatus");
+      const hi = state.lang === "hi";
+      if (!locationEditDraft) return;
+      try {
+        const data = await apiRequest("/api/admin/locations/structure", {
+          method: "POST",
+          body: JSON.stringify(locationEditDraft)
+        });
+        if (statusEl) statusEl.textContent = hi
+          ? `सहेजा गया: ${data.blocks} ब्लॉक, ${data.gps} जीपी, ${data.municipalBodies} नगरीय निकाय।`
+          : `Saved: ${data.blocks} blocks, ${data.gps} GPs, ${data.municipalBodies} municipal bodies.`;
+        showToast(hi ? "बदलाव सहेजे गए।" : "Changes saved.", "✅");
+        await refreshPortalData();
+        locationEditDraft = null;
+        renderAll();
+      } catch (error) {
+        if (statusEl) statusEl.textContent = error?.message || (hi ? "सहेजना विफल।" : "Save failed.");
+      }
+    }
+
+    function discardLocationEdits() {
+      locationEditDraft = cloneLocationStructure(state.locationStructure);
+      locationEditDraftSource = state.locationStructure;
+      document.getElementById("locationEditStatus").textContent = "";
+      renderLocationStructurePanel();
+    }
+
+    // A blank fill-in-and-upload CSV, so an officer doesn't have to guess the
+    // column format — matches exactly what /api/admin/locations/upload expects.
+    function downloadLocationTemplate() {
+      const csv = [
+        "Type,Block,Name",
+        "GP,Example Block 1,Example Gram Panchayat A",
+        "GP,Example Block 1,Example Gram Panchayat B",
+        "GP,Example Block 2,Example Gram Panchayat C",
+        "Municipal,,Example Nagar Panchayat"
+      ].join("\n");
+      const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "prayas_location_format.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function uploadLocationStructureFile() {
+      const fileInput = document.getElementById("locationStructureFile");
+      const statusEl = document.getElementById("locationStructureStatus");
+      const hi = state.lang === "hi";
+      const file = fileInput?.files?.[0];
+      if (!file) {
+        if (statusEl) statusEl.textContent = hi ? "पहले एक CSV फ़ाइल चुनें।" : "Choose a CSV file first.";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const data = await apiRequest("/api/admin/locations/upload", {
+            method: "POST",
+            body: JSON.stringify({ csvText: String(reader.result || "") })
+          });
+          if (statusEl) statusEl.textContent = hi
+            ? `अपलोड हो गया: ${data.blocks} ब्लॉक, ${data.gps} जीपी, ${data.municipalBodies} नगरीय निकाय।`
+            : `Uploaded: ${data.blocks} blocks, ${data.gps} GPs, ${data.municipalBodies} municipal bodies.`;
+          showToast(hi ? "भूगोल अपडेट किया गया।" : "Geography updated.", "✅");
+          fileInput.value = "";
+          await refreshPortalData();
+          locationEditDraft = null;
+          renderAll();
+        } catch (error) {
+          if (statusEl) statusEl.textContent = error?.message || (hi ? "अपलोड विफल।" : "Upload failed.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function confirmClearLocationStructure() {
+      const hi = state.lang === "hi";
+      openConfirmModal({
+        icon: "🗑️",
+        title: hi ? "पूरा भूगोल हटाएं?" : "Clear the entire geography?",
+        message: hi
+          ? "सभी ब्लॉक, ग्राम पंचायतें और नगरीय निकाय हटा दिए जाएंगे। मौजूदा अभियान प्रभावित नहीं होंगे, पर स्थान सुझाव खाली हो जाएंगे।"
+          : "All blocks, Gram Panchayats, and municipal bodies will be removed. Existing missions are unaffected, but location suggestions will be empty until you upload again.",
+        confirmLabel: hi ? "हटाएं" : "Clear",
+        onConfirm: async () => {
+          try {
+            await apiRequest("/api/admin/locations/clear", { method: "POST" });
+            showToast(hi ? "भूगोल हटा दिया गया।" : "Geography cleared.", "🗑️");
+            await refreshPortalData();
+            locationEditDraft = null;
+            renderAll();
+          } catch (error) {
+            handleRequestError(error);
+          }
+        }
+      });
+    }
+
     function renderWardSelectOptions() {
       renderLocationSuggestions();
     }
@@ -6201,9 +6608,7 @@
       const view = state.missionView || "active";
       return state.missions.filter((mission) => {
         const publicOk = mission.approvalStatus !== "pending" && mission.approvalStatus !== "rejected";
-        // The calendar is a timeline of everything, not a completed/active
-        // filter — a completed activity still deserves a spot on its date.
-        const viewOk = view === "calendar" ? true : (view === "completed" ? mission.status === "completed" : mission.status !== "completed");
+        const viewOk = view === "completed" ? mission.status === "completed" : mission.status !== "completed";
         const categoryOk = state.currentCategory === "all" || mission.category === state.currentCategory;
         const searchOk = !q ||
           mission.title.toLowerCase().includes(q) ||
@@ -6219,9 +6624,6 @@
       document.querySelectorAll("[data-mission-view]").forEach((button) => {
         button.classList.toggle("active", button.getAttribute("data-mission-view") === view);
       });
-      document.getElementById("missionsGrid")?.classList.toggle("hidden", view === "calendar");
-      document.getElementById("categoryFilters")?.classList.toggle("hidden", view === "calendar");
-      document.getElementById("missionCalendar")?.classList.toggle("hidden", view !== "calendar");
       renderMissions();
     }
 
@@ -6229,10 +6631,10 @@
       document.querySelectorAll("[data-mission-view]").forEach((button) => {
         button.classList.toggle("active", button.getAttribute("data-mission-view") === (state.missionView || "active"));
       });
-      if ((state.missionView || "active") === "calendar") {
-        renderMissionCalendar();
-        return;
-      }
+      // The calendar is always visible alongside the grid (not a separate
+      // tab), and shows the full timeline regardless of the active/completed
+      // filter above, so it renders independently on every refresh.
+      renderMissionCalendar();
       const missions = filteredMissions();
       const grid = document.getElementById("missionsGrid");
       if (!missions.length) {
@@ -6364,15 +6766,18 @@
         const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         const dayMissions = byDate.get(key) || [];
         const isToday = key === todayKey;
-        const maxChips = 2;
-        const chips = dayMissions.slice(0, maxChips).map((m) => `<div class="cal-day-chip" title="${escapeHtml(m.title)}">${escapeHtml(m.title)}</div>`).join("");
-        const more = dayMissions.length > maxChips ? `<div class="cal-day-more">+${dayMissions.length - maxChips} ${hi ? "और" : "more"}</div>` : "";
+        // A slim sidebar has room for a day number and a dot per activity —
+        // titles show on hover and in the day modal on click, not crammed
+        // into the cell itself.
+        const maxDots = 4;
+        const dots = dayMissions.slice(0, maxDots).map(() => `<span class="cal-day-dot"></span>`).join("");
+        const more = dayMissions.length > maxDots ? `<div class="cal-day-more">+${dayMissions.length - maxDots}</div>` : "";
         cells += `
           <div class="cal-day ${dayMissions.length ? "has-missions" : ""} ${isToday ? "is-today" : ""}"
                ${dayMissions.length ? `onclick="openCalendarDay('${key}')"` : ""}
                title="${dayMissions.length ? escapeHtml(dayMissions.map((m) => m.title).join(", ")) : ""}">
             <div class="cal-day-num">${day}</div>
-            ${chips}
+            ${dots ? `<div class="cal-day-dots">${dots}</div>` : ""}
             ${more}
           </div>`;
       }
@@ -6404,48 +6809,103 @@
       openModal("calendarDayModal");
     }
 
-    function renderWardGrid() {
-      const areas = uniqueAreas();
-      const cards = areas.map((ward, index) => {
-        const missions = state.missions.filter((mission) =>
-          missionArea(mission) === ward && mission.approvalStatus !== "pending" && mission.approvalStatus !== "rejected"
-        );
-        const categories = [...new Set(missions.map((mission) => mission.category))];
-        const borderColors = [varValue("--saffron"), varValue("--navy"), varValue("--green")];
-        const borderColor = borderColors[index % borderColors.length];
-        const dots = categories.length
-          ? categories.map((category) => `<span class="dot-pill" style="background:${categoryMeta[category].dot}">${categoryEmoji(category)}</span>`).join("")
-          : `<span style="color:var(--muted);font-size:13px">${state.lang === "hi" ? "अभी कोई अभियान नहीं" : "No missions yet"}</span>`;
+    // Real administrative geography (Blocks → Gram Panchayats, plus Municipal
+    // Bodies) uploaded once in the admin Locations panel, instead of a flat
+    // list of made-up "wards" being compared against each other. Every GP
+    // and municipal body is shown, including the ones with zero activity —
+    // that gap is exactly what a district officer needs to see.
+    function locationMissionCount(label) {
+      return state.missions.filter((mission) =>
+        missionArea(mission) === label && mission.approvalStatus !== "pending" && mission.approvalStatus !== "rejected"
+      ).length;
+    }
 
-        return `
-          <article class="ward-card ${missions.length ? "" : "empty"}" style="border-left-color:${borderColor}">
-            <h3>${escapeHtml(wardLabel(ward))}</h3>
-            <div class="ward-count">${missions.length}</div>
-            <div class="ward-meta">${missions.length ? `${missions.length} ${state.lang === "hi" ? "सक्रिय अभियान" : "active missions"}` : state.lang === "hi" ? "नया अभियान आवश्यक" : "Mission opportunity zone"}</div>
-            <div class="ward-dots">${dots}</div>
-            ${
-              missions.length
-                ? ``
-                : `<button class="btn btn-soft" type="button" onclick="openAdminLogin()">${state.lang === "hi" ? "नया अभियान जोड़ें" : "Add Mission"}</button>`
-            }
-          </article>
-        `;
-      });
-      document.getElementById("wardGrid").innerHTML = cards.length
-        ? cards.join("")
-        : `<div class="mission-card" style="grid-column:1/-1;padding:32px;text-align:center">
-            <h3 class="mission-title">${state.lang === "hi" ? "अभी तक कोई स्थान नहीं जोड़ा गया है।" : "No locations have been added yet."}</h3>
-            <p class="mission-desc" style="display:block">${state.lang === "hi" ? "एडमिन पैनल से पहली गतिविधि जोड़ें।" : "Add the first activity from the admin panel."}</p>
+    function renderLocationCoverage() {
+      const structure = state.locationStructure || { blocks: [], municipalBodies: [] };
+      const blocks = Array.isArray(structure.blocks) ? structure.blocks : [];
+      const municipalBodies = Array.isArray(structure.municipalBodies) ? structure.municipalBodies : [];
+      const hi = state.lang === "hi";
+      const container = document.getElementById("coverageGrid");
+      if (!container) return;
+
+      if (!blocks.length && !municipalBodies.length) {
+        container.innerHTML = `
+          <div class="mission-card" style="grid-column:1/-1;padding:32px;text-align:center">
+            <h3 class="mission-title">${hi ? "अभी तक कोई ब्लॉक/जीपी सूची अपलोड नहीं हुई है।" : "No block/GP list has been uploaded yet."}</h3>
+            <p class="mission-desc" style="display:block">${hi ? "एडमिन पैनल → स्थान से ब्लॉक-वार जीपी और नगरीय निकायों की सूची अपलोड करें।" : "Upload your blocks, Gram Panchayats, and municipal bodies from Admin Panel → Locations."}</p>
           </div>`;
+        document.getElementById("mapSummary").textContent = "";
+        return;
+      }
+
+      const gpRow = (block, gp) => {
+        const label = `${gp} (${block})`;
+        const count = locationMissionCount(label);
+        return `<li class="coverage-row ${count ? "" : "coverage-row-empty"}"><span>${escapeHtml(gp)}</span><span class="coverage-count">${count}</span></li>`;
+      };
+
+      const blockCards = blocks
+        .map((block) => {
+          const gps = Array.isArray(block.gps) ? block.gps : [];
+          const blockTotal = gps.reduce((sum, gp) => sum + locationMissionCount(`${gp} (${block.name})`), 0);
+          return `
+            <div class="coverage-block">
+              <div class="coverage-block-head">
+                <h4>${escapeHtml(block.name)}</h4>
+                <span class="coverage-count">${blockTotal}</span>
+              </div>
+              <ul class="coverage-list">${gps.map((gp) => gpRow(block.name, gp)).join("") || `<li class="coverage-row-empty">${hi ? "कोई जीपी सूचीबद्ध नहीं" : "No GPs listed"}</li>`}</ul>
+            </div>`;
+        })
+        .join("");
+
+      const municipalRows = municipalBodies
+        .map((name) => {
+          const label = `${name} (Municipal)`;
+          const count = locationMissionCount(label);
+          return `<li class="coverage-row ${count ? "" : "coverage-row-empty"}"><span>${escapeHtml(name)}</span><span class="coverage-count">${count}</span></li>`;
+        })
+        .join("");
+
+      container.innerHTML = `
+        <div class="coverage-col">
+          <h3 class="coverage-col-title">${hi ? "ब्लॉक और ग्राम पंचायतें" : "Blocks & Gram Panchayats"}</h3>
+          <div class="coverage-blocks">${blockCards || `<p class="mission-desc" style="display:block">${hi ? "कोई ब्लॉक सूचीबद्ध नहीं।" : "No blocks listed."}</p>`}</div>
+        </div>
+        <div class="coverage-col">
+          <h3 class="coverage-col-title">${hi ? "नगरीय निकाय" : "Municipal Bodies"}</h3>
+          <ul class="coverage-list coverage-list-standalone">${municipalRows || `<li class="coverage-row-empty">${hi ? "कोई नगरीय निकाय सूचीबद्ध नहीं।" : "No municipal bodies listed."}</li>`}</ul>
+        </div>
+      `;
 
       const publicMissions = state.missions.filter((mission) => mission.approvalStatus !== "pending" && mission.approvalStatus !== "rejected");
-      const activeWards = new Set(publicMissions.map((mission) => missionArea(mission)).filter(Boolean)).size;
-      const categories = new Set(publicMissions.map((mission) => mission.category)).size;
+      const totalGps = blocks.reduce((sum, b) => sum + (Array.isArray(b.gps) ? b.gps.length : 0), 0);
+      const totalPlaces = totalGps + municipalBodies.length;
+      const coveredPlaces = new Set(publicMissions.map((mission) => missionArea(mission)).filter(Boolean)).size;
       const volunteers = publicMissions.reduce((sum, mission) => sum + mission.volunteers, 0);
-      document.getElementById("mapSummary").textContent =
-        state.lang === "hi"
-          ? `${publicMissions.length} सक्रिय अभियान · ${activeWards} स्थान · ${categories} श्रेणियाँ · ${volunteers.toLocaleString("en-IN")} स्वयंसेवक सक्रिय`
-          : `${publicMissions.length} active missions across ${activeWards} locations · ${categories} categories · ${volunteers.toLocaleString("en-IN")} volunteers engaged`;
+      document.getElementById("mapSummary").textContent = hi
+        ? `${publicMissions.length} सक्रिय अभियान · ${coveredPlaces} / ${totalPlaces} स्थान कवर · ${blocks.length} ब्लॉक · ${municipalBodies.length} नगरीय निकाय · ${volunteers.toLocaleString("en-IN")} स्वयंसेवक सक्रिय`
+        : `${publicMissions.length} active missions · ${coveredPlaces} / ${totalPlaces} places covered · ${blocks.length} blocks · ${municipalBodies.length} municipal bodies · ${volunteers.toLocaleString("en-IN")} volunteers engaged`;
+    }
+
+    function exportLocationReport() {
+      const token = getAdminToken();
+      if (!token) return showToast(state.lang === "hi" ? "एडमिन लॉगिन आवश्यक है।" : "Admin login required.", "⚠️");
+      fetch("/api/admin/export/location-report.csv", { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => {
+          if (!r.ok) throw new Error("Export failed");
+          return r.blob();
+        })
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "prayas_location_coverage_report.csv";
+          link.click();
+          URL.revokeObjectURL(url);
+          showToast(state.lang === "hi" ? "रिपोर्ट डाउनलोड हुई।" : "Coverage report downloaded.", "📄");
+        })
+        .catch(() => showToast(state.lang === "hi" ? "डाउनलोड विफल। कृपया एडमिन के रूप में लॉगिन करें।" : "Download failed. Please log in as admin.", "⚠️"));
     }
 
     function storyCardMedia(story) {
@@ -7459,7 +7919,7 @@
       renderSkills();
       renderCategoryFilters();
       renderMissions();
-      renderWardGrid();
+      renderLocationCoverage();
       renderStories();
       renderLeaders();
       renderLeaderReport();
@@ -7480,6 +7940,7 @@
       renderRecentVolunteerList();
       renderSubscriberList();
       renderLocationCatalogPanel();
+      renderLocationStructurePanel();
       renderDataModePanel();
       if (state.activeMissionId) renderMissionModal();
       if (state.activeStoryId) renderCommentsModal();
@@ -8854,7 +9315,7 @@
       state.theme = state.theme === "light" ? "dark" : "light";
       document.body.setAttribute("data-theme", state.theme);
       applyTranslations();
-      renderWardGrid();
+      renderLocationCoverage();
       persistState();
     }
 
@@ -8930,6 +9391,13 @@
         toggleDepartmentOtherField("pmDepartment", "pmDepartmentOtherGroup", "pmDepartmentOther");
       });
       document.getElementById("saveLocationsBtn").addEventListener("click", saveLocationCatalog);
+      document.getElementById("uploadLocationStructureBtn")?.addEventListener("click", uploadLocationStructureFile);
+      document.getElementById("clearLocationStructureBtn")?.addEventListener("click", confirmClearLocationStructure);
+      document.getElementById("downloadLocationTemplateBtn")?.addEventListener("click", downloadLocationTemplate);
+      document.getElementById("addBlockBtn")?.addEventListener("click", addDraftBlock);
+      document.getElementById("addMunicipalBtn")?.addEventListener("click", addDraftMunicipal);
+      document.getElementById("saveLocationEditsBtn")?.addEventListener("click", saveLocationEdits);
+      document.getElementById("discardLocationEditsBtn")?.addEventListener("click", discardLocationEdits);
       document.getElementById("locationImportFile").addEventListener("change", async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
