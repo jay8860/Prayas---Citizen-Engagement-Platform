@@ -444,7 +444,7 @@
       gap: 32px;
       width: max-content;
       padding: 11px 0;
-      animation: ticker-scroll 34s linear infinite;
+      animation: ticker-scroll 18s linear infinite;
       white-space: nowrap;
     }
 
@@ -3918,6 +3918,7 @@
         </div>
         <div class="admin-tabbar">
           <button class="admin-tab-btn active" type="button" data-admin-tab="overview" data-i18n="admin-tab-overview">Overview</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="missions" data-i18n="admin-tab-missions">Missions</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="post" data-i18n="admin-tab-post">Post Mission</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="poster" data-i18n="admin-tab-poster">Poster Maker</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="volunteers" data-i18n="admin-tab-volunteers">Volunteers</button>
@@ -3927,6 +3928,7 @@
           <button class="admin-tab-btn" type="button" data-admin-tab="announcements" data-i18n="admin-tab-announcements">Announcements</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="branding" data-i18n="admin-tab-branding">Branding</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="locations" data-i18n="admin-tab-locations">Locations</button>
+          <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="missionsetup" data-i18n="admin-tab-missionsetup">Mission Setup</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="data" data-i18n="admin-tab-data">Data Mode</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="newsletter" data-i18n="admin-tab-newsletter">Newsletter</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="users" data-i18n="admin-tab-users">Users &amp; Delegation</button>
@@ -3980,6 +3982,31 @@
               <div class="announcement-stream" id="adminRecentEventHistoryList"></div>
             </div>
           </div>
+        </div>
+
+        <div class="admin-pane" id="adminPaneMissions">
+          <div class="section-top" style="margin-bottom:12px">
+            <div>
+              <h3 class="form-card-title" style="font-size:20px;margin-bottom:4px">All Missions</h3>
+              <p class="form-card-subtitle" style="margin-bottom:0">Every mission on the portal — search, filter, edit, close, or remove any of them from one place.</p>
+            </div>
+            <button class="btn btn-primary" type="button" onclick="switchAdminTab('post')">+ New Mission</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+            <input type="text" id="adminMissionSearchInput" placeholder="Search title, ward, coordinator…" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+            <select id="adminMissionStatusFilter" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+              <option value="all">All statuses</option>
+              <option value="open">Open</option>
+              <option value="full">Full</option>
+              <option value="closed">Closed</option>
+              <option value="completed">Completed</option>
+            </select>
+            <select id="adminMissionCategoryFilter" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+              <option value="all">All categories</option>
+            </select>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:10px" id="adminMissionsCount"></div>
+          <div class="announcement-stream" id="adminMissionsList"></div>
         </div>
 
         <div class="admin-pane" id="adminPanePost">
@@ -4181,7 +4208,10 @@
               <h3 class="form-card-title" style="font-size:20px;margin-bottom:4px">Admin Audit Log</h3>
               <p class="form-card-subtitle" style="margin-bottom:0">Record of all admin actions — mission approvals, archives, creations.</p>
             </div>
-            <button class="btn btn-secondary" type="button" onclick="loadAuditLog()">Refresh</button>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-secondary" type="button" onclick="loadAuditLog()">Refresh</button>
+              <button class="btn btn-primary" type="button" onclick="exportAuditLog()">Export Excel (CSV)</button>
+            </div>
           </div>
           <div style="overflow:auto">
             <table class="volunteer-table" id="auditLogTable">
@@ -4214,6 +4244,15 @@
               </div>
               <button class="btn btn-primary" type="button" id="postAnnouncementBtn" data-i18n="admin-announcement-submit">Add Announcement</button>
             </div>
+          </div>
+          <div class="panel-card" style="max-width:420px;margin-top:16px">
+            <h3>Ticker Scroll Speed</h3>
+            <p style="margin-bottom:10px">Seconds for one full loop of the announcement ticker at the top of the portal. Lower = faster.</p>
+            <div class="form-row">
+              <input id="tickerSpeedInput" type="number" min="8" max="120" step="1" style="width:100px" />
+              <button class="btn btn-primary" type="button" id="saveTickerSpeedBtn">Save Speed</button>
+            </div>
+            <div id="tickerSpeedStatus" style="margin-top:8px;font-size:13px;color:var(--muted)"></div>
           </div>
         </div>
 
@@ -4303,6 +4342,67 @@
               <p data-i18n="admin-locations-current-subtitle">These names feed the district location view, mission forms, and filters.</p>
               <div class="announcement-stream" id="locationCatalogList"></div>
             </div>
+          </div>
+        </div>
+
+        <div class="admin-pane" id="adminPaneMissionSetup">
+          <p style="color:var(--muted);font-size:14px;margin-bottom:16px">Mission types, nodal departments, and quick-post templates are all editable here — add, rename, or remove any of them without touching code. Changes apply to every mission form across the portal immediately after you save.</p>
+
+          <div class="panel-card">
+            <div class="section-top" style="margin-bottom:6px">
+              <div>
+                <h3 style="margin-bottom:2px">Mission Categories</h3>
+                <p style="margin-bottom:0">The category dropdown and filter chips shown across the portal.</p>
+              </div>
+            </div>
+            <div id="categoryEditorList" style="display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto"></div>
+            <div class="form-row" style="margin-top:12px">
+              <input id="newCategoryEmojiInput" type="text" maxlength="4" placeholder="🎯" style="width:56px;text-align:center" />
+              <input id="newCategoryEnInput" type="text" placeholder="New category (English)" style="flex:1" />
+              <input id="newCategoryHiInput" type="text" placeholder="Hindi label (optional)" style="flex:1" />
+              <button class="btn btn-soft" type="button" id="addCategoryBtn">+ Add Category</button>
+            </div>
+            <div class="message-actions" style="margin-top:14px">
+              <button class="btn btn-primary" type="button" id="saveCategoryEditsBtn">Save Changes</button>
+              <button class="btn btn-soft" type="button" id="discardCategoryEditsBtn">Discard Changes</button>
+            </div>
+            <div id="categoryEditStatus" style="margin-top:8px;font-size:13px;color:var(--muted)"></div>
+          </div>
+
+          <div class="panel-card">
+            <div class="section-top" style="margin-bottom:6px">
+              <div>
+                <h3 style="margin-bottom:2px">Nodal Departments</h3>
+                <p style="margin-bottom:0">The department list shown when posting or approving a mission.</p>
+              </div>
+            </div>
+            <div id="departmentEditorList" style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto"></div>
+            <div class="form-row" style="margin-top:12px">
+              <input id="newDeptEnInput" type="text" placeholder="New department (English)" style="flex:1" />
+              <input id="newDeptHiInput" type="text" placeholder="Hindi label (optional)" style="flex:1" />
+              <button class="btn btn-soft" type="button" id="addDeptBtn">+ Add Department</button>
+            </div>
+            <div class="message-actions" style="margin-top:14px">
+              <button class="btn btn-primary" type="button" id="saveDeptEditsBtn">Save Changes</button>
+              <button class="btn btn-soft" type="button" id="discardDeptEditsBtn">Discard Changes</button>
+            </div>
+            <div id="deptEditStatus" style="margin-top:8px;font-size:13px;color:var(--muted)"></div>
+          </div>
+
+          <div class="panel-card">
+            <div class="section-top" style="margin-bottom:6px">
+              <div>
+                <h3 style="margin-bottom:2px">Quick-Post Activity Templates</h3>
+                <p style="margin-bottom:0">The "Activity Type Template" dropdown on Post Mission that prefills title, category, duration, slots, and description.</p>
+              </div>
+            </div>
+            <div id="templateEditorList" style="display:flex;flex-direction:column;gap:10px;max-height:420px;overflow-y:auto"></div>
+            <div class="message-actions" style="margin-top:14px">
+              <button class="btn btn-soft" type="button" id="addTemplateBtn">+ Add Blank Template</button>
+              <button class="btn btn-primary" type="button" id="saveTemplateEditsBtn">Save Changes</button>
+              <button class="btn btn-soft" type="button" id="discardTemplateEditsBtn">Discard Changes</button>
+            </div>
+            <div id="templateEditStatus" style="margin-top:8px;font-size:13px;color:var(--muted)"></div>
           </div>
         </div>
 
@@ -5178,7 +5278,20 @@
       "admin-newsletter-subscribers-subtitle": { en: "Most recent email signups collected on this browser.", hi: "इस ब्राउज़र पर संग्रहित हाल के ईमेल साइनअप।" }
     };
 
-    const categoryMeta = {
+    function categoryArrayToMeta(list) {
+      const meta = {};
+      (Array.isArray(list) ? list : []).forEach((item) => {
+        if (!item || !item.key) return;
+        meta[item.key] = { en: item.en, hi: item.hi || item.en, emoji: item.emoji || "⭐", dot: item.dot || "#64748B" };
+      });
+      return meta;
+    }
+
+    function categoryMetaToArray(meta) {
+      return Object.keys(meta || {}).map((key) => ({ key, en: meta[key].en, hi: meta[key].hi, emoji: meta[key].emoji, dot: meta[key].dot }));
+    }
+
+    let categoryMeta = {
       sanitation: { en: "Sanitation", hi: "स्वच्छता", emoji: "🧹", dot: "#F97316" },
       environment: { en: "Environment", hi: "पर्यावरण", emoji: "🌳", dot: "#16A34A" },
       awareness: { en: "Awareness", hi: "जागरूकता", emoji: "🚦", dot: "#0284C7" },
@@ -5194,7 +5307,7 @@
       other: { en: "Other / Custom", hi: "अन्य / कस्टम", emoji: "✨", dot: "#64748B" }
     };
 
-    const nodalDepartments = [
+    let nodalDepartments = [
       { en: "Municipal Administration", hi: "नगर प्रशासन" },
       { en: "Rural Development", hi: "ग्रामीण विकास" },
       { en: "Education Department", hi: "शिक्षा विभाग" },
@@ -5206,7 +5319,7 @@
       { en: "Other", hi: "अन्य" }
     ];
 
-    const activityTemplates = [
+    let activityTemplates = [
       {
         key: "sanitation-drive",
         labelEn: "Sanitation Drive",
@@ -5343,6 +5456,11 @@
         siteBadgeEn: "",
         siteBadgeHi: "",
         locationStructure: { blocks: [], municipalBodies: [] },
+        missionCategoriesList: [],
+        tickerSpeedSeconds: 18,
+        adminMissionSearch: "",
+        adminMissionStatusFilter: "all",
+        adminMissionCategoryFilter: "all",
         announcements: [
           "Prayas portal is ready for district deployment."
         ],
@@ -5883,6 +6001,17 @@
         ? { blocks: Array.isArray(payload.locationStructure.blocks) ? payload.locationStructure.blocks : [], municipalBodies: Array.isArray(payload.locationStructure.municipalBodies) ? payload.locationStructure.municipalBodies : [] }
         : { blocks: [], municipalBodies: [] };
       state.departments = Array.isArray(payload.departments) ? payload.departments : [];
+      if (Array.isArray(payload.missionCategories) && payload.missionCategories.length) {
+        categoryMeta = categoryArrayToMeta(payload.missionCategories);
+        state.missionCategoriesList = payload.missionCategories;
+      }
+      if (Array.isArray(payload.nodalDepartmentsList) && payload.nodalDepartmentsList.length) {
+        nodalDepartments = payload.nodalDepartmentsList;
+      }
+      if (Array.isArray(payload.activityTemplatesList) && payload.activityTemplatesList.length) {
+        activityTemplates = payload.activityTemplatesList;
+      }
+      state.tickerSpeedSeconds = Math.max(8, Math.min(120, Number(payload.tickerSpeedSeconds) || 18));
       state.announcements = Array.isArray(payload.announcements) ? payload.announcements : [];
       state.announcementRecords = Array.isArray(payload.announcementRecords) ? payload.announcementRecords : [];
       state.missions = Array.isArray(payload.missions) ? payload.missions : [];
@@ -6014,7 +6143,7 @@
     }
 
     function templateLabel(template) {
-      return state.lang === "hi" ? template.labelHi : template.labelEn;
+      return state.lang === "hi" ? (template.labelHi || template.labelEn) : template.labelEn;
     }
 
     function renderActivityTemplateOptions() {
@@ -6041,10 +6170,19 @@
     }
 
     function renderTicker() {
-      const items = [...state.announcements, ...state.announcements];
-      document.getElementById("tickerTrack").innerHTML = items
+      const track = document.getElementById("tickerTrack");
+      const single = state.announcements.length <= 1;
+      // With more than one announcement, the list is duplicated so the CSS
+      // marquee can loop seamlessly. With exactly one, duplicating it just
+      // makes the same line appear twice on screen at once, so show it once
+      // and turn the scroll animation off.
+      const items = single ? state.announcements : [...state.announcements, ...state.announcements];
+      track.innerHTML = items
         .map((item, index) => `<div class="ticker-item"><strong>${index % 2 === 0 ? "📢" : "✅"}</strong> ${escapeHtml(item)}</div>`)
         .join("");
+      track.style.animationDuration = `${state.tickerSpeedSeconds || 18}s`;
+      track.style.animationPlayState = single ? "paused" : "running";
+      track.style.transform = single ? "translateX(0)" : "";
     }
 
     function renderCategorySelectOptions() {
@@ -6477,6 +6615,222 @@
 
     // A blank fill-in-and-upload CSV, so an officer doesn't have to guess the
     // column format — matches exactly what /api/admin/locations/upload expects.
+    // ── Editable mission categories, nodal departments, and quick-post
+    // templates. Same local-draft-plus-explicit-save pattern as the
+    // geography editor above: edits happen on an in-memory clone and are
+    // only sent to the server when "Save Changes" is clicked, tracked by
+    // source reference (not focus) so a button click never wipes an edit.
+    let categoryEditDraft = null;
+    let categoryEditDraftSource = null;
+    let deptEditDraft = null;
+    let deptEditDraftSource = null;
+    let templateEditDraft = null;
+    let templateEditDraftSource = null;
+
+    function renderCategoryEditor() {
+      if (categoryEditDraft === null) {
+        categoryEditDraft = deepClone(categoryMetaToArray(categoryMeta));
+        categoryEditDraftSource = state.missionCategoriesList;
+      }
+      const list = categoryEditDraft;
+      const container = document.getElementById("categoryEditorList");
+      if (!container) return;
+      const hi = state.lang === "hi";
+      container.innerHTML = list.length
+        ? list.map((c, i) => `
+            <div class="message-card" style="display:flex;align-items:center;gap:8px">
+              <input type="text" value="${escapeHtml(c.emoji || "⭐")}" data-cat-emoji="${i}" maxlength="4" style="width:44px;text-align:center" />
+              <input type="text" value="${escapeHtml(c.en || "")}" data-cat-en="${i}" placeholder="English" style="flex:1" />
+              <input type="text" value="${escapeHtml(c.hi || "")}" data-cat-hi="${i}" placeholder="Hindi" style="flex:1" />
+              <button class="btn btn-soft" type="button" style="color:var(--danger)" data-cat-delete="${i}" title="${hi ? "हटाएं" : "Delete"}">✕</button>
+            </div>`).join("")
+        : `<div class="message-card"><div class="message-text">${hi ? "कोई श्रेणी नहीं। कम से कम एक जोड़ें।" : "No categories. Add at least one."}</div></div>`;
+      container.querySelectorAll("[data-cat-emoji]").forEach((el) => el.addEventListener("change", (e) => { categoryEditDraft[Number(e.target.dataset.catEmoji)].emoji = e.target.value.trim(); }));
+      container.querySelectorAll("[data-cat-en]").forEach((el) => el.addEventListener("change", (e) => { categoryEditDraft[Number(e.target.dataset.catEn)].en = e.target.value.trim(); }));
+      container.querySelectorAll("[data-cat-hi]").forEach((el) => el.addEventListener("change", (e) => { categoryEditDraft[Number(e.target.dataset.catHi)].hi = e.target.value.trim(); }));
+      container.querySelectorAll("[data-cat-delete]").forEach((btn) => btn.addEventListener("click", (e) => {
+        categoryEditDraft.splice(Number(e.target.dataset.catDelete), 1);
+        renderCategoryEditor();
+      }));
+    }
+
+    function addDraftCategory() {
+      const emoji = document.getElementById("newCategoryEmojiInput");
+      const en = document.getElementById("newCategoryEnInput");
+      const hiInput = document.getElementById("newCategoryHiInput");
+      const value = (en?.value || "").trim();
+      if (!value) return;
+      if (!categoryEditDraft) { categoryEditDraft = deepClone(categoryMetaToArray(categoryMeta)); categoryEditDraftSource = state.missionCategoriesList; }
+      categoryEditDraft.push({ en: value, hi: (hiInput?.value || "").trim(), emoji: (emoji?.value || "").trim() || "⭐", dot: "#64748B" });
+      en.value = ""; hiInput.value = ""; emoji.value = "";
+      renderCategoryEditor();
+    }
+
+    async function saveCategoryEdits() {
+      const statusEl = document.getElementById("categoryEditStatus");
+      const hi = state.lang === "hi";
+      if (!categoryEditDraft) return;
+      try {
+        const data = await apiRequest("/api/admin/mission-categories", { method: "POST", body: JSON.stringify({ categories: categoryEditDraft }) });
+        if (statusEl) { statusEl.style.color = "var(--green)"; statusEl.textContent = hi ? `सहेजा गया: ${data.count} श्रेणियाँ।` : `Saved: ${data.count} categories.`; }
+        showToast(hi ? "श्रेणियाँ सहेजी गईं।" : "Categories saved.", "✅");
+        await refreshPortalData();
+        categoryEditDraft = null;
+        renderAll();
+      } catch (error) {
+        if (statusEl) { statusEl.style.color = "var(--danger)"; statusEl.textContent = error?.message || (hi ? "सहेजना विफल।" : "Save failed."); }
+      }
+    }
+
+    function discardCategoryEdits() {
+      categoryEditDraft = deepClone(categoryMetaToArray(categoryMeta));
+      categoryEditDraftSource = state.missionCategoriesList;
+      document.getElementById("categoryEditStatus").textContent = "";
+      renderCategoryEditor();
+    }
+
+    function renderDepartmentEditor() {
+      if (deptEditDraft === null) {
+        deptEditDraft = deepClone(nodalDepartments);
+        deptEditDraftSource = nodalDepartments;
+      }
+      const list = deptEditDraft;
+      const container = document.getElementById("departmentEditorList");
+      if (!container) return;
+      const hi = state.lang === "hi";
+      container.innerHTML = list.length
+        ? list.map((d, i) => `
+            <div class="message-card" style="display:flex;align-items:center;gap:8px">
+              <input type="text" value="${escapeHtml(d.en || "")}" data-dept-en="${i}" placeholder="English" style="flex:1" />
+              <input type="text" value="${escapeHtml(d.hi || "")}" data-dept-hi="${i}" placeholder="Hindi" style="flex:1" />
+              <button class="btn btn-soft" type="button" style="color:var(--danger)" data-dept-delete="${i}" title="${hi ? "हटाएं" : "Delete"}">✕</button>
+            </div>`).join("")
+        : `<div class="message-card"><div class="message-text">${hi ? "कोई विभाग नहीं। कम से कम एक जोड़ें।" : "No departments. Add at least one."}</div></div>`;
+      container.querySelectorAll("[data-dept-en]").forEach((el) => el.addEventListener("change", (e) => { deptEditDraft[Number(e.target.dataset.deptEn)].en = e.target.value.trim(); }));
+      container.querySelectorAll("[data-dept-hi]").forEach((el) => el.addEventListener("change", (e) => { deptEditDraft[Number(e.target.dataset.deptHi)].hi = e.target.value.trim(); }));
+      container.querySelectorAll("[data-dept-delete]").forEach((btn) => btn.addEventListener("click", (e) => {
+        deptEditDraft.splice(Number(e.target.dataset.deptDelete), 1);
+        renderDepartmentEditor();
+      }));
+    }
+
+    function addDraftDept() {
+      const en = document.getElementById("newDeptEnInput");
+      const hiInput = document.getElementById("newDeptHiInput");
+      const value = (en?.value || "").trim();
+      if (!value) return;
+      if (!deptEditDraft) { deptEditDraft = deepClone(nodalDepartments); deptEditDraftSource = nodalDepartments; }
+      deptEditDraft.push({ en: value, hi: (hiInput?.value || "").trim() });
+      en.value = ""; hiInput.value = "";
+      renderDepartmentEditor();
+    }
+
+    async function saveDeptEdits() {
+      const statusEl = document.getElementById("deptEditStatus");
+      const hi = state.lang === "hi";
+      if (!deptEditDraft) return;
+      try {
+        const data = await apiRequest("/api/admin/nodal-departments", { method: "POST", body: JSON.stringify({ departments: deptEditDraft }) });
+        if (statusEl) { statusEl.style.color = "var(--green)"; statusEl.textContent = hi ? `सहेजा गया: ${data.count} विभाग।` : `Saved: ${data.count} departments.`; }
+        showToast(hi ? "विभाग सहेजे गए।" : "Departments saved.", "✅");
+        await refreshPortalData();
+        deptEditDraft = null;
+        renderAll();
+      } catch (error) {
+        if (statusEl) { statusEl.style.color = "var(--danger)"; statusEl.textContent = error?.message || (hi ? "सहेजना विफल।" : "Save failed."); }
+      }
+    }
+
+    function discardDeptEdits() {
+      deptEditDraft = deepClone(nodalDepartments);
+      deptEditDraftSource = nodalDepartments;
+      document.getElementById("deptEditStatus").textContent = "";
+      renderDepartmentEditor();
+    }
+
+    function renderTemplateEditor() {
+      if (templateEditDraft === null) {
+        templateEditDraft = deepClone(activityTemplates);
+        templateEditDraftSource = activityTemplates;
+      }
+      const list = templateEditDraft;
+      const container = document.getElementById("templateEditorList");
+      if (!container) return;
+      const hi = state.lang === "hi";
+      const categoryOptions = (selected) => Object.keys(categoryMeta)
+        .map((key) => `<option value="${key}" ${key === selected ? "selected" : ""}>${categoryEmoji(key)} ${categoryLabel(key)}</option>`).join("");
+      container.innerHTML = list.length
+        ? list.map((t, i) => `
+            <div class="message-card">
+              <div class="form-row">
+                <input type="text" value="${escapeHtml(t.labelEn || "")}" data-tpl-labelen="${i}" placeholder="${hi ? "लेबल (अंग्रेज़ी)" : "Label (English)"}" style="flex:1;font-weight:600" />
+                <input type="text" value="${escapeHtml(t.labelHi || "")}" data-tpl-labelhi="${i}" placeholder="${hi ? "लेबल (हिन्दी)" : "Label (Hindi)"}" style="flex:1" />
+                <button class="btn btn-soft" type="button" style="color:var(--danger)" data-tpl-delete="${i}" title="${hi ? "हटाएं" : "Delete"}">✕</button>
+              </div>
+              <div class="form-row" style="margin-top:6px">
+                <select data-tpl-category="${i}" style="flex:1">${categoryOptions(t.category)}</select>
+                <input type="text" value="${escapeHtml(t.duration || "")}" data-tpl-duration="${i}" placeholder="${hi ? "अवधि, जैसे 3 hours" : "Duration, e.g. 3 hours"}" style="flex:1" />
+                <input type="number" min="1" max="10000" value="${Number(t.slots) || 50}" data-tpl-slots="${i}" placeholder="${hi ? "स्लॉट" : "Slots"}" style="width:90px" />
+              </div>
+              <div class="form-row" style="margin-top:6px">
+                <input type="text" value="${escapeHtml(t.impactEn || "")}" data-tpl-impact="${i}" placeholder="${hi ? "अपेक्षित प्रभाव (वैकल्पिक)" : "Expected impact (optional)"}" style="flex:1" />
+              </div>
+              <div class="form-row" style="margin-top:6px">
+                <textarea data-tpl-descen="${i}" placeholder="${hi ? "विवरण (अंग्रेज़ी)" : "Description (English)"}" style="flex:1;min-height:44px">${escapeHtml(t.descriptionEn || "")}</textarea>
+                <textarea data-tpl-deschi="${i}" placeholder="${hi ? "विवरण (हिन्दी, वैकल्पिक)" : "Description (Hindi, optional)"}" style="flex:1;min-height:44px">${escapeHtml(t.descriptionHi || "")}</textarea>
+              </div>
+            </div>`).join("")
+        : `<div class="message-card"><div class="message-text">${hi ? "कोई टेम्पलेट नहीं। कम से कम एक जोड़ें।" : "No templates. Add at least one."}</div></div>`;
+      const wire = (selector, field, transform = (v) => v.trim()) => {
+        container.querySelectorAll(selector).forEach((el) => el.addEventListener("change", (e) => {
+          const idx = Number(e.target.dataset[Object.keys(e.target.dataset)[0]]);
+          templateEditDraft[idx][field] = transform(e.target.value);
+        }));
+      };
+      wire("[data-tpl-labelen]", "labelEn");
+      wire("[data-tpl-labelhi]", "labelHi");
+      wire("[data-tpl-category]", "category");
+      wire("[data-tpl-duration]", "duration");
+      wire("[data-tpl-slots]", "slots", (v) => Math.max(1, Number(v) || 50));
+      wire("[data-tpl-impact]", "impactEn");
+      wire("[data-tpl-descen]", "descriptionEn");
+      wire("[data-tpl-deschi]", "descriptionHi");
+      container.querySelectorAll("[data-tpl-delete]").forEach((btn) => btn.addEventListener("click", (e) => {
+        templateEditDraft.splice(Number(e.target.dataset.tplDelete), 1);
+        renderTemplateEditor();
+      }));
+    }
+
+    function addDraftTemplate() {
+      if (!templateEditDraft) { templateEditDraft = deepClone(activityTemplates); templateEditDraftSource = activityTemplates; }
+      const firstCategory = Object.keys(categoryMeta)[0] || "other";
+      templateEditDraft.push({ labelEn: "New Activity", labelHi: "", category: firstCategory, duration: "2 hours", slots: 50, impactEn: "", impactHi: "", descriptionEn: "", descriptionHi: "" });
+      renderTemplateEditor();
+    }
+
+    async function saveTemplateEdits() {
+      const statusEl = document.getElementById("templateEditStatus");
+      const hi = state.lang === "hi";
+      if (!templateEditDraft) return;
+      try {
+        const data = await apiRequest("/api/admin/activity-templates", { method: "POST", body: JSON.stringify({ templates: templateEditDraft }) });
+        if (statusEl) { statusEl.style.color = "var(--green)"; statusEl.textContent = hi ? `सहेजा गया: ${data.count} टेम्पलेट।` : `Saved: ${data.count} templates.`; }
+        showToast(hi ? "टेम्पलेट सहेजे गए।" : "Templates saved.", "✅");
+        await refreshPortalData();
+        templateEditDraft = null;
+        renderAll();
+      } catch (error) {
+        if (statusEl) { statusEl.style.color = "var(--danger)"; statusEl.textContent = error?.message || (hi ? "सहेजना विफल।" : "Save failed."); }
+      }
+    }
+
+    function discardTemplateEdits() {
+      templateEditDraft = deepClone(activityTemplates);
+      templateEditDraftSource = activityTemplates;
+      document.getElementById("templateEditStatus").textContent = "";
+      renderTemplateEditor();
+    }
+
     function downloadLocationTemplate() {
       const csv = [
         "Type,Block,Name",
@@ -7298,6 +7652,76 @@
       renderQrCodes();
     }
 
+    function confirmDeleteMission(missionId) {
+      const mission = state.missions.find((item) => item.id === missionId);
+      const hi = state.lang === "hi";
+      openConfirmModal({
+        icon: "🗑️",
+        title: hi ? "यह मिशन हटाएं?" : "Delete this mission?",
+        message: hi
+          ? `"${mission?.title || ""}" स्थायी रूप से हटा दिया जाएगा, साथ ही इससे जुड़ा पंजीकरण डेटा भी। यह पूर्ववत नहीं किया जा सकता — अस्थायी रूप से रोकने के लिए इसके बजाय "बंद करें" या "संग्रहीत करें" का उपयोग करें।`
+          : `"${mission?.title || ""}" and its registration data will be permanently deleted. This can't be undone — use Close or Archive instead if you just want to stop new sign-ups.`,
+        confirmLabel: hi ? "हाँ, हटाएं" : "Yes, Delete",
+        onConfirm: () => deleteMission(missionId)
+      });
+    }
+
+    function renderAdminMissionsList() {
+      const container = document.getElementById("adminMissionsList");
+      const countEl = document.getElementById("adminMissionsCount");
+      if (!container) return;
+      const q = (state.adminMissionSearch || "").trim().toLowerCase();
+      const statusFilter = state.adminMissionStatusFilter || "all";
+      const categoryFilter = state.adminMissionCategoryFilter || "all";
+      const scope = adminScope();
+      const filtered = state.missions.filter((mission) => {
+        if (scope && missionArea(mission) !== scope) return false;
+        if (statusFilter !== "all" && mission.status !== statusFilter) return false;
+        if (categoryFilter !== "all" && mission.category !== categoryFilter) return false;
+        if (q) {
+          const haystack = `${mission.title} ${missionArea(mission)} ${mission.coordinator || ""} ${mission.location || ""}`.toLowerCase();
+          if (!haystack.includes(q)) return false;
+        }
+        return true;
+      });
+      if (countEl) {
+        countEl.textContent = state.lang === "hi"
+          ? `${filtered.length} में से ${state.missions.length} मिशन दिखाए जा रहे हैं`
+          : `Showing ${filtered.length} of ${state.missions.length} missions`;
+      }
+      if (!filtered.length) {
+        container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "कोई मिशन नहीं मिला।" : "No missions match your search or filters."}</div></div>`;
+        return;
+      }
+      container.innerHTML = filtered
+        .map((mission) => `
+          <div class="message-card">
+            <div class="message-name">${categoryEmoji(mission.category)} ${escapeHtml(mission.title)} ${mission.completionRequested ? `<span style="font-size:11px;font-weight:600;color:#B45309;background:#FEF3C7;padding:2px 8px;border-radius:20px;margin-left:6px">⏳ Completion requested</span>` : ""}</div>
+            <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.date)} · ${escapeHtml(categoryLabel(mission.category))}${mission.nodalDepartment ? ` · ${escapeHtml(mission.nodalDepartment)}` : ""}</div>
+            <div class="message-time">${escapeHtml(statusLabel(mission.status))} · ${mission.volunteers || 0}/${mission.total || 0} ${state.lang === "hi" ? "पंजीकृत" : "registered"}</div>
+            <div class="message-actions">
+              <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
+              ${mission.status !== "completed" ? `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>` : `<button class="btn btn-soft" type="button" onclick="confirmUnmarkCompleted(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्न हटाएं" : "Unmark Completed"}</button>`}
+              ${mission.status !== "closed" ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'closed')">${state.lang === "hi" ? "अस्थायी बंद" : "Close"}</button>` : `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>`}
+              <button class="btn btn-soft" type="button" onclick="archiveMission(${mission.id})">${state.lang === "hi" ? "संग्रहीत करें" : "Archive"}</button>
+              <button class="btn btn-danger" type="button" onclick="confirmDeleteMission(${mission.id})">${state.lang === "hi" ? "हटाएं" : "Delete"}</button>
+            </div>
+          </div>
+        `)
+        .join("");
+    }
+
+    function renderAdminMissionCategoryFilterOptions() {
+      const select = document.getElementById("adminMissionCategoryFilter");
+      if (!select) return;
+      const current = select.value || "all";
+      const options = Object.keys(categoryMeta)
+        .map((key) => `<option value="${key}">${categoryEmoji(key)} ${categoryLabel(key)}</option>`)
+        .join("");
+      select.innerHTML = `<option value="all">All categories</option>${options}`;
+      if ([...select.options].some((opt) => opt.value === current)) select.value = current;
+    }
+
     function renderMissionRequestList() {
       const container = document.getElementById("missionRequestList");
       const scope = adminScope();
@@ -7934,6 +8358,8 @@
       if (state.adminLoggedIn) renderCompletionRequestsPanel();
       if (state.adminLoggedIn) renderPosterMissionOptions();
       renderMissionStatusList();
+      renderAdminMissionCategoryFilterOptions();
+      renderAdminMissionsList();
       renderVolunteerTable();
       renderAnnouncementList();
       renderNewsletterPreview();
@@ -9102,6 +9528,7 @@
       });
       const map = {
         overview: "adminPaneOverview",
+        missions: "adminPaneMissions",
         post: "adminPanePost",
         poster: "adminPanePoster",
         volunteers: "adminPaneVolunteers",
@@ -9111,6 +9538,7 @@
         announcements: "adminPaneAnnouncements",
         branding: "adminPaneBranding",
         locations: "adminPaneLocations",
+        missionsetup: "adminPaneMissionSetup",
         data: "adminPaneData",
         newsletter: "adminPaneNewsletter",
         users: "adminPaneUsers"
@@ -9124,6 +9552,12 @@
       if (tab === "users") loadAdminUsersList();
       if (tab === "poster") renderPosterMissionOptions();
       if (tab === "post") applyCoordinatorPostLock();
+      if (tab === "missions") renderAdminMissionsList();
+      if (tab === "missionsetup") { renderCategoryEditor(); renderDepartmentEditor(); renderTemplateEditor(); }
+      if (tab === "announcements") {
+        const speedInput = document.getElementById("tickerSpeedInput");
+        if (speedInput) speedInput.value = state.tickerSpeedSeconds || 18;
+      }
       if (tab === "volunteers" && adminScope()) {
         const wardFilter = document.getElementById("volunteerSearchWard");
         if (wardFilter && !wardFilter.value) {
@@ -9165,11 +9599,11 @@
       const template = activityTemplates.find((item) => item.key === templateKey);
       if (!template) return;
       document.getElementById("pmCategory").value = template.category;
-      document.getElementById("pmTitle").value = state.lang === "hi" ? template.titleHi : template.titleEn;
+      document.getElementById("pmTitle").value = state.lang === "hi" ? (template.titleHi || template.titleEn) : template.titleEn;
       parseMissionDurationToFields(template.duration || "", "pm");
       document.getElementById("pmSlots").value = template.slots;
-      document.getElementById("pmImpact").value = state.lang === "hi" ? template.impactHi : template.impactEn;
-      document.getElementById("pmDescription").value = state.lang === "hi" ? template.descriptionHi : template.descriptionEn;
+      document.getElementById("pmImpact").value = state.lang === "hi" ? (template.impactHi || template.impactEn) : template.impactEn;
+      document.getElementById("pmDescription").value = state.lang === "hi" ? (template.descriptionHi || template.descriptionEn) : template.descriptionEn;
       ["pmTitle","pmDescription","pmImpact"].forEach((id) => document.getElementById(id)?.dispatchEvent(new Event("input")));
     }
 
@@ -9398,6 +9832,28 @@
       document.getElementById("addMunicipalBtn")?.addEventListener("click", addDraftMunicipal);
       document.getElementById("saveLocationEditsBtn")?.addEventListener("click", saveLocationEdits);
       document.getElementById("discardLocationEditsBtn")?.addEventListener("click", discardLocationEdits);
+      document.getElementById("saveTickerSpeedBtn")?.addEventListener("click", saveTickerSpeed);
+      document.getElementById("adminMissionSearchInput")?.addEventListener("input", (event) => {
+        state.adminMissionSearch = event.target.value;
+        renderAdminMissionsList();
+      });
+      document.getElementById("adminMissionStatusFilter")?.addEventListener("change", (event) => {
+        state.adminMissionStatusFilter = event.target.value;
+        renderAdminMissionsList();
+      });
+      document.getElementById("adminMissionCategoryFilter")?.addEventListener("change", (event) => {
+        state.adminMissionCategoryFilter = event.target.value;
+        renderAdminMissionsList();
+      });
+      document.getElementById("addCategoryBtn")?.addEventListener("click", addDraftCategory);
+      document.getElementById("saveCategoryEditsBtn")?.addEventListener("click", saveCategoryEdits);
+      document.getElementById("discardCategoryEditsBtn")?.addEventListener("click", discardCategoryEdits);
+      document.getElementById("addDeptBtn")?.addEventListener("click", addDraftDept);
+      document.getElementById("saveDeptEditsBtn")?.addEventListener("click", saveDeptEdits);
+      document.getElementById("discardDeptEditsBtn")?.addEventListener("click", discardDeptEdits);
+      document.getElementById("addTemplateBtn")?.addEventListener("click", addDraftTemplate);
+      document.getElementById("saveTemplateEditsBtn")?.addEventListener("click", saveTemplateEdits);
+      document.getElementById("discardTemplateEditsBtn")?.addEventListener("click", discardTemplateEdits);
       document.getElementById("locationImportFile").addEventListener("change", async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -9707,6 +10163,37 @@
           URL.revokeObjectURL(url);
           showToast("Subscribers CSV downloaded.", "📄");
         });
+    }
+
+    function exportAuditLog() {
+      const token = getAdminToken();
+      if (!token) return showToast("Admin login required.", "⚠️");
+      fetch("/api/admin/export/audit-log.csv", { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.blob())
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url; link.download = "prayas_audit_log.csv"; link.click();
+          URL.revokeObjectURL(url);
+          showToast("Audit log downloaded (opens in Excel).", "📄");
+        });
+    }
+
+    async function saveTickerSpeed() {
+      const status = document.getElementById("tickerSpeedStatus");
+      const seconds = Number(document.getElementById("tickerSpeedInput").value || 18);
+      try {
+        const data = await apiRequest("/api/admin/ticker-speed", {
+          method: "POST",
+          body: JSON.stringify({ seconds })
+        });
+        state.tickerSpeedSeconds = data.seconds;
+        renderTicker();
+        if (status) { status.style.color = "var(--green)"; status.textContent = state.lang === "hi" ? "सहेजा गया।" : "Saved."; }
+        showToast(state.lang === "hi" ? "टिकर गति सहेजी गई।" : "Ticker speed saved.", "⚡");
+      } catch (error) {
+        if (status) { status.style.color = "var(--danger)"; status.textContent = error?.message || "Failed to save."; }
+      }
     }
 
     // ── Bulk approve/reject community missions ────────────────────────────────

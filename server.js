@@ -1281,6 +1281,30 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, saveDepartmentCatalog(body));
     }
 
+    if (req.method === "POST" && url.pathname === "/api/admin/mission-categories") {
+      const admin = requireSuperAdmin(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, updateMissionCategories(body, admin));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/admin/nodal-departments") {
+      const admin = requireSuperAdmin(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, updateNodalDepartments(body, admin));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/admin/activity-templates") {
+      const admin = requireSuperAdmin(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, updateActivityTemplates(body, admin));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/admin/ticker-speed") {
+      const admin = requireSuperAdmin(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, updateTickerSpeed(body, admin));
+    }
+
     if (req.method === "POST" && url.pathname === "/api/admin/newsletter") {
       requireSuperAdmin(req);
       const body = await readJsonBody(req);
@@ -1364,6 +1388,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/admin/export/location-report.csv") {
       requireAdmin(req);
       return sendCsv(res, buildLocationReportCsv());
+    }
+    if (req.method === "GET" && url.pathname === "/api/admin/export/audit-log.csv") {
+      requireAdmin(req);
+      return sendCsv(res, buildAuditLogCsv());
     }
 
     // ── Admin audit log ───────────────────────────────────────────────────────
@@ -2110,6 +2138,10 @@ function buildBootstrapPayload() {
     locations,
     locationStructure: safeJsonObject(getSetting("location_structure_json", ""), { blocks: [], municipalBodies: [] }),
     departments,
+    missionCategories: safeJsonArrayOr(getSetting("mission_categories_json", ""), DEFAULT_MISSION_CATEGORIES),
+    nodalDepartmentsList: safeJsonArrayOr(getSetting("nodal_departments_json", ""), DEFAULT_NODAL_DEPARTMENTS),
+    activityTemplatesList: safeJsonArrayOr(getSetting("activity_templates_json", ""), DEFAULT_ACTIVITY_TEMPLATES),
+    tickerSpeedSeconds: Math.max(8, Math.min(120, Number(getSetting("ticker_speed_seconds", "18")) || 18)),
     announcements: announcementRows.map((row) => row.text),
     announcementRecords: announcementRows.map((row) => ({ id: row.id, text: row.text })),
     missions,
@@ -2146,6 +2178,197 @@ function safeJsonObject(value, fallback) {
   } catch (error) {
     return fallback;
   }
+}
+
+function safeJsonArrayOr(value, fallback) {
+  const parsed = safeJsonArray(value);
+  return parsed.length ? parsed : fallback;
+}
+
+const DEFAULT_MISSION_CATEGORIES = [
+  { key: "sanitation", en: "Sanitation", hi: "स्वच्छता", emoji: "🧹", dot: "#F97316" },
+  { key: "environment", en: "Environment", hi: "पर्यावरण", emoji: "🌳", dot: "#16A34A" },
+  { key: "awareness", en: "Awareness", hi: "जागरूकता", emoji: "🚦", dot: "#0284C7" },
+  { key: "arts", en: "Arts & Culture", hi: "कला व संस्कृति", emoji: "🎨", dot: "#9333EA" },
+  { key: "education", en: "Education", hi: "शिक्षा", emoji: "📚", dot: "#2563EB" },
+  { key: "health", en: "Health", hi: "स्वास्थ्य", emoji: "🏥", dot: "#DC2626" },
+  { key: "sports", en: "Sports", hi: "खेल", emoji: "🏅", dot: "#0F766E" },
+  { key: "welfare", en: "Social Welfare", hi: "सामाजिक कल्याण", emoji: "🤝", dot: "#7C3AED" },
+  { key: "heritage", en: "Heritage", hi: "विरासत", emoji: "🏛️", dot: "#92400E" },
+  { key: "digital", en: "Digital Inclusion", hi: "डिजिटल समावेशन", emoji: "💻", dot: "#1D4ED8" },
+  { key: "youth", en: "Youth Engagement", hi: "युवा सहभागिता", emoji: "⚡", dot: "#DB2777" },
+  { key: "governance", en: "Public Governance", hi: "जन शासन", emoji: "📋", dot: "#475569" },
+  { key: "other", en: "Other / Custom", hi: "अन्य / कस्टम", emoji: "✨", dot: "#64748B" }
+];
+
+const DEFAULT_NODAL_DEPARTMENTS = [
+  { en: "Municipal Administration", hi: "नगर प्रशासन" },
+  { en: "Rural Development", hi: "ग्रामीण विकास" },
+  { en: "Education Department", hi: "शिक्षा विभाग" },
+  { en: "Health Department", hi: "स्वास्थ्य विभाग" },
+  { en: "Women and Child Development", hi: "महिला एवं बाल विकास" },
+  { en: "Forest Department", hi: "वन विभाग" },
+  { en: "Police / Traffic", hi: "पुलिस / यातायात" },
+  { en: "Youth Affairs and Sports", hi: "युवा एवं खेल" },
+  { en: "Other", hi: "अन्य" }
+];
+
+const DEFAULT_ACTIVITY_TEMPLATES = [
+  { key: "sanitation-drive", labelEn: "Sanitation Drive", labelHi: "स्वच्छता अभियान", category: "sanitation", titleEn: "Sanitation Drive", titleHi: "स्वच्छता अभियान", duration: "3 hours", slots: 60, impactEn: "Cleaner public spaces and higher citizen participation", impactHi: "स्वच्छ सार्वजनिक स्थान और अधिक नागरिक भागीदारी", descriptionEn: "Mobilise citizens for cleanliness, waste segregation, sweeping, and public-space restoration with local support teams.", descriptionHi: "नागरिकों को स्वच्छता, कचरा पृथक्करण, सफाई और सार्वजनिक स्थान सुधार के लिए स्थानीय टीमों के साथ जोड़ें।" },
+  { key: "blood-donation", labelEn: "Blood Donation Drive", labelHi: "रक्तदान शिविर", category: "awareness", titleEn: "Blood Donation Drive", titleHi: "रक्तदान शिविर", duration: "4 hours", slots: 80, impactEn: "Improved emergency blood availability", impactHi: "आपातकालीन रक्त उपलब्धता में सुधार", descriptionEn: "Coordinate hospitals, blood banks, donor registration, awareness messaging, and volunteer support for a structured blood donation camp.", descriptionHi: "रक्तदान शिविर के लिए अस्पताल, ब्लड बैंक, दाता पंजीकरण, जागरूकता संदेश और स्वयंसेवी सहायता का समन्वय करें।" },
+  { key: "wall-painting", labelEn: "Wall Painting / Public Art", labelHi: "वॉल पेंटिंग / सार्वजनिक कला", category: "arts", titleEn: "Wall Painting Drive", titleHi: "वॉल पेंटिंग अभियान", duration: "1 full day", slots: 50, impactEn: "Beautified public areas and civic messaging", impactHi: "सार्वजनिक क्षेत्रों का सौंदर्यीकरण और नागरिक संदेश", descriptionEn: "Organise artists, students, paint logistics, design approvals, and theme-based public murals for civic engagement.", descriptionHi: "नागरिक सहभागिता के लिए कलाकारों, छात्रों, पेंट सामग्री, डिज़ाइन अनुमोदन और थीम-आधारित भित्ति चित्रों का आयोजन करें।" },
+  { key: "awareness-drive", labelEn: "Awareness Drive / Rally", labelHi: "जागरूकता अभियान / रैली", category: "awareness", titleEn: "Awareness Drive", titleHi: "जागरूकता अभियान", duration: "2.5 hours", slots: 100, impactEn: "Higher citizen awareness and visibility", impactHi: "अधिक नागरिक जागरूकता और दृश्यता", descriptionEn: "Plan route, marshals, messaging material, public announcements, and institution participation for a focused awareness drive.", descriptionHi: "एक केंद्रित जागरूकता अभियान के लिए मार्ग, मार्शल, संदेश सामग्री, सार्वजनिक घोषणाएँ और संस्थागत भागीदारी की योजना बनाएं।" },
+  { key: "tree-plantation", labelEn: "Tree Plantation Drive", labelHi: "वृक्षारोपण अभियान", category: "environment", titleEn: "Tree Plantation Drive", titleHi: "वृक्षारोपण अभियान", duration: "Half day", slots: 120, impactEn: "Improved green cover and long-term stewardship", impactHi: "हरित आवरण में सुधार और दीर्घकालिक संरक्षण", descriptionEn: "Coordinate saplings, pit preparation, watering teams, school participation, and survival tracking for plantation sites.", descriptionHi: "वृक्षारोपण स्थलों के लिए पौधे, गड्ढा तैयारी, सिंचाई टीम, स्कूल भागीदारी और संरक्षण ट्रैकिंग का समन्वय करें।" },
+  { key: "teaching-camp", labelEn: "Teaching / Learning Camp", labelHi: "शिक्षण / अध्ययन शिविर", category: "education", titleEn: "Teaching Support Camp", titleHi: "शिक्षण सहायता शिविर", duration: "2 hours", slots: 30, impactEn: "Improved learner attendance and support", impactHi: "सीखने वालों की उपस्थिति और सहायता में सुधार", descriptionEn: "Bring volunteers together for teaching support, reading sessions, remedial help, and activity-based learning.", descriptionHi: "स्वयंसेवकों को शिक्षण सहायता, पठन सत्र, सुधारात्मक मदद और गतिविधि-आधारित सीखने के लिए साथ लाएं।" },
+  { key: "health-camp", labelEn: "Health Camp", labelHi: "स्वास्थ्य शिविर", category: "awareness", titleEn: "Community Health Camp", titleHi: "सामुदायिक स्वास्थ्य शिविर", duration: "5 hours", slots: 45, impactEn: "Improved public health outreach and screening", impactHi: "सार्वजनिक स्वास्थ्य पहुंच और स्क्रीनिंग में सुधार", descriptionEn: "Support registrations, patient queues, awareness desks, follow-up coordination, and local medical partners for a health camp.", descriptionHi: "स्वास्थ्य शिविर के लिए पंजीकरण, कतार प्रबंधन, जागरूकता डेस्क, फॉलो-अप समन्वय और चिकित्सा साझेदारों को समर्थन दें।" },
+  { key: "sports-event", labelEn: "Sports for Youth", labelHi: "युवा खेल कार्यक्रम", category: "awareness", titleEn: "Community Sports Event", titleHi: "सामुदायिक खेल कार्यक्रम", duration: "4 hours", slots: 60, impactEn: "Youth engagement and fitness", impactHi: "युवा जुड़ाव और फिटनेस", descriptionEn: "Organise neighbourhood sports events to engage youth and promote teamwork.", descriptionHi: "युवाओं को जोड़ने और टीम भावना बढ़ाने के लिए खेल कार्यक्रम आयोजित करें।" },
+  { key: "nutrition-drive", labelEn: "Nutrition Awareness", labelHi: "पोषण जागरूकता", category: "awareness", titleEn: "Nutrition Awareness Drive", titleHi: "पोषण जागरूकता अभियान", duration: "3 hours", slots: 45, impactEn: "Improved maternal and child health awareness", impactHi: "मातृ एवं बाल स्वास्थ्य जागरूकता में सुधार", descriptionEn: "Run outreach on nutrition, anemia prevention, and healthy household practices.", descriptionHi: "पोषण, एनीमिया रोकथाम और स्वस्थ घरेलू आदतों पर अभियान चलाएँ।" },
+  { key: "career-guidance", labelEn: "Career Guidance Camp", labelHi: "कैरियर मार्गदर्शन शिविर", category: "education", titleEn: "Career Guidance Camp", titleHi: "कैरियर मार्गदर्शन शिविर", duration: "2 hours", slots: 40, impactEn: "Better career awareness for students", impactHi: "छात्रों में बेहतर कैरियर जागरूकता", descriptionEn: "Invite mentors and professionals to guide students on opportunities and exams.", descriptionHi: "मेंटर्स और पेशेवरों को बुलाकर छात्रों को अवसरों और परीक्षाओं पर मार्गदर्शन दें।" },
+  { key: "library-drive", labelEn: "Library Setup Drive", labelHi: "पुस्तकालय स्थापना अभियान", category: "education", titleEn: "Library Setup Drive", titleHi: "पुस्तकालय स्थापना अभियान", duration: "1 day", slots: 35, impactEn: "Improved access to books and reading spaces", impactHi: "पुस्तकों और पठन स्थानों तक बेहतर पहुंच", descriptionEn: "Set up or refresh a school or community library with volunteers and book donors.", descriptionHi: "स्वयंसेवकों और पुस्तक दाताओं के साथ स्कूल या समुदाय पुस्तकालय तैयार करें।" },
+  { key: "plastic-free", labelEn: "Plastic-Free Campaign", labelHi: "प्लास्टिक मुक्त अभियान", category: "environment", titleEn: "Plastic-Free Campaign", titleHi: "प्लास्टिक मुक्त अभियान", duration: "3 hours", slots: 55, impactEn: "Cleaner public spaces and reduced plastic use", impactHi: "स्वच्छ सार्वजनिक स्थान और कम प्लास्टिक उपयोग", descriptionEn: "Conduct awareness and collection drives to reduce single-use plastic.", descriptionHi: "सिंगल-यूज प्लास्टिक कम करने के लिए जागरूकता और संग्रह अभियान चलाएँ।" },
+  { key: "waterbody-cleanup", labelEn: "Water Body Cleanup", labelHi: "जलाशय सफाई अभियान", category: "environment", titleEn: "Water Body Cleanup", titleHi: "जलाशय सफाई अभियान", duration: "Half day", slots: 70, impactEn: "Cleaner ponds, lakes, and river edges", impactHi: "तालाब, झील और नदी किनारे अधिक स्वच्छ", descriptionEn: "Mobilise citizens to clean local water bodies and surrounding zones.", descriptionHi: "स्थानीय जलाशयों और आसपास के क्षेत्रों की सफाई के लिए नागरिकों को जोड़ें।" },
+  { key: "public-hearing-support", labelEn: "Public Hearing Support", labelHi: "जन-सुनवाई सहायता", category: "awareness", titleEn: "Public Hearing Support Desk", titleHi: "जन-सुनवाई सहायता डेस्क", duration: "5 hours", slots: 20, impactEn: "Better grievance support and citizen guidance", impactHi: "शिकायत सहायता और नागरिक मार्गदर्शन में सुधार", descriptionEn: "Support queues, guidance desks, and documentation help during grievance camps.", descriptionHi: "शिकायत शिविरों के दौरान कतार, मार्गदर्शन और दस्तावेज़ सहायता दें।" },
+  { key: "digital-literacy", labelEn: "Digital Literacy Camp", labelHi: "डिजिटल साक्षरता शिविर", category: "education", titleEn: "Digital Literacy Camp", titleHi: "डिजिटल साक्षरता शिविर", duration: "3 hours", slots: 30, impactEn: "Better citizen access to digital services", impactHi: "डिजिटल सेवाओं तक नागरिक पहुंच में सुधार", descriptionEn: "Teach basic smartphone, internet, and digital service usage to citizens.", descriptionHi: "नागरिकों को स्मार्टफोन, इंटरनेट और डिजिटल सेवाओं का मूल उपयोग सिखाएँ।" },
+  { key: "women-safety", labelEn: "Women Safety Outreach", labelHi: "महिला सुरक्षा अभियान", category: "awareness", titleEn: "Women Safety Outreach", titleHi: "महिला सुरक्षा अभियान", duration: "2.5 hours", slots: 35, impactEn: "Safer public spaces and reporting awareness", impactHi: "अधिक सुरक्षित सार्वजनिक स्थान और रिपोर्टिंग जागरूकता", descriptionEn: "Run outreach on safety helplines, safe travel, and reporting support.", descriptionHi: "सुरक्षा हेल्पलाइन, सुरक्षित आवागमन और रिपोर्टिंग सहायता पर अभियान चलाएँ।" },
+  { key: "heritage-walk", labelEn: "Heritage Walk", labelHi: "विरासत भ्रमण", category: "arts", titleEn: "Heritage Walk", titleHi: "विरासत भ्रमण", duration: "2 hours", slots: 50, impactEn: "Better heritage awareness and local pride", impactHi: "विरासत जागरूकता और स्थानीय गौरव में सुधार", descriptionEn: "Organise guided community walks around important heritage or cultural sites.", descriptionHi: "महत्वपूर्ण विरासत या सांस्कृतिक स्थलों पर समुदाय भ्रमण आयोजित करें।" },
+  { key: "street-theatre", labelEn: "Street Theatre Campaign", labelHi: "नुक्कड़ नाटक अभियान", category: "arts", titleEn: "Street Theatre Campaign", titleHi: "नुक्कड़ नाटक अभियान", duration: "3 hours", slots: 25, impactEn: "Better awareness through creative public messaging", impactHi: "रचनात्मक सार्वजनिक संदेश से अधिक जागरूकता", descriptionEn: "Use theatre to raise awareness on health, sanitation, voting, or safety.", descriptionHi: "स्वास्थ्य, स्वच्छता, मतदान या सुरक्षा पर जागरूकता के लिए नाटक का उपयोग करें।" },
+  { key: "school-repair", labelEn: "School Repair Day", labelHi: "स्कूल मरम्मत दिवस", category: "sanitation", titleEn: "School Repair Day", titleHi: "स्कूल मरम्मत दिवस", duration: "1 day", slots: 40, impactEn: "Improved school infrastructure", impactHi: "स्कूल अवसंरचना में सुधार", descriptionEn: "Coordinate small repair and painting activities in public schools.", descriptionHi: "सरकारी स्कूलों में छोटी मरम्मत और पेंटिंग गतिविधियों का समन्वय करें।" },
+  { key: "traffic-awareness", labelEn: "Traffic Awareness Drive", labelHi: "यातायात जागरूकता अभियान", category: "awareness", titleEn: "Traffic Awareness Drive", titleHi: "यातायात जागरूकता अभियान", duration: "2 hours", slots: 50, impactEn: "Safer junction behavior", impactHi: "अधिक सुरक्षित यातायात व्यवहार", descriptionEn: "Run junction awareness activities for helmet, seatbelt, and lane discipline.", descriptionHi: "हेलमेट, सीटबेल्ट और लेन अनुशासन पर जागरूकता अभियान चलाएँ।" },
+  { key: "waste-segregation", labelEn: "Waste Segregation Drive", labelHi: "कचरा पृथक्करण अभियान", category: "sanitation", titleEn: "Waste Segregation Drive", titleHi: "कचरा पृथक्करण अभियान", duration: "3 hours", slots: 45, impactEn: "Better waste sorting and cleaner neighbourhoods", impactHi: "बेहतर कचरा पृथक्करण और स्वच्छ मोहल्ले", descriptionEn: "Train households and market areas on dry-wet waste segregation practices.", descriptionHi: "घरों और बाजार क्षेत्रों को सूखा-गीला कचरा पृथक्करण सिखाएँ।" }
+];
+
+function slugify(text, fallbackPrefix) {
+  const base = String(text || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+  return base || `${fallbackPrefix}-${Date.now()}`;
+}
+
+function sanitizeMissionCategories(input) {
+  const list = Array.isArray(input?.categories) ? input.categories : [];
+  const seenKeys = new Set();
+  const cleaned = [];
+  list.forEach((item) => {
+    const en = String(item?.en || "").trim().slice(0, 60);
+    if (!en) return;
+    let key = String(item?.key || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "") || slugify(en, "category");
+    while (seenKeys.has(key)) key = `${key}-2`;
+    seenKeys.add(key);
+    cleaned.push({
+      key,
+      en,
+      hi: String(item?.hi || "").trim().slice(0, 60) || en,
+      emoji: String(item?.emoji || "").trim().slice(0, 8) || "⭐",
+      dot: /^#[0-9A-Fa-f]{3,8}$/.test(String(item?.dot || "")) ? item.dot : "#64748B"
+    });
+  });
+  if (!cleaned.length) {
+    throw publicError(400, "Keep at least one mission category — add a new one before removing the last.");
+  }
+  return cleaned;
+}
+
+function sanitizeNodalDepartments(input) {
+  const list = Array.isArray(input?.departments) ? input.departments : [];
+  const seenEn = new Set();
+  const cleaned = [];
+  list.forEach((item) => {
+    const en = String(item?.en || "").trim().slice(0, 100);
+    if (!en || seenEn.has(en.toLowerCase())) return;
+    seenEn.add(en.toLowerCase());
+    cleaned.push({ en, hi: String(item?.hi || "").trim().slice(0, 100) || en });
+  });
+  if (!cleaned.length) {
+    throw publicError(400, "Keep at least one nodal department — add a new one before removing the last.");
+  }
+  return cleaned;
+}
+
+function sanitizeActivityTemplates(input) {
+  const list = Array.isArray(input?.templates) ? input.templates : [];
+  const seenKeys = new Set();
+  const cleaned = [];
+  list.forEach((item) => {
+    const labelEn = String(item?.labelEn || "").trim().slice(0, 100);
+    if (!labelEn) return;
+    let key = String(item?.key || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "") || slugify(labelEn, "template");
+    while (seenKeys.has(key)) key = `${key}-2`;
+    seenKeys.add(key);
+    cleaned.push({
+      key,
+      labelEn,
+      labelHi: String(item?.labelHi || "").trim().slice(0, 100) || labelEn,
+      category: String(item?.category || "other").trim().slice(0, 40) || "other",
+      titleEn: String(item?.titleEn || "").trim().slice(0, 100) || labelEn,
+      titleHi: String(item?.titleHi || "").trim().slice(0, 100) || (String(item?.labelHi || "").trim() || labelEn),
+      duration: String(item?.duration || "").trim().slice(0, 40) || "2 hours",
+      slots: Math.max(1, Math.min(10000, Number(item?.slots) || 50)),
+      impactEn: String(item?.impactEn || "").trim().slice(0, 200),
+      impactHi: String(item?.impactHi || "").trim().slice(0, 200),
+      descriptionEn: String(item?.descriptionEn || "").trim().slice(0, 500),
+      descriptionHi: String(item?.descriptionHi || "").trim().slice(0, 500)
+    });
+  });
+  if (!cleaned.length) {
+    throw publicError(400, "Keep at least one activity template — add a new one before removing the last.");
+  }
+  return cleaned;
+}
+
+function persistMissionCategories(list, admin) {
+  setSetting("mission_categories_json", JSON.stringify(list));
+  writeAuditLog("update_mission_categories", "settings", null, `Mission categories updated (${list.length} categories) by ${admin?.username || "admin"}.`);
+  return { ok: true, count: list.length, categories: list };
+}
+
+function persistNodalDepartments(list, admin) {
+  setSetting("nodal_departments_json", JSON.stringify(list));
+  writeAuditLog("update_nodal_departments", "settings", null, `Nodal departments updated (${list.length} departments) by ${admin?.username || "admin"}.`);
+  return { ok: true, count: list.length, departments: list };
+}
+
+function persistActivityTemplates(list, admin) {
+  setSetting("activity_templates_json", JSON.stringify(list));
+  writeAuditLog("update_activity_templates", "settings", null, `Activity templates updated (${list.length} templates) by ${admin?.username || "admin"}.`);
+  return { ok: true, count: list.length, templates: list };
+}
+
+function updateMissionCategories(body, admin) {
+  return persistMissionCategories(sanitizeMissionCategories(body), admin);
+}
+
+function updateNodalDepartments(body, admin) {
+  return persistNodalDepartments(sanitizeNodalDepartments(body), admin);
+}
+
+function updateActivityTemplates(body, admin) {
+  return persistActivityTemplates(sanitizeActivityTemplates(body), admin);
+}
+
+function updateTickerSpeed(body, admin) {
+  const seconds = Math.max(8, Math.min(120, Number(body?.seconds) || 18));
+  setSetting("ticker_speed_seconds", String(seconds));
+  writeAuditLog("update_ticker_speed", "settings", null, `Announcement ticker speed set to ${seconds}s by ${admin?.username || "admin"}.`);
+  return { ok: true, seconds };
+}
+
+function getAuditLogFull() {
+  return db.prepare(`
+    SELECT id, action, target_type, target_id, detail, created_at
+    FROM admin_audit_log
+    ORDER BY id DESC
+  `).all();
+}
+
+function buildAuditLogCsv() {
+  const rows = getAuditLogFull();
+  const header = "ID,Action,TargetType,TargetID,Detail,Time\n";
+  const lines = rows.map((r) =>
+    [r.id, r.action, r.target_type, r.target_id, r.detail, r.created_at].map(csvEscape).join(",")
+  );
+  return header + lines.join("\n");
 }
 
 function migrateVolunteerRegistry() {
