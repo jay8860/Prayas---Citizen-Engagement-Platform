@@ -93,7 +93,7 @@ function getCivicRank(points) {
 // Returns a Map: profileId -> { points, missionCount, streak, longestStreak, badges, attended }
 function computeAllVolunteerStats() {
   const allParticipations = db.prepare(`
-    SELECT vp.volunteer_profile_id, vp.created_at, vp.mission_title, m.status, m.category
+    SELECT vp.volunteer_profile_id, vp.created_at, vp.date_label, vp.mission_title, m.status, m.category
     FROM volunteer_participations vp
     LEFT JOIN missions m ON m.id = vp.mission_id
     ORDER BY vp.volunteer_profile_id, vp.created_at ASC
@@ -149,8 +149,17 @@ function computeAllVolunteerStats() {
     if (missionCount >= 10) badges.push("🌟");
     if (currentStreak >= 2) badges.push("🔥");
 
-    // Attended mission titles
-    const attended = rows.map((r) => r.mission_title).filter(Boolean);
+    // Attended missions — carries its own completion flag and date so the
+    // client never has to re-derive "was this one completed?" by fuzzy-
+    // matching mission titles against the current missions list (titles can
+    // be edited or the mission archived after the volunteer attended it).
+    const attended = rows
+      .filter((r) => r.mission_title)
+      .map((r) => ({
+        title: r.mission_title,
+        completed: r.status === "completed",
+        dateLabel: r.date_label || ""
+      }));
 
     statsMap.set(pid, { points, missionCount, completedCount, currentStreak, longestStreak, badges, attended });
   });
@@ -198,11 +207,93 @@ function buildRealLeaders() {
     cls:          idx === 0 ? "gold" : idx === 1 ? "silver" : idx === 2 ? "bronze" : "",
     badges:       v.badges,
     attended:     v.attended,
+    completedCount: v.completedCount,
     civicRankEn:  v.civicRankEn,
     civicRankHi:  v.civicRankHi,
     streak:       v.currentStreak,
     longestStreak:v.longestStreak,
   }));
+}
+
+// Self-service passport lookup: any registered volunteer can fetch their own
+// full stats (not just the top 10 shown on the public leaderboard) by
+// confirming the name + phone they registered with.
+function getMyPassport(body) {
+  const name = String(body.name || "").trim();
+  const phone = String(body.phone || "").trim();
+  if (!name || !phone) {
+    throw publicError(400, "Enter the name and mobile number you registered with.");
+  }
+  const profile = findVolunteerProfile(name, phone);
+  if (!profile) {
+    return { found: false };
+  }
+
+  const statsMap = computeAllVolunteerStats();
+  const stats = statsMap.get(profile.id) || { points: POINTS.register, missionCount: 0, completedCount: 0, currentStreak: 0, longestStreak: 0, badges: [], attended: [] };
+  const rank = getCivicRank(stats.points);
+
+  // Rank this volunteer against ALL volunteers by points, not just the top 10.
+  const allProfileIds = db.prepare("SELECT id FROM volunteer_profiles").all().map((r) => r.id);
+  const totalVolunteers = allProfileIds.length;
+  const sortedByPoints = allProfileIds
+    .map((id) => ({ id, points: (statsMap.get(id) || { points: POINTS.register }).points }))
+    .sort((a, b) => b.points - a.points);
+  const position = sortedByPoints.findIndex((row) => row.id === profile.id) + 1;
+
+  const words = profile.name.trim().split(/\s+/);
+  const initials = words.slice(0, 2).map((w) => w[0]?.toUpperCase() || "").join("") || "?";
+
+  return {
+    found: true,
+    leader: {
+      id: profile.id,
+      name: profile.name,
+      area: profile.area || "—",
+      phone: profile.phone,
+      initials,
+      color: AVATAR_COLORS[profile.id % AVATAR_COLORS.length],
+      points: stats.points,
+      missions: stats.missionCount,
+      completedCount: stats.completedCount,
+      rank: position === 1 ? "🥇" : position === 2 ? "🥈" : position === 3 ? "🥉" : String(position),
+      cls: position === 1 ? "gold" : position === 2 ? "silver" : position === 3 ? "bronze" : "",
+      badges: stats.badges,
+      attended: stats.attended,
+      civicRankEn: rank.en,
+      civicRankHi: rank.hi,
+      streak: stats.currentStreak,
+      longestStreak: stats.longestStreak,
+      position,
+      totalVolunteers,
+      memberSince: profile.first_registered_at || ""
+    }
+  };
+}
+
+// What a certificate/ID-card QR code resolves to. Public by design (mirrors
+// what the leaderboard already shows anyone), but never includes the phone
+// number — only the self-service passport lookup above does, and only to
+// someone who already knows that phone number.
+function getPublicVolunteerVerification(profileId) {
+  const profile = db.prepare("SELECT id, name, area, first_registered_at FROM volunteer_profiles WHERE id = ?").get(profileId);
+  if (!profile) {
+    return { valid: false };
+  }
+  const statsMap = computeAllVolunteerStats();
+  const stats = statsMap.get(profile.id) || { points: POINTS.register, missionCount: 0, completedCount: 0 };
+  const rank = getCivicRank(stats.points);
+  return {
+    valid: true,
+    name: profile.name,
+    area: profile.area || "",
+    points: stats.points,
+    missions: stats.missionCount,
+    completedCount: stats.completedCount,
+    civicRankEn: rank.en,
+    civicRankHi: rank.hi,
+    memberSince: profile.first_registered_at || ""
+  };
 }
 
 // Ward vs. Ward: aggregate volunteer_profiles by area
@@ -876,6 +967,27 @@ try {
 try {
   db.exec("ALTER TABLE volunteer_participations ADD COLUMN attended_at TEXT");
 } catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN completion_requested INTEGER NOT NULL DEFAULT 0");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN completion_requested_by TEXT NOT NULL DEFAULT ''");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN completion_requested_note TEXT NOT NULL DEFAULT ''");
+} catch (error) {}
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS mission_photos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      mission_id INTEGER NOT NULL REFERENCES missions(id) ON DELETE CASCADE,
+      photo_data TEXT NOT NULL,
+      caption TEXT NOT NULL DEFAULT '',
+      uploaded_by TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+} catch (error) {}
 
 seedDatabase();
 migrateLegacyDemoRecords();
@@ -982,6 +1094,25 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/volunteers/lookup") {
       const body = await readJsonBody(req);
       return sendJson(res, 200, lookupVolunteerProfile(body));
+    }
+
+    // Self-service passport lookup — lets ANY registered volunteer (not just
+    // the top-10 public leaderboard) fetch their own stats to view/download
+    // their certificate and ID card. Gated the same lightweight way as the
+    // existing lookup: the visitor must know both the registered name AND
+    // phone number, which the leaderboard-only path did not require.
+    if (req.method === "POST" && url.pathname === "/api/volunteers/passport") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, getMyPassport(body));
+    }
+
+    // Public certificate/ID-card verification — what the QR code on a
+    // downloaded certificate or ID card resolves to. Deliberately returns
+    // only information that is already public via the leaderboard (name,
+    // area, points, rank) and never the phone number.
+    if (req.method === "GET" && /^\/api\/volunteers\/\d+\/verify$/.test(url.pathname)) {
+      const profileId = Number(url.pathname.split("/")[3]);
+      return sendJson(res, 200, getPublicVolunteerVerification(profileId));
     }
 
     if (req.method === "POST" && url.pathname === "/api/community-missions") {
@@ -1219,6 +1350,32 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, submitFeedback(body));
     }
 
+    // ── Mission photo gallery ─────────────────────────────────────────────────
+    if (req.method === "POST" && /^\/api\/missions\/\d+\/photos$/.test(url.pathname)) {
+      const body = await readJsonBody(req);
+      const missionId = Number(url.pathname.split("/")[3]);
+      return sendJson(res, 200, addMissionPhoto(missionId, body));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/photos\/\d+\/delete$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const photoId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, deleteMissionPhoto(photoId, admin));
+    }
+
+    // ── Citizen-requested mission completion ─────────────────────────────────
+    if (req.method === "POST" && /^\/api\/missions\/\d+\/request-completion$/.test(url.pathname)) {
+      const body = await readJsonBody(req);
+      const missionId = Number(url.pathname.split("/")[3]);
+      return sendJson(res, 200, requestMissionCompletion(missionId, body));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/completion-request\/dismiss$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const missionId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, dismissCompletionRequest(missionId, admin));
+    }
+
     if (req.method === "GET" && /^\/api\/missions\/\d+\/feedback$/.test(url.pathname)) {
       const missionId = Number(url.pathname.split("/")[3]);
       return sendJson(res, 200, { feedback: getMissionFeedback(missionId) });
@@ -1301,7 +1458,10 @@ function sendCsv(res, csvContent) {
     ...corsHeaders(),
     ...securityHeaders()
   });
-  res.end(csvContent);
+  // A leading UTF-8 BOM does two things: it stops Excel from mis-detecting a
+  // CSV whose header starts with "ID" as an old SYLK file, and it makes Excel
+  // render non-ASCII (Hindi) text correctly instead of as mojibake.
+  res.end("﻿" + csvContent);
 }
 
 function stripHtml(value) {
@@ -1323,7 +1483,7 @@ function readJsonBody(req) {
     let raw = "";
     req.on("data", (chunk) => {
       raw += chunk;
-      if (raw.length > 2_000_000) {
+      if (raw.length > 2_500_000) {
         reject(publicError(413, "Request body is too large."));
         req.destroy();
       }
@@ -1686,6 +1846,7 @@ function buildBootstrapPayload() {
   const announcementRows = db.prepare("SELECT id, text FROM announcements WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
   const missionRows = db.prepare("SELECT * FROM missions WHERE is_demo = ? AND archived_at IS NULL ORDER BY id DESC").all(demoFlag);
   const discussionStmt = db.prepare("SELECT name, text, time_label FROM mission_discussions WHERE mission_id = ? ORDER BY id DESC");
+  const photoStmt = db.prepare("SELECT id, photo_data, caption, uploaded_by, created_at FROM mission_photos WHERE mission_id = ? ORDER BY id ASC");
   const fundRows = [];
   const storyRows = db.prepare("SELECT * FROM stories WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
   const storyCommentStmt = db.prepare("SELECT name, text, time_label FROM story_comments WHERE story_id = ? ORDER BY id ASC");
@@ -1728,10 +1889,20 @@ function buildBootstrapPayload() {
     actualTurnout: mission.actual_turnout || 0,
     photoUrl: mission.photo_url || "",
     checkInCode: mission.check_in_code || "",
+    completionRequested: Boolean(mission.completion_requested),
+    completionRequestedBy: mission.completion_requested_by || "",
+    completionRequestedNote: mission.completion_requested_note || "",
     discussion: discussionStmt.all(mission.id).map((entry) => ({
       name: entry.name,
       text: entry.text,
       time: entry.time_label
+    })),
+    photos: photoStmt.all(mission.id).map((photo) => ({
+      id: photo.id,
+      dataUrl: photo.photo_data,
+      caption: photo.caption,
+      uploadedBy: photo.uploaded_by,
+      createdAt: photo.created_at
     }))
   }));
 
@@ -1773,23 +1944,37 @@ function buildBootstrapPayload() {
   const realVolunteerCount = db.prepare("SELECT COUNT(*) as n FROM volunteer_profiles").get().n;
   const leaders = (dataMode === "real" && realVolunteerCount > 0)
     ? buildRealLeaders()
-    : leaderRows.map((leader) => ({
-        id: leader.id,
-        name: leader.name,
-        area: leader.area,
-        initials: leader.initials,
-        color: leader.color,
-        points: leader.points,
-        missions: leader.missions,
-        rank: leader.rank_label,
-        cls: leader.cls,
-        badges: safeJsonArray(leader.badges_json),
-        attended: safeJsonArray(leader.attended_json),
-        civicRankEn: getCivicRank(leader.points).en,
-        civicRankHi: getCivicRank(leader.points).hi,
-        streak: 0,
-        longestStreak: 0,
-      }));
+    : leaderRows.map((leader) => {
+        // Demo/seed leaders only ever stored plain title strings with no
+        // completion tracking of their own. Normalize to the same
+        // { title, completed, dateLabel } shape real leaders use, so the
+        // client never has to special-case demo vs. real data. Since these
+        // are showcase records with no underlying mission link, every
+        // listed activity is treated as completed.
+        const attended = safeJsonArray(leader.attended_json).map((title) => ({
+          title,
+          completed: true,
+          dateLabel: ""
+        }));
+        return {
+          id: leader.id,
+          name: leader.name,
+          area: leader.area,
+          initials: leader.initials,
+          color: leader.color,
+          points: leader.points,
+          missions: leader.missions,
+          completedCount: attended.length,
+          rank: leader.rank_label,
+          cls: leader.cls,
+          badges: safeJsonArray(leader.badges_json),
+          attended,
+          civicRankEn: getCivicRank(leader.points).en,
+          civicRankHi: getCivicRank(leader.points).hi,
+          streak: 0,
+          longestStreak: 0,
+        };
+      });
 
   const wardLeaderboard = buildWardLeaderboard();
 
@@ -2402,8 +2587,12 @@ function updateMissionStatus(missionId, body, admin) {
     const outcomeNote = String(body.outcomeNote || "").trim();
     const actualTurnout = Math.max(0, Number(body.actualTurnout || 0));
     const photoUrl = String(body.photoUrl || "").trim();
-    db.prepare("UPDATE missions SET status = ?, outcome_note = ?, actual_turnout = ?, photo_url = ? WHERE id = ?")
-      .run(status, outcomeNote, actualTurnout, photoUrl, missionId);
+    db.prepare(`
+      UPDATE missions
+      SET status = ?, outcome_note = ?, actual_turnout = ?, photo_url = ?,
+          completion_requested = 0, completion_requested_by = '', completion_requested_note = ''
+      WHERE id = ?
+    `).run(status, outcomeNote, actualTurnout, photoUrl, missionId);
   } else {
     db.prepare("UPDATE missions SET status = ? WHERE id = ?").run(status, missionId);
   }
@@ -2544,7 +2733,7 @@ function saveNewsletterDraft(body) {
   return { ok: true };
 }
 
-const ALLOWED_TABLES = new Set(["stories", "missions", "funds", "announcements"]);
+const ALLOWED_TABLES = new Set(["stories", "missions", "funds", "announcements", "mission_photos"]);
 
 function ensureRowExists(table, id, message) {
   if (!ALLOWED_TABLES.has(table)) {
@@ -2782,6 +2971,7 @@ function exportMissionsCsv() {
            m.approval_status, m.volunteers, m.total, m.coordinator,
            m.nodal_department, m.host_name, m.host_phone, m.created_at
     FROM missions m
+    WHERE m.is_demo = 0 AND m.archived_at IS NULL
     ORDER BY m.id DESC
   `).all();
   const header = "ID,Title,Category,Ward,Date,Location,Status,Approval,Registered,Capacity,Coordinator,Department,HostName,HostPhone,CreatedAt\n";
@@ -2797,6 +2987,7 @@ function exportStoriesCsv() {
   const rows = db.prepare(`
     SELECT id, contributor, role, title, likes, date_label, created_at
     FROM stories
+    WHERE is_demo = 0
     ORDER BY id DESC
   `).all();
   const header = "ID,Contributor,Role,Title,Likes,Date,CreatedAt\n";
@@ -2880,6 +3071,71 @@ function checkInVolunteer(body) {
 
   db.prepare("UPDATE volunteer_participations SET attended_at = ? WHERE id = ?").run(isoNow(), participation.id);
   return { ok: true, checkedIn: true, missionTitle: mission.title };
+}
+
+// ── Mission photo gallery ──────────────────────────────────────────────────────
+
+const MAX_PHOTOS_PER_MISSION = 8;
+const MAX_PHOTO_DATA_LENGTH = 2_000_000; // ~1.5MB decoded, plenty for a compressed JPEG
+
+function addMissionPhoto(missionId, body) {
+  const mission = ensureRowExists("missions", missionId, "Mission not found.");
+  const photoData = String(body.photoData || "");
+  const caption = String(body.caption || "").trim().slice(0, 200);
+  const uploadedBy = String(body.uploadedBy || "").trim().slice(0, 100) || "Anonymous";
+
+  if (!photoData.startsWith("data:image/")) {
+    throw publicError(400, "Photo must be a valid image.");
+  }
+  if (photoData.length > MAX_PHOTO_DATA_LENGTH) {
+    throw publicError(413, "Photo is too large. Please use a smaller or more compressed image.");
+  }
+
+  const existingCount = db.prepare("SELECT COUNT(*) AS n FROM mission_photos WHERE mission_id = ?").get(missionId).n;
+  if (existingCount >= MAX_PHOTOS_PER_MISSION) {
+    throw publicError(400, `This mission already has the maximum of ${MAX_PHOTOS_PER_MISSION} photos. Remove one before adding another.`);
+  }
+
+  db.prepare(`
+    INSERT INTO mission_photos (mission_id, photo_data, caption, uploaded_by, created_at)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(missionId, photoData, caption, uploadedBy, isoNow());
+
+  return { ok: true, count: existingCount + 1 };
+}
+
+function deleteMissionPhoto(photoId, admin) {
+  const photo = db.prepare("SELECT mission_id FROM mission_photos WHERE id = ?").get(photoId);
+  if (!photo) throw publicError(404, "Photo not found.");
+  assertMissionScope(admin, photo.mission_id);
+  db.prepare("DELETE FROM mission_photos WHERE id = ?").run(photoId);
+  writeAuditLog("delete_mission_photo", "mission", photo.mission_id, `Photo #${photoId} deleted by ${admin ? admin.name : "admin"}`);
+  return { ok: true };
+}
+
+// ── Citizen-requested mission completion ────────────────────────────────────────
+
+function requestMissionCompletion(missionId, body) {
+  const mission = ensureRowExists("missions", missionId, "Mission not found.");
+  const row = db.prepare("SELECT status, archived_at FROM missions WHERE id = ?").get(missionId);
+  if (row.archived_at) throw publicError(400, "This mission has been archived.");
+  if (row.status === "completed") throw publicError(400, "This mission is already marked completed.");
+  const requestedBy = String(body.requestedBy || "").trim().slice(0, 100);
+  const note = String(body.note || "").trim().slice(0, 300);
+  if (!requestedBy) throw publicError(400, "Your name is required to request completion.");
+  db.prepare(`
+    UPDATE missions SET completion_requested = 1, completion_requested_by = ?, completion_requested_note = ?
+    WHERE id = ?
+  `).run(requestedBy, note, missionId);
+  return { ok: true };
+}
+
+function dismissCompletionRequest(missionId, admin) {
+  ensureRowExists("missions", missionId, "Mission not found.");
+  assertMissionScope(admin, missionId);
+  db.prepare("UPDATE missions SET completion_requested = 0, completion_requested_by = '', completion_requested_note = '' WHERE id = ?").run(missionId);
+  writeAuditLog("dismiss_completion_request", "mission", missionId, `Completion request dismissed by ${admin ? admin.name : "admin"}`);
+  return { ok: true };
 }
 
 // ── Post-mission feedback ─────────────────────────────────────────────────────

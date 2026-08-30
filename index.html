@@ -2218,6 +2218,8 @@
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 14px;
+      min-width: 0;
+      overflow-wrap: break-word;
     }
 
     .thread-card {
@@ -2409,6 +2411,14 @@
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 20px;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+
+    .panel-card .announcement-stream,
+    .panel-card table {
+      max-width: 100%;
+      overflow-x: auto;
     }
 
     .panel-card h3 {
@@ -2776,6 +2786,7 @@
             <a class="btn btn-soft" href="#volunteer" data-i18n="hero-register">Register as Volunteer</a>
             <button class="btn btn-soft" type="button" onclick="openModal('checkInModal')" style="background:rgba(255,255,255,0.18)">Check In at Venue</button>
             <button class="btn btn-soft" type="button" onclick="openModal('trackMissionModal')" style="background:rgba(255,255,255,0.18)">Track My Request</button>
+            <button class="btn btn-soft" type="button" onclick="openModal('myPassportModal')" style="background:rgba(255,255,255,0.18)">🎖️ My Passport &amp; Certificate</button>
           </div>
         </div>
 
@@ -2841,6 +2852,10 @@
         <div class="mission-search-wrap">
           <i class="fa-solid fa-magnifying-glass mission-search-icon"></i>
           <input id="missionSearchInput" type="search" class="mission-search-input" data-i18n-placeholder="missions-search-placeholder" placeholder="Search missions by title, location or description…" />
+        </div>
+        <div class="filters" id="missionViewToggle" style="margin-bottom:10px">
+          <button class="filter-btn" type="button" data-mission-view="active" onclick="setMissionView('active')">🟢 <span data-i18n="missions-view-active">Active &amp; Upcoming</span></button>
+          <button class="filter-btn" type="button" data-mission-view="completed" onclick="setMissionView('completed')">✅ <span data-i18n="missions-view-completed">Completed</span></button>
         </div>
         <div class="filters" id="categoryFilters"></div>
         <div class="missions-grid" id="missionsGrid"></div>
@@ -3385,6 +3400,7 @@
           <div class="passport-name" id="passportName"></div>
           <div id="passportCivicRank" style="margin:4px 0"></div>
           <div class="passport-area" id="passportArea"></div>
+          <div id="passportRankPosition" style="font-size:12px;color:var(--muted);margin-top:4px"></div>
         </div>
         <div class="passport-stats">
           <div class="passport-stat">
@@ -3474,6 +3490,49 @@
           <button class="btn btn-primary" type="button" onclick="trackMyMissions()">Track</button>
         </div>
         <div id="trackMissionResults" style="margin-top:14px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Certificate / ID card verification result — what scanning the QR code
+       on a downloaded certificate or ID card lands on. -->
+  <div class="modal-overlay" id="verifyResultModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Certificate Verification</h2>
+          <p class="modal-subtitle">Confirming the authenticity of a Prayas volunteer credential.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="verifyResultModal">✕</button>
+      </div>
+      <div class="modal-body" id="verifyResultBody"></div>
+    </div>
+  </div>
+
+  <!-- My Passport lookup modal (self-service, for any registered volunteer —
+       not just the top-10 shown on the public leaderboard) -->
+  <div class="modal-overlay" id="myPassportModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">My Volunteer Passport</h2>
+          <p class="modal-subtitle">Enter the name and mobile number you registered with to view your stats and download your certificate or ID card.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="myPassportModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="myPassportForm">
+          <div class="form-group">
+            <label for="myPassportName">Full Name</label>
+            <input type="text" id="myPassportName" class="form-control" required maxlength="100">
+          </div>
+          <div class="form-group">
+            <label for="myPassportPhone">Mobile Number</label>
+            <input type="tel" id="myPassportPhone" class="form-control" placeholder="10-digit mobile number" maxlength="10" pattern="[6-9][0-9]{9}" required>
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%">View My Passport</button>
+        </form>
+        <div id="myPassportError" style="color:var(--danger,#DC2626);font-size:13px;margin-top:10px"></div>
       </div>
     </div>
   </div>
@@ -3616,6 +3675,11 @@
 
         <div class="admin-pane active" id="adminPaneOverview">
           <div class="admin-grid" id="adminStatsGrid"></div>
+          <div class="panel-card" id="completionRequestsCard" style="margin-top:20px;display:none">
+            <h3>⏳ Completion Requests</h3>
+            <p>Citizens or organisers have asked for these missions to be marked completed or closed. Confirm to finalise, or dismiss if it's not ready yet.</p>
+            <div class="announcement-stream" id="completionRequestList"></div>
+          </div>
           <div class="admin-two-col" style="margin-top:20px">
             <div class="panel-card">
               <h3 data-i18n="admin-overview-requests-title">Volunteer Mission Requests</h3>
@@ -4862,11 +4926,13 @@
         departments: [],
         dataMode: "real",
         currentCategory: "all",
+        missionView: "active",
         missionSearch: "",
         activeMissionId: null,
         activeMissionTab: "details",
         activeStoryId: null,
         activeLeaderId: null,
+        selfPassportLeader: null,
         selectedMissionId: null,
         adminLoggedIn: Boolean(window.localStorage.getItem(ADMIN_TOKEN_KEY)),
         adminUser: null,
@@ -5113,6 +5179,45 @@
       return y + lines.length * lineHeight;
     }
 
+    // Pure line-wrapping (no drawing) — splits text into lines that fit
+    // maxWidth, capped at maxLines with an ellipsis on the last line. Used
+    // to MEASURE how many lines a block of text will need before any canvas
+    // has been sized, so certificates never draw content past their edge.
+    function wrapLinesOnly(ctx, text, maxWidth, maxLines) {
+      const words = String(text || "").split(/\s+/).filter(Boolean);
+      let line = "";
+      let lines = [];
+      words.forEach((word) => {
+        const test = line ? `${line} ${word}` : word;
+        if (ctx.measureText(test).width > maxWidth && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = test;
+        }
+      });
+      if (line) lines.push(line);
+      if (lines.length > maxLines) {
+        lines = lines.slice(0, maxLines);
+        lines[maxLines - 1] = lines[maxLines - 1].replace(/\s*\S*$/, "") + "…";
+      }
+      return lines;
+    }
+
+    // Picks the largest font size (down to minSize) at which `text` fits
+    // within maxWidth on a single line, so long names/titles on certificates
+    // and ID cards shrink gracefully instead of overflowing the artwork.
+    function fitSingleLineFontSize(ctx, text, maxWidth, fontFamily, startSize, minSize, weight = "700") {
+      let size = startSize;
+      while (size > minSize) {
+        ctx.font = `${weight} ${size}px ${fontFamily}`;
+        if (ctx.measureText(text).width <= maxWidth) break;
+        size -= 1;
+      }
+      ctx.font = `${weight} ${size}px ${fontFamily}`;
+      return size;
+    }
+
     function generateEventPoster() {
       const lang = document.getElementById("posterLang").value || "en";
       const title = document.getElementById("posterTitle").value.trim();
@@ -5237,7 +5342,7 @@
 
       // QR code linking back to the portal (or the mission page if one was picked)
       const missionId = Number(document.getElementById("posterMissionPicker").value || 0);
-      const qrTarget = missionId ? `${window.location.origin}/#mission-${missionId}` : window.location.origin;
+      const qrTarget = missionId ? `${window.location.origin}${window.location.pathname}?mission=${missionId}` : window.location.origin;
       const qrHost = document.createElement("div");
       qrHost.style.position = "fixed";
       qrHost.style.left = "-9999px";
@@ -5793,19 +5898,32 @@
 
     function filteredMissions() {
       const q = state.missionSearch.toLowerCase().trim();
+      const view = state.missionView || "active";
       return state.missions.filter((mission) => {
         const publicOk = mission.approvalStatus !== "pending" && mission.approvalStatus !== "rejected";
+        const viewOk = view === "completed" ? mission.status === "completed" : mission.status !== "completed";
         const categoryOk = state.currentCategory === "all" || mission.category === state.currentCategory;
         const searchOk = !q ||
           mission.title.toLowerCase().includes(q) ||
           mission.location.toLowerCase().includes(q) ||
           (mission.desc || "").toLowerCase().includes(q) ||
           (mission.ward || "").toLowerCase().includes(q);
-        return publicOk && categoryOk && searchOk;
+        return publicOk && viewOk && categoryOk && searchOk;
       });
     }
 
+    function setMissionView(view) {
+      state.missionView = view;
+      document.querySelectorAll("[data-mission-view]").forEach((button) => {
+        button.classList.toggle("active", button.getAttribute("data-mission-view") === view);
+      });
+      renderMissions();
+    }
+
     function renderMissions() {
+      document.querySelectorAll("[data-mission-view]").forEach((button) => {
+        button.classList.toggle("active", button.getAttribute("data-mission-view") === (state.missionView || "active"));
+      });
       const missions = filteredMissions();
       const grid = document.getElementById("missionsGrid");
       if (!missions.length) {
@@ -5978,8 +6096,8 @@
             <div class="leader-score">⚡ ${leader.points} ${state.lang === "hi" ? "अंक" : "pts"} · ${leader.missions} ${state.lang === "hi" ? "अभियान" : "missions"}</div>
             ${streakTxt ? `<div class="streak-pill active">${streakTxt}</div>` : ""}
             <div class="leader-badges">${(leader.badges || []).map((b) => `<span class="badge-emoji">${b}</span>`).join("")}</div>
-            <button class="btn btn-primary" type="button" style="width:100%;margin-top:8px" onclick="openPassportModal(${leader.id})">
-              ${state.lang === "hi" ? "पासपोर्ट देखें" : "View Passport"}
+            <button class="btn btn-primary" type="button" style="width:100%;margin-top:8px" onclick="showVolunteerVerification(${leader.id})">
+              ${state.lang === "hi" ? "प्रोफ़ाइल सत्यापित करें" : "Verify Profile"}
             </button>
           </article>`;
       }).join("");
@@ -6104,9 +6222,7 @@
         count: missions.filter((mission) => missionArea(mission) === area).length
       })).sort((left, right) => right.count - left.count);
       const strongestArea = locationCounts[0]?.area || (state.lang === "hi" ? "अभी उपलब्ध नहीं" : "Not available yet");
-      const certificateReady = leaders.filter((leader) =>
-        leader.attended.some((title) => missions.some((mission) => mission.title.includes(title) && mission.status === "completed"))
-      ).length;
+      const certificateReady = leaders.filter((leader) => (leader.completedCount || 0) > 0).length;
 
       return {
         topLeader,
@@ -6255,7 +6371,7 @@
         .slice(0, 10)
         .map((mission) => `
           <div class="message-card">
-            <div class="message-name">${escapeHtml(mission.title)}</div>
+            <div class="message-name">${escapeHtml(mission.title)} ${mission.completionRequested ? `<span style="font-size:11px;font-weight:600;color:#B45309;background:#FEF3C7;padding:2px 8px;border-radius:20px;margin-left:6px">⏳ Completion requested</span>` : ""}</div>
             <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.date)}</div>
             <div class="message-time">${escapeHtml(statusLabel(mission.status))}</div>
             ${mission.checkInCode ? `
@@ -6313,6 +6429,32 @@
                   <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
                 </div>
               </div>
+            </div>
+          </div>
+        `)
+        .join("");
+    }
+
+    function renderCompletionRequestsPanel() {
+      const card = document.getElementById("completionRequestsCard");
+      const container = document.getElementById("completionRequestList");
+      if (!card || !container) return;
+      const scope = adminScope();
+      const requests = state.missions.filter((mission) =>
+        mission.completionRequested && (!scope || missionArea(mission) === scope)
+      );
+      card.style.display = requests.length ? "block" : "none";
+      if (!requests.length) return;
+      container.innerHTML = requests
+        .map((mission) => `
+          <div class="message-card">
+            <div class="message-name">${escapeHtml(mission.title)}</div>
+            <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.date)}</div>
+            <div class="message-text">Requested by: ${escapeHtml(mission.completionRequestedBy || "—")}</div>
+            ${mission.completionRequestedNote ? `<div class="message-text">"${escapeHtml(mission.completionRequestedNote)}"</div>` : ""}
+            <div class="message-actions">
+              <button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">Confirm &amp; Mark Completed</button>
+              <button class="btn btn-soft" type="button" onclick="dismissMissionCompletionRequest(${mission.id})">Dismiss</button>
             </div>
           </div>
         `)
@@ -6509,6 +6651,8 @@
           ${mission.outcomeNote ? `<div class="message-text">${escapeHtml(mission.outcomeNote)}</div>` : ""}
           ${mission.photoUrl ? `<div class="message-actions"><a class="btn btn-soft" href="${escapeHtml(mission.photoUrl)}" target="_blank" rel="noopener">${state.lang === "hi" ? "फोटो देखें" : "View Photo"}</a></div>` : ""}
         </div>` : ""}
+        ${renderMissionPhotoSection(mission)}
+        ${renderMissionCompletionSection(mission)}
       `;
 
       discussionPane.innerHTML = `
@@ -6543,6 +6687,198 @@
       `;
 
       document.getElementById("discussionForm").addEventListener("submit", submitDiscussionForm);
+
+      const photoForm = document.getElementById("missionPhotoUploadForm");
+      if (photoForm) photoForm.addEventListener("submit", submitMissionPhotoUpload);
+      const completionForm = document.getElementById("missionCompletionForm");
+      if (completionForm) completionForm.addEventListener("submit", submitMissionCompletionRequest);
+    }
+
+    // ── Mission photo gallery (public upload, admin moderation) ────────────────
+
+    function renderMissionPhotoSection(mission) {
+      const photos = Array.isArray(mission.photos) ? mission.photos : [];
+      const hi = state.lang === "hi";
+      const maxPhotos = 8;
+      const canUploadMore = photos.length < maxPhotos;
+      const grid = photos.length
+        ? `<div class="mission-photo-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin:14px 0">
+            ${photos.map((photo) => `
+              <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);aspect-ratio:1/1">
+                <img src="${escapeHtml(photo.dataUrl)}" alt="${escapeHtml(photo.caption || mission.title)}" loading="lazy"
+                     style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="window.open('${escapeHtml(photo.dataUrl)}', '_blank')" />
+                ${photo.uploadedBy ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:#fff;font-size:10px;padding:3px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(photo.uploadedBy)}</div>` : ""}
+                ${state.adminLoggedIn ? `<button type="button" onclick="deleteMissionPhotoAsAdmin(${photo.id})" title="${hi ? "फोटो हटाएं" : "Delete photo"}"
+                    style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(220,38,38,0.9);color:#fff;font-size:12px;line-height:1;cursor:pointer">✕</button>` : ""}
+              </div>
+            `).join("")}
+          </div>`
+        : `<p style="font-size:13px;color:var(--muted);margin:10px 0">${hi ? "अभी तक कोई गतिविधि फोटो अपलोड नहीं हुई है।" : "No activity photos uploaded yet."}</p>`;
+
+      const uploadBlock = canUploadMore
+        ? `<form id="missionPhotoUploadForm" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)">
+            <div class="form-group">
+              <label for="missionPhotoUploaderName">${hi ? "आपका नाम (आयोजक/नोडल/नागरिक)" : "Your name (organiser, nodal officer, or citizen)"}</label>
+              <input id="missionPhotoUploaderName" type="text" required maxlength="100" />
+            </div>
+            <div class="form-group">
+              <label for="missionPhotoFiles">${hi ? `फोटो चुनें (${maxPhotos - photos.length} स्लॉट शेष)` : `Choose photos (up to ${maxPhotos - photos.length} more)`}</label>
+              <input id="missionPhotoFiles" type="file" accept="image/*" multiple />
+            </div>
+            <button class="btn btn-soft" type="submit" style="width:100%">📸 ${hi ? "गतिविधि फोटो अपलोड करें" : "Upload Activity Photos"}</button>
+            <div id="missionPhotoUploadStatus" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
+          </form>`
+        : `<p style="font-size:12px;color:var(--muted);margin-top:10px">${hi ? "इस अभियान के लिए अधिकतम 8 फोटो पहुंच गई हैं।" : "This mission has reached the maximum of 8 photos."}</p>`;
+
+      return `
+        <div class="message-card" style="margin-top:20px">
+          <div class="message-name">📷 ${hi ? "गतिविधि फोटो" : "Activity Photos"}</div>
+          <div class="message-text" style="margin-bottom:0">${hi ? "आयोजक, नोडल अधिकारी या भाग लेने वाला नागरिक यहां फोटो जोड़ सकते हैं ताकि सभी गतिविधि देख सकें।" : "The organiser, nodal officer, or a participating citizen can add photos here so everyone can see the activity in action."}</div>
+          ${grid}
+          ${uploadBlock}
+        </div>
+      `;
+    }
+
+    let pendingMissionPhotoFiles = [];
+
+    async function submitMissionPhotoUpload(event) {
+      event.preventDefault();
+      const mission = state.missions.find((item) => item.id === state.activeMissionId);
+      if (!mission) return;
+      const uploaderName = (document.getElementById("missionPhotoUploaderName").value || "").trim();
+      const fileInput = document.getElementById("missionPhotoFiles");
+      const files = Array.from(fileInput.files || []).slice(0, 8 - (mission.photos || []).length);
+      const statusEl = document.getElementById("missionPhotoUploadStatus");
+      if (!files.length) {
+        showToast(state.lang === "hi" ? "कृपया कम से कम एक फोटो चुनें।" : "Please choose at least one photo.", "⚠️");
+        return;
+      }
+      let uploaded = 0;
+      for (const file of files) {
+        try {
+          if (statusEl) statusEl.textContent = `${state.lang === "hi" ? "अपलोड हो रहा है" : "Uploading"} ${uploaded + 1}/${files.length}…`;
+          const dataUrl = await compressImageToDataUrl(file);
+          await apiRequest(`/api/missions/${mission.id}/photos`, {
+            method: "POST",
+            body: JSON.stringify({ photoData: dataUrl, uploadedBy: uploaderName })
+          });
+          uploaded++;
+        } catch (error) {
+          handleRequestError(error);
+          break;
+        }
+      }
+      if (statusEl) statusEl.textContent = "";
+      if (uploaded) {
+        showToast(state.lang === "hi" ? `${uploaded} फोटो जोड़ी गईं।` : `${uploaded} photo(s) added.`, "📸");
+        try {
+          await refreshPortalData();
+          renderAll();
+        } catch (error) {}
+      }
+    }
+
+    function compressImageToDataUrl(file, maxDimension = 1280, quality = 0.72) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Could not read the selected file."));
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = () => reject(new Error("Could not load the selected image."));
+          img.onload = () => {
+            let { width, height } = img;
+            if (width > maxDimension || height > maxDimension) {
+              const scale = maxDimension / Math.max(width, height);
+              width = Math.round(width * scale);
+              height = Math.round(height * scale);
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", quality));
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function deleteMissionPhotoAsAdmin(photoId) {
+      if (!confirm(state.lang === "hi" ? "क्या आप इस फोटो को हटाना चाहते हैं?" : "Delete this photo?")) return;
+      try {
+        await apiRequest(`/api/admin/photos/${photoId}/delete`, { method: "POST" });
+        showToast(state.lang === "hi" ? "फोटो हटा दी गई।" : "Photo deleted.", "🗑️");
+        await refreshPortalData();
+        renderAll();
+      } catch (error) { handleRequestError(error); }
+    }
+
+    // ── Citizen/admin-requested mission completion ──────────────────────────────
+
+    function renderMissionCompletionSection(mission) {
+      if (mission.status === "completed") return "";
+      const hi = state.lang === "hi";
+      if (mission.completionRequested) {
+        return `
+          <div class="message-card" style="margin-top:20px;border-left:3px solid var(--saffron,#FF9933)">
+            <div class="message-name">⏳ ${hi ? "पूर्णता अनुरोध लंबित है" : "Completion request pending"}</div>
+            <div class="message-text">${hi ? "अनुरोधकर्ता" : "Requested by"}: ${escapeHtml(mission.completionRequestedBy || "—")}</div>
+            ${mission.completionRequestedNote ? `<div class="message-text">${escapeHtml(mission.completionRequestedNote)}</div>` : ""}
+            <div class="message-text" style="font-size:12px">${hi ? "एडमिन द्वारा पुष्टि की प्रतीक्षा है।" : "Waiting for an admin to confirm and mark this mission completed."}</div>
+            ${state.adminLoggedIn ? `
+            <div class="message-actions">
+              <button class="btn btn-primary" type="button" onclick="closeModal('missionModal'); openCompletionSummaryModal(${mission.id})">${hi ? "पुष्टि करें और पूर्ण करें" : "Confirm & Mark Completed"}</button>
+              <button class="btn btn-soft" type="button" onclick="dismissMissionCompletionRequest(${mission.id})">${hi ? "अनुरोध खारिज करें" : "Dismiss Request"}</button>
+            </div>` : ""}
+          </div>
+        `;
+      }
+      return `
+        <div class="message-card" style="margin-top:20px">
+          <div class="message-name">🏁 ${hi ? "गतिविधि पूर्ण हो गई?" : "Is this activity finished?"}</div>
+          <div class="message-text">${hi ? "आयोजक या कोई भी नागरिक इस अभियान को पूर्ण/बंद करने का अनुरोध कर सकता है। एडमिन इसकी पुष्टि करेगा।" : "The organiser or any citizen can request that this mission be marked completed or closed. An admin will confirm it."}</div>
+          <form id="missionCompletionForm" style="margin-top:10px">
+            <div class="form-group">
+              <label for="missionCompletionName">${hi ? "आपका नाम" : "Your Name"}</label>
+              <input id="missionCompletionName" type="text" required maxlength="100" />
+            </div>
+            <div class="form-group">
+              <label for="missionCompletionNote">${hi ? "टिप्पणी (वैकल्पिक)" : "Note (optional)"}</label>
+              <textarea id="missionCompletionNote" maxlength="300" placeholder="${hi ? "जैसे: कार्यक्रम सफलतापूर्वक संपन्न हुआ" : "e.g. Event was successfully held on schedule"}"></textarea>
+            </div>
+            <button class="btn btn-soft" type="submit" style="width:100%">${hi ? "पूर्णता/समापन का अनुरोध करें" : "Request Completion / Closure"}</button>
+          </form>
+        </div>
+      `;
+    }
+
+    async function submitMissionCompletionRequest(event) {
+      event.preventDefault();
+      const mission = state.missions.find((item) => item.id === state.activeMissionId);
+      if (!mission) return;
+      const requestedBy = (document.getElementById("missionCompletionName").value || "").trim();
+      const note = (document.getElementById("missionCompletionNote").value || "").trim();
+      try {
+        await apiRequest(`/api/missions/${mission.id}/request-completion`, {
+          method: "POST",
+          body: JSON.stringify({ requestedBy, note })
+        });
+        showToast(state.lang === "hi" ? "अनुरोध भेजा गया। एडमिन जल्द पुष्टि करेगा।" : "Request sent. An admin will confirm it soon.", "✅");
+        await refreshPortalData();
+        renderAll();
+      } catch (error) { handleRequestError(error); }
+    }
+
+    async function dismissMissionCompletionRequest(missionId) {
+      try {
+        await apiRequest(`/api/admin/missions/${missionId}/completion-request/dismiss`, { method: "POST" });
+        showToast(state.lang === "hi" ? "अनुरोध खारिज किया गया।" : "Request dismissed.", "✅");
+        await refreshPortalData();
+        renderAll();
+      } catch (error) { handleRequestError(error); }
     }
 
     function renderCommentsModal() {
@@ -6572,11 +6908,10 @@
     }
 
     function renderPassportModal() {
-      const leader = state.leaders.find((item) => item.id === state.activeLeaderId);
+      const leader = activePassportLeader();
       if (!leader) return;
-      const completedActivities = leader.attended.filter((title) =>
-        state.missions.some((mission) => mission.title.includes(title) && mission.status === "completed")
-      );
+      const attended = Array.isArray(leader.attended) ? leader.attended : [];
+      const completedActivities = attended.filter((entry) => entry && entry.completed);
       document.getElementById("passportAvatar").textContent = leader.initials;
       document.getElementById("passportAvatar").style.background = leader.color;
       document.getElementById("passportName").textContent = leader.name;
@@ -6587,6 +6922,16 @@
       const rankLabel = state.lang === "hi" ? (leader.civicRankHi || leader.civicRankEn || "") : (leader.civicRankEn || "");
       const rankEl = document.getElementById("passportCivicRank");
       if (rankEl) rankEl.innerHTML = rankLabel ? `<span class="civic-rank-badge">${escapeHtml(rankLabel)}</span>` : "";
+      // District-wide rank position (only known for the self-service lookup,
+      // since the public leaderboard only ever shows the top 10).
+      const positionEl = document.getElementById("passportRankPosition");
+      if (positionEl) {
+        positionEl.textContent = (leader.position && leader.totalVolunteers)
+          ? (state.lang === "hi"
+              ? `जिले में रैंक #${leader.position} (कुल ${leader.totalVolunteers} स्वयंसेवकों में से)`
+              : `District rank #${leader.position} of ${leader.totalVolunteers} volunteers`)
+          : "";
+      }
       // Streak
       const streakEl = document.getElementById("passportStreak");
       if (streakEl) {
@@ -6597,9 +6942,11 @@
           : (best > 0 ? `${state.lang === "hi" ? "सर्वश्रेष्ठ" : "Best"}: ${best}` : "—");
       }
       document.getElementById("passportBadges").innerHTML = (leader.badges || []).map((badge) => `<span class="badge-emoji">${badge}</span>`).join("");
-      document.getElementById("passportTimeline").innerHTML = leader.attended
-        .map((mission) => `<div class="timeline-item">${escapeHtml(mission)}${completedActivities.includes(mission) ? ` · ${state.lang === "hi" ? "पूर्ण" : "completed"}` : ""}</div>`)
-        .join("");
+      document.getElementById("passportTimeline").innerHTML = attended.length
+        ? attended
+            .map((entry) => `<div class="timeline-item">${escapeHtml(entry.title)}${entry.dateLabel ? ` · ${escapeHtml(entry.dateLabel)}` : ""}${entry.completed ? ` · ${state.lang === "hi" ? "पूर्ण" : "completed"}` : ""}</div>`)
+            .join("")
+        : `<div class="timeline-item">${state.lang === "hi" ? "अभी तक कोई अभियान दर्ज नहीं है।" : "No missions recorded yet."}</div>`;
       document.getElementById("passportEligibilityText").textContent = completedActivities.length
         ? state.lang === "hi"
           ? `${completedActivities.length} पूर्ण गतिविधि सत्यापित है। प्रमाणपत्र डाउनलोड सक्षम है।`
@@ -6659,6 +7006,7 @@
       updateVolunteerFormMode();
       renderAdminStats();
       renderMissionRequestList();
+      if (state.adminLoggedIn) renderCompletionRequestsPanel();
       if (state.adminLoggedIn) renderPosterMissionOptions();
       renderMissionStatusList();
       renderVolunteerTable();
@@ -6676,11 +7024,83 @@
     function handleMissionDeepLink() {
       const params = new URLSearchParams(window.location.search);
       const missionId = Number(params.get("mission") || 0);
-      if (!missionId) return;
-      const mission = state.missions.find((item) => item.id === missionId);
-      if (!mission) return;
-      document.getElementById("missions").scrollIntoView({ behavior: "smooth", block: "start" });
-      openMissionModal(mission.id);
+      const checkinCode = String(params.get("checkin") || "").trim().toUpperCase();
+      const verifyId = Number(params.get("verify") || 0);
+
+      if (verifyId) {
+        showVolunteerVerification(verifyId);
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        return;
+      }
+
+      if (missionId) {
+        const mission = state.missions.find((item) => item.id === missionId);
+        if (mission) {
+          document.getElementById("missions").scrollIntoView({ behavior: "smooth", block: "start" });
+          openMissionModal(mission.id);
+        }
+      }
+
+      if (checkinCode) {
+        const codeField = document.getElementById("checkInCode");
+        if (codeField) codeField.value = checkinCode;
+        // If this browser has checked in before, remember the phone number so
+        // returning volunteers only have to tap Check In at the venue.
+        const phoneField = document.getElementById("checkInPhone");
+        if (phoneField) {
+          try {
+            const lastPhone = window.localStorage.getItem("prayasLastCheckinPhone");
+            if (lastPhone) phoneField.value = lastPhone;
+          } catch (error) {}
+        }
+        openModal("checkInModal");
+      }
+
+      if (missionId || checkinCode) {
+        // Clean the URL so refreshing or sharing it doesn't replay the deep link.
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    }
+
+    // What scanning the QR code on a downloaded certificate or ID card
+    // resolves to — confirms the credential is real without exposing
+    // anything the public leaderboard doesn't already show (no phone number).
+    async function showVolunteerVerification(profileId) {
+      const hi = state.lang === "hi";
+      const body = document.getElementById("verifyResultBody");
+      body.innerHTML = `<div class="message-card"><div class="message-text">${hi ? "सत्यापन हो रहा है…" : "Verifying…"}</div></div>`;
+      openModal("verifyResultModal");
+      try {
+        const data = await apiRequest(`/api/volunteers/${profileId}/verify`);
+        if (!data.valid) {
+          body.innerHTML = `<div class="message-card" style="border-left:3px solid #DC2626"><div class="message-name">❌ ${hi ? "अमान्य" : "Not Verified"}</div><div class="message-text">${hi ? "यह प्रमाणपत्र/आईडी हमारे रिकॉर्ड से मेल नहीं खाता।" : "This certificate/ID does not match a record in our system."}</div></div>`;
+          return;
+        }
+        const memberSince = data.memberSince
+          ? new Date(data.memberSince).toLocaleDateString(hi ? "hi-IN" : "en-IN", { month: "long", year: "numeric" })
+          : "";
+        body.innerHTML = `
+          <div class="message-card" style="border-left:3px solid #138808">
+            <div class="message-name">✅ ${hi ? "प्रामाणिक — सत्यापित प्रयास स्वयंसेवक" : "Authentic — Verified Prayas Volunteer"}</div>
+            <div class="message-text" style="font-size:20px;font-weight:700;color:var(--navy);margin-top:6px">${escapeHtml(data.name)}</div>
+            <div class="message-text">${escapeHtml(data.area || "—")}</div>
+            <div class="message-actions" style="margin-top:10px">
+              <span class="civic-rank-badge">${escapeHtml(hi ? (data.civicRankHi || data.civicRankEn) : data.civicRankEn)}</span>
+            </div>
+          </div>
+          <div class="admin-grid" style="margin-top:14px;grid-template-columns:repeat(3,1fr)">
+            <div class="admin-stat"><div class="admin-stat-value">${data.points}</div><div class="admin-stat-label">${hi ? "अंक" : "Points"}</div></div>
+            <div class="admin-stat"><div class="admin-stat-value">${data.missions}</div><div class="admin-stat-label">${hi ? "अभियान" : "Missions"}</div></div>
+            <div class="admin-stat"><div class="admin-stat-value">${data.completedCount}</div><div class="admin-stat-label">${hi ? "पूर्ण" : "Completed"}</div></div>
+          </div>
+          ${memberSince ? `<div class="message-text" style="margin-top:12px;font-size:12px;color:var(--muted)">${hi ? `सदस्य: ${memberSince} से` : `Volunteer since ${memberSince}`}</div>` : ""}
+          <div class="message-text" style="margin-top:8px;font-size:12px;color:var(--muted)">${hi ? "यह जानकारी प्रयास नागरिक सहभागिता मंच के आधिकारिक रिकॉर्ड से सीधे प्राप्त की गई है।" : "This information is fetched live from official Prayas Citizen Engagement Platform records."}</div>
+        `;
+      } catch (error) {
+        body.innerHTML = `<div class="message-card"><div class="message-text">${hi ? "सत्यापन में समस्या हुई। कृपया पुनः प्रयास करें।" : "Could not verify right now. Please try again."}</div></div>`;
+      }
     }
 
     function varValue(variable) {
@@ -7152,136 +7572,365 @@
       }).join("");
     }
 
-    function openPassportModal(leaderId) {
-      state.activeLeaderId = leaderId;
-      renderPassportModal();
-      openModal("passportModal");
+    // The passport modal (and its certificate/ID downloads) is only ever
+    // populated via the phone-verified self-service lookup
+    // (submitMyPassportLookup sets state.activeLeaderId = "self"). There is
+    // deliberately no public code path that can open another volunteer's
+    // passport — the public leaderboard instead calls
+    // showVolunteerVerification(), which shows non-sensitive, phone-free
+    // authenticity info with no download access.
+    function activePassportLeader() {
+      if (state.activeLeaderId === "self") return state.selfPassportLeader;
+      return null;
+    }
+
+    async function submitMyPassportLookup(event) {
+      event.preventDefault();
+      const errorEl = document.getElementById("myPassportError");
+      errorEl.textContent = "";
+      const name = document.getElementById("myPassportName").value.trim();
+      const phone = document.getElementById("myPassportPhone").value.trim();
+      try {
+        const data = await apiRequest("/api/volunteers/passport", {
+          method: "POST",
+          body: JSON.stringify({ name, phone })
+        });
+        if (!data.found) {
+          errorEl.textContent = state.lang === "hi"
+            ? "इस नाम और मोबाइल नंबर से कोई पंजीकृत स्वयंसेवक नहीं मिला। कृपया वही विवरण दर्ज करें जो पंजीकरण के समय दिए थे।"
+            : "No registered volunteer found with that name and mobile number. Enter them exactly as used at registration.";
+          return;
+        }
+        state.selfPassportLeader = data.leader;
+        state.activeLeaderId = "self";
+        document.getElementById("myPassportForm").reset();
+        closeModal("myPassportModal");
+        renderPassportModal();
+        openModal("passportModal");
+      } catch (error) {
+        errorEl.textContent = error?.message || (state.lang === "hi" ? "कुछ गलत हो गया।" : "Something went wrong. Please try again.");
+      }
     }
 
     function downloadCertificate() {
-      const leader = state.leaders.find((item) => item.id === state.activeLeaderId);
+      const leader = activePassportLeader();
       if (!leader) return;
-      const completedActivities = leader.attended.filter((title) =>
-        state.missions.some((mission) => mission.title.includes(title) && mission.status === "completed")
-      );
+      const attended = Array.isArray(leader.attended) ? leader.attended : [];
+      const completedActivities = attended.filter((entry) => entry && entry.completed);
       if (!completedActivities.length) {
         showToast(state.lang === "hi" ? "प्रमाणपत्र केवल पूर्ण गतिविधि के बाद उपलब्ध होगा।" : "Certificates unlock only after a completed activity is verified.", "ℹ️");
         return;
       }
-      const canvas = document.createElement("canvas");
-      canvas.width = 1120;
-      canvas.height = 760;
-      const ctx = canvas.getContext("2d");
-      const certificateId = `PRAYAS-${String(leader.id).padStart(3, "0")}-${new Date().getFullYear()}`;
-      const primaryActivity = completedActivities[0];
+      const hi = state.lang === "hi";
+      const W = 1120;
+      // A stable, human-checkable certificate number — deterministic from the
+      // volunteer's own record ID, never random, so re-downloading the same
+      // certificate always produces the same number.
+      const certificateId = `PRAYAS-${state.stateAbbr || "ST"}-${String(leader.id).padStart(4, "0")}`;
+      const verifyUrl = `${window.location.origin}${window.location.pathname}?verify=${leader.id}`;
+      const shownActivities = completedActivities.slice(0, 4);
+      const moreCount = completedActivities.length - shownActivities.length;
+      const bodyText = hi
+        ? `ने ${state.districtName} जिले में प्रयास नागरिक सहभागिता मंच के अंतर्गत नीचे सूचीबद्ध सत्यापित सार्वजनिक सेवा गतिविधियों में सफलतापूर्वक भाग लिया है।`
+        : `has successfully contributed to the verified public service activities listed below, under the Prayas Citizen Engagement Platform in ${state.districtName} district.`;
 
-      ctx.fillStyle = "#FBF7EE";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const drawSeal = (x, y, radius, topText, bottomText, centerText) => {
-        ctx.save();
-        ctx.strokeStyle = "#8B6A2F";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(x, y, radius - 10, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.fillStyle = "#1B3A6B";
-        ctx.font = "700 13px Inter";
+      // Renders the whole certificate onto `ctx` (sized W x H) and always
+      // returns where the verification footer landed. Called twice: once
+      // with draw=false against a throwaway context purely to measure how
+      // tall the variable-length content (name, activity list, body text)
+      // will be, and once for real once the canvas has been created at
+      // exactly that height — so nothing can ever run off the bottom edge
+      // or collide with the signature/footer, regardless of how many
+      // completed activities or how long the names/titles are.
+      function paint(ctx, H, draw) {
         ctx.textAlign = "center";
-        ctx.fillText(topText, x, y - radius - 10);
-        ctx.fillText(bottomText, x, y + radius + 24);
-        ctx.fillStyle = "#8B6A2F";
-        ctx.font = "700 24px Georgia";
-        ctx.fillText(centerText, x, y + 8);
-        ctx.restore();
+
+        if (draw) {
+          ctx.fillStyle = "#FBF7EE";
+          ctx.fillRect(0, 0, W, H);
+
+          // Faint decorative wheel watermark — purely ornamental, not a
+          // reproduction of any official emblem.
+          ctx.save();
+          ctx.translate(W / 2, Math.min(470, H / 2));
+          ctx.globalAlpha = 0.05;
+          ctx.strokeStyle = "#1B3A6B";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(0, 0, 210, 0, Math.PI * 2);
+          ctx.stroke();
+          for (let i = 0; i < 24; i++) {
+            const angle = (i / 24) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(angle) * 210, Math.sin(angle) * 210);
+            ctx.stroke();
+          }
+          ctx.restore();
+
+          const drawSeal = (x, y, radius, topText, bottomText, centerText) => {
+            ctx.save();
+            ctx.strokeStyle = "#8B6A2F";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(x, y, radius - 10, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = "#1B3A6B";
+            ctx.font = "700 13px Inter";
+            ctx.textAlign = "center";
+            ctx.fillText(topText, x, y - radius - 10);
+            ctx.fillText(bottomText, x, y + radius + 24);
+            ctx.fillStyle = "#8B6A2F";
+            ctx.font = "700 24px Georgia";
+            ctx.fillText(centerText, x, y + 8);
+            ctx.restore();
+          };
+
+          const drawCornerFlourish = (x, y, flipX, flipY) => {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(flipX, flipY);
+            ctx.strokeStyle = "#C8A96A";
+            ctx.globalAlpha = 0.65;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, 16, 0, Math.PI / 2);
+            ctx.stroke();
+            for (let i = 0; i <= 4; i++) {
+              const angle = (i / 4) * (Math.PI / 2);
+              ctx.beginPath();
+              ctx.moveTo(Math.cos(angle) * 8, Math.sin(angle) * 8);
+              ctx.lineTo(Math.cos(angle) * 24, Math.sin(angle) * 24);
+              ctx.stroke();
+            }
+            ctx.restore();
+          };
+
+          ctx.fillStyle = "#FF9933";
+          ctx.fillRect(0, 0, W, 18);
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillRect(0, 18, W, 12);
+          ctx.fillStyle = "#138808";
+          ctx.fillRect(0, 30, W, 18);
+
+          ctx.strokeStyle = "#1B3A6B";
+          ctx.lineWidth = 7;
+          ctx.strokeRect(28, 28, W - 56, H - 56);
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "#C8A96A";
+          ctx.strokeRect(44, 44, W - 88, H - 88);
+
+          drawCornerFlourish(48, 48, 1, 1);
+          drawCornerFlourish(W - 48, 48, -1, 1);
+          drawCornerFlourish(48, H - 48, 1, -1);
+          drawCornerFlourish(W - 48, H - 48, -1, -1);
+
+          ctx.fillStyle = "#1B3A6B";
+          ctx.font = "700 18px Inter";
+          ctx.fillText(hi ? "छत्तीसगढ़ सरकार" : "GOVERNMENT OF CHHATTISGARH", W / 2, 108);
+          ctx.font = "700 30px Georgia";
+          ctx.fillText(hi ? `${state.districtName} जिला प्रशासन` : `${state.districtName} District Administration`, W / 2, 148);
+          ctx.font = "700 26px Georgia";
+          ctx.fillText(hi ? "प्रयास नागरिक सहभागिता मंच" : "Prayas Citizen Engagement Platform", W / 2, 186);
+
+          ctx.fillStyle = "#6B7280";
+          ctx.font = "600 16px Inter";
+          ctx.fillText(hi ? "नागरिक योगदान का आधिकारिक प्रमाणपत्र" : "Official Certificate of Civic Contribution", W / 2, 220);
+
+          drawSeal(190, 156, 48, "Government of", state.stateName, state.stateAbbr);
+          drawSeal(W - 190, 156, 48, "Prayas", "Certificate Seal", "P");
+
+          ctx.fillStyle = "#6B7280";
+          ctx.font = "18px Georgia";
+          ctx.fillText(hi ? "यह प्रमाणित किया जाता है कि" : "This is to certify that", W / 2, 294);
+        }
+
+        // Volunteer name — shrinks to fit so a long name never overruns the frame.
+        const nameSize = fitSingleLineFontSize(ctx, leader.name, W - 300, "Georgia", 42, 22, "700");
+        if (draw) {
+          ctx.fillStyle = "#1B3A6B";
+          ctx.font = `700 ${nameSize}px Georgia`;
+          ctx.fillText(leader.name, W / 2, 356);
+        }
+
+        let cursorY = 400;
+        ctx.font = "18px Georgia";
+        const bodyLines = wrapLinesOnly(ctx, bodyText, W - 260, 2);
+        if (draw) {
+          ctx.fillStyle = "#374151";
+          bodyLines.forEach((line, i) => ctx.fillText(line, W / 2, cursorY + i * 26));
+        }
+        cursorY += bodyLines.length * 26;
+
+        cursorY += 16;
+        if (draw) {
+          ctx.fillStyle = "#8B6A2F";
+          ctx.font = "700 14px Inter";
+          ctx.fillText(hi ? "पूर्ण गतिविधियाँ" : "COMPLETED ACTIVITIES", W / 2, cursorY);
+        }
+        cursorY += 30;
+
+        shownActivities.forEach((entry) => {
+          const size = fitSingleLineFontSize(ctx, `• ${entry.title}`, W - 320, "Inter", 21, 15, "700");
+          if (draw) {
+            ctx.fillStyle = "#1B3A6B";
+            ctx.font = `700 ${size}px Inter`;
+            ctx.fillText(`• ${entry.title}`, W / 2, cursorY);
+          }
+          cursorY += size + 10;
+        });
+        if (moreCount > 0) {
+          if (draw) {
+            ctx.fillStyle = "#6B7280";
+            ctx.font = "600 15px Inter";
+            ctx.fillText(
+              hi ? `+ ${moreCount} अन्य पूर्ण गतिविधियाँ` : `+ ${moreCount} more completed activities`,
+              W / 2, cursorY
+            );
+          }
+          cursorY += 26;
+        }
+
+        cursorY += 14;
+        if (draw) {
+          ctx.fillStyle = "#6B7280";
+          ctx.font = "16px Inter";
+          ctx.fillText(
+            hi
+              ? `कुल पूर्ण गतिविधियाँ: ${completedActivities.length}  |  कुल भागीदारी: ${leader.missions}  |  प्रमाणपत्र क्र.: ${certificateId}`
+              : `Total completed: ${completedActivities.length}  |  Total participations: ${leader.missions}  |  Certificate No: ${certificateId}`,
+            W / 2, cursorY
+          );
+        }
+        cursorY += 26;
+        if (draw) {
+          ctx.fillText(
+            hi
+              ? `जारी किया गया: ${formatDate(new Date(), "hi")}  |  नागरिक रैंक: ${leader.civicRankHi || leader.civicRankEn}`
+              : `Issued on ${formatDate(new Date(), "en")}  |  Civic Rank: ${leader.civicRankEn}`,
+            W / 2, cursorY
+          );
+        }
+
+        const sigY = cursorY + 96;
+        if (draw) {
+          ctx.strokeStyle = "#C8A96A";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(210, sigY - 26);
+          ctx.lineTo(910, sigY - 26);
+          ctx.stroke();
+
+          ctx.strokeStyle = "#1B3A6B";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(170, sigY + 52);
+          ctx.lineTo(370, sigY + 52);
+          ctx.moveTo(750, sigY + 52);
+          ctx.lineTo(950, sigY + 52);
+          ctx.stroke();
+
+          ctx.fillStyle = "#1B3A6B";
+          ctx.font = "700 16px Inter";
+          ctx.fillText(hi ? `${state.districtName} जिला प्रशासन` : `${state.districtName} District Administration`, 270, sigY + 78);
+          ctx.fillText(hi ? "जिला प्रशासन" : "District Administration", 850, sigY + 78);
+
+          ctx.fillStyle = "#6B7280";
+          ctx.font = "14px Inter";
+          ctx.fillText(hi ? "प्रयास नागरिक सहभागिता मंच" : "Prayas Citizen Engagement Platform", 270, sigY + 102);
+          ctx.fillText(hi ? "अधिकृत हस्ताक्षरकर्ता" : "Authorised Signatory", 850, sigY + 102);
+        }
+
+        // Verification footer sits a fixed gap AFTER the signature block —
+        // never anchored to the canvas edge — so it can never collide with it.
+        const footerY = sigY + 140;
+        if (draw) {
+          ctx.strokeStyle = "#E5D9BE";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(70, footerY - 24);
+          ctx.lineTo(W - 70, footerY - 24);
+          ctx.stroke();
+        }
+
+        return footerY;
+      }
+
+      // Pass 1: measure only (nothing drawn) to find the exact height needed.
+      const scratch = document.createElement("canvas");
+      scratch.width = W;
+      scratch.height = 10;
+      const measuredFooterY = paint(scratch.getContext("2d"), 0, false);
+      const H = Math.max(measuredFooterY + 110, 760);
+
+      // Pass 2: draw for real on a canvas sized exactly right.
+      const canvas = document.createElement("canvas");
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext("2d");
+      const footerY = paint(ctx, H, true);
+
+      const finishAndDownload = () => {
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = `${leader.name.replace(/\s+/g, "_")}_certificate.png`;
+        link.click();
+        showToast(hi ? "प्रमाणपत्र डाउनलोड हो गया।" : "Certificate downloaded.", "🏅");
       };
 
-      ctx.fillStyle = "#FF9933";
-      ctx.fillRect(0, 0, canvas.width, 18);
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(0, 18, canvas.width, 12);
-      ctx.fillStyle = "#138808";
-      ctx.fillRect(0, 30, canvas.width, 18);
+      if (typeof QRCode === "undefined") {
+        // Library unavailable (e.g. offline) — still deliver a complete,
+        // correctly laid out certificate rather than blocking the download.
+        ctx.fillStyle = "#6B7280";
+        ctx.textAlign = "left";
+        ctx.font = "13px Inter";
+        ctx.fillText(hi ? `सत्यापन: ${verifyUrl}` : `Verify online: ${verifyUrl}`, 70, footerY + 22);
+        ctx.textAlign = "center";
+        finishAndDownload();
+        return;
+      }
 
-      ctx.strokeStyle = "#1B3A6B";
-      ctx.lineWidth = 7;
-      ctx.strokeRect(28, 28, canvas.width - 56, canvas.height - 56);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "#C8A96A";
-      ctx.strokeRect(44, 44, canvas.width - 88, canvas.height - 88);
+      const qrHost = document.createElement("div");
+      qrHost.style.position = "fixed";
+      qrHost.style.left = "-9999px";
+      document.body.appendChild(qrHost);
+      new QRCode(qrHost, { text: verifyUrl, width: 150, height: 150, colorDark: "#1B3A6B", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+      setTimeout(() => {
+        const qrCanvas = qrHost.querySelector("canvas");
+        const qrImg = qrHost.querySelector("img");
+        const qrSize = 76;
+        const qrX = 70;
+        const qrY = footerY - 14;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
+        if (qrCanvas) ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+        else if (qrImg) ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+        document.body.removeChild(qrHost);
 
-      ctx.textAlign = "center";
-      ctx.fillStyle = "#1B3A6B";
-      ctx.font = "700 18px Inter";
-      ctx.fillText(state.lang === "hi" ? "छत्तीसगढ़ सरकार" : "GOVERNMENT OF CHHATTISGARH", canvas.width / 2, 108);
-      ctx.font = "700 30px Georgia";
-      ctx.fillText(state.lang === "hi" ? `${state.districtName} जिला प्रशासन` : `${state.districtName} District Administration`, canvas.width / 2, 148);
-      ctx.font = "700 26px Georgia";
-      ctx.fillText(state.lang === "hi" ? "प्रयास नागरिक सहभागिता मंच" : "Prayas Citizen Engagement Platform", canvas.width / 2, 186);
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#1B3A6B";
+        ctx.font = "700 13px Inter";
+        ctx.fillText(hi ? "प्रामाणिकता सत्यापित करें" : "Verify Authenticity", qrX + qrSize + 16, qrY + 22);
+        ctx.fillStyle = "#6B7280";
+        ctx.font = "12px Inter";
+        ctx.fillText(hi ? "इस QR कोड को स्कैन करें या नीचे दिया लिंक खोलें:" : "Scan this QR code, or open the link below:", qrX + qrSize + 16, qrY + 42);
+        ctx.fillStyle = "#1B3A6B";
+        ctx.font = "600 13px Inter";
+        ctx.fillText(verifyUrl, qrX + qrSize + 16, qrY + 62);
 
-      ctx.fillStyle = "#6B7280";
-      ctx.font = "600 16px Inter";
-      ctx.fillText(state.lang === "hi" ? "नागरिक योगदान का आधिकारिक प्रमाणपत्र" : "Official Certificate of Civic Contribution", canvas.width / 2, 220);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#6B7280";
+        ctx.font = "12px Inter";
+        ctx.fillText(hi ? `प्रमाणपत्र क्र. ${certificateId}` : `Certificate No. ${certificateId}`, W - 70, qrY + 22);
+        ctx.fillText(hi ? "डिजिटल रूप से जनरेट किया गया" : "Digitally generated and verifiable online", W - 70, qrY + 42);
+        ctx.textAlign = "center";
 
-      drawSeal(190, 156, 48, "Government of", state.stateName, state.stateAbbr);
-      drawSeal(canvas.width - 190, 156, 48, "Prayas", "Certificate Seal", "P");
-
-      ctx.fillStyle = "#6B7280";
-      ctx.font = "18px Georgia";
-      ctx.fillText(state.lang === "hi" ? "यह प्रमाणित किया जाता है कि" : "This is to certify that", canvas.width / 2, 294);
-
-      ctx.fillStyle = "#1B3A6B";
-      ctx.font = "700 42px Georgia";
-      ctx.fillText(leader.name, canvas.width / 2, 356);
-
-      ctx.fillStyle = "#374151";
-      ctx.font = "18px Georgia";
-      ctx.fillText(state.lang === "hi" ? "ने प्रयास मंच के अंतर्गत एक सत्यापित सार्वजनिक सेवा गतिविधि में सफलतापूर्वक भाग लिया है।" : "has successfully contributed to a verified public service activity under the Prayas platform.", canvas.width / 2, 412);
-
-      ctx.fillStyle = "#1B3A6B";
-      ctx.font = "700 24px Inter";
-      ctx.fillText(primaryActivity, canvas.width / 2, 462);
-
-      ctx.fillStyle = "#6B7280";
-      ctx.font = "16px Inter";
-      ctx.fillText(state.lang === "hi" ? `पूर्ण गतिविधियाँ: ${completedActivities.length}  |  प्रमाणपत्र क्र.: ${certificateId}` : `Completed activity count: ${completedActivities.length}  |  Certificate No: ${certificateId}`, canvas.width / 2, 500);
-      ctx.fillText(state.lang === "hi" ? `जारी किया गया: ${formatDate(new Date(), "hi")}  |  जिला प्रशासन द्वारा सत्यापित` : `Issued on ${formatDate(new Date(), "en")}  |  Verified by District Administration`, canvas.width / 2, 528);
-
-      ctx.strokeStyle = "#C8A96A";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(210, 562);
-      ctx.lineTo(910, 562);
-      ctx.stroke();
-
-      ctx.strokeStyle = "#1B3A6B";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(170, 640);
-      ctx.lineTo(370, 640);
-      ctx.moveTo(750, 640);
-      ctx.lineTo(950, 640);
-      ctx.stroke();
-
-      ctx.fillStyle = "#1B3A6B";
-      ctx.font = "700 16px Inter";
-      ctx.fillText(state.lang === "hi" ? `${state.districtName} जिला प्रशासन` : `${state.districtName} District Administration`, 270, 666);
-      ctx.fillText(state.lang === "hi" ? "जिला प्रशासन" : "District Administration", 850, 666);
-
-      ctx.fillStyle = "#6B7280";
-      ctx.font = "14px Inter";
-      ctx.fillText(state.lang === "hi" ? "प्रयास नागरिक सहभागिता मंच" : "Prayas Citizen Engagement Platform", 270, 690);
-      ctx.fillText(state.lang === "hi" ? "अधिकृत हस्ताक्षरकर्ता" : "Authorised Signatory", 850, 690);
-
-      const link = document.createElement("a");
-      link.href = canvas.toDataURL("image/png");
-      link.download = `${leader.name.replace(/\s+/g, "_")}_certificate.png`;
-      link.click();
-      showToast(state.lang === "hi" ? "प्रमाणपत्र डाउनलोड हो गया।" : "Certificate downloaded.", "🏅");
+        finishAndDownload();
+      }, 150);
     }
 
     async function verifyDonation(donationId) {
@@ -7812,6 +8461,7 @@
       document.getElementById("commentForm").addEventListener("submit", submitCommentForm);
       document.getElementById("adminLoginForm").addEventListener("submit", submitAdminLogin);
       document.getElementById("postMissionForm").addEventListener("submit", submitPostMissionForm);
+      document.getElementById("myPassportForm").addEventListener("submit", submitMyPassportLookup);
       document.getElementById("exportVolunteersBtn").addEventListener("click", exportVolunteersCsv);
       document.getElementById("postAnnouncementBtn").addEventListener("click", postAnnouncement);
       document.getElementById("newsletterSubject").addEventListener("input", renderNewsletterPreview);
@@ -8118,6 +8768,7 @@
         } else {
           showToast(`Attendance confirmed for: ${data.missionTitle}!`, "✅");
         }
+        try { window.localStorage.setItem("prayasLastCheckinPhone", phone); } catch (error) {}
         closeModal("checkInModal");
         document.getElementById("checkInForm").reset();
       } catch (e) { handleRequestError(e); }
@@ -8129,8 +8780,12 @@
         if (!m.checkInCode) return;
         const el = document.getElementById(`qr-${m.id}`);
         if (!el || el.innerHTML) return;
+        // Scanning this opens the portal directly with the check-in modal
+        // pre-filled — a volunteer just has to add their phone number and
+        // tap Check In, instead of retyping a 6-character code by hand.
+        const checkinUrl = `${window.location.origin}${window.location.pathname}?checkin=${m.checkInCode}`;
         new QRCode(el, {
-          text: m.checkInCode,
+          text: checkinUrl,
           width: 64,
           height: 64,
           colorDark: "#000",
@@ -8181,95 +8836,180 @@
     // ── Volunteer ID card (canvas) ────────────────────────────────────────────
 
     function downloadIdCard() {
-      const name = document.getElementById("passportName").textContent || "Volunteer";
-      const area = document.getElementById("passportArea").textContent || "";
-      const rank = document.getElementById("passportCivicRank").textContent || "";
-      const phone = (state.volunteerLookup?.profile?.phone || "").replace(/(\d{6})(\d{4})/, "XXXXXX$2");
+      const leader = activePassportLeader();
+      if (!leader) return;
+      const hi = state.lang === "hi";
+      const name = leader.name || "Volunteer";
+      const area = leader.area || "";
+      const rankLabel = hi ? (leader.civicRankHi || leader.civicRankEn || "") : (leader.civicRankEn || "");
+      // The phone number is only ever shown when the holder proved it's
+      // theirs via the self-service "My Passport" lookup. A card opened from
+      // the public leaderboard (anyone can click any top-10 entry) never
+      // reveals a phone number that visitor hasn't verified.
+      const phone = (state.activeLeaderId === "self" && leader.phone)
+        ? leader.phone.replace(/(\d{6})(\d{4})/, "XXXXXX$2")
+        : "";
+      // Deterministic ID number tied to the volunteer's own record — stable
+      // across re-downloads, unlike a random number.
+      const idNum = `PRAYAS-ID-${String(leader.id).padStart(5, "0")}`;
+      const memberSince = leader.memberSince
+        ? new Date(leader.memberSince).toLocaleDateString(hi ? "hi-IN" : "en-IN", { month: "short", year: "numeric" })
+        : "";
+      const verifyUrl = `${window.location.origin}${window.location.pathname}?verify=${leader.id}`;
 
+      const W = 720, H = 460;
       const canvas = document.createElement("canvas");
-      canvas.width = 680;
-      canvas.height = 430;
+      canvas.width = W;
+      canvas.height = H;
       const ctx = canvas.getContext("2d");
 
       // Card background
-      const grad = ctx.createLinearGradient(0, 0, 680, 430);
+      const grad = ctx.createLinearGradient(0, 0, W, H);
       grad.addColorStop(0, "#1B2A4A");
       grad.addColorStop(1, "#0D3B6E");
       ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.roundRect(0, 0, 680, 430, 20);
+      ctx.roundRect(0, 0, W, H, 22);
       ctx.fill();
 
-      // Saffron stripe
+      // Fine border for a more finished, printable-card look
+      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(6, 6, W - 12, H - 12, 18);
+      ctx.stroke();
+
+      // Tricolor stripe band along the bottom
       ctx.fillStyle = "#FF9933";
-      ctx.fillRect(0, 380, 680, 50);
-
-      // White stripe
+      ctx.fillRect(0, H - 50, W, 50);
       ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(0, 400, 680, 10);
-
-      // Green stripe
+      ctx.fillRect(0, H - 30, W, 10);
       ctx.fillStyle = "#138808";
-      ctx.fillRect(0, 410, 680, 20);
+      ctx.fillRect(0, H - 20, W, 20);
 
       // Logo circle
       ctx.fillStyle = "rgba(255,255,255,0.12)";
       ctx.beginPath();
-      ctx.arc(80, 100, 50, 0, Math.PI * 2);
+      ctx.arc(84, 100, 50, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#FF9933";
       ctx.font = "bold 38px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("🇮🇳", 80, 115);
+      ctx.fillText("🇮🇳", 84, 115);
 
       // Title
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 22px sans-serif";
+      ctx.font = "bold 22px Inter, sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText("PRAYAS — Citizen Volunteer", 150, 80);
+      ctx.fillText(hi ? "प्रयास — नागरिक स्वयंसेवक" : "PRAYAS — Citizen Volunteer", 156, 80);
       ctx.fillStyle = "rgba(255,255,255,0.65)";
-      ctx.font = "14px sans-serif";
-      ctx.fillText((state.districtName || "District") + " · " + (state.stateName || "State"), 150, 108);
+      ctx.font = "14px Inter, sans-serif";
+      ctx.fillText((state.districtName || "District") + " · " + (state.stateName || "State"), 156, 108);
 
       // Avatar circle
       const initials = name.split(" ").slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "PV";
-      ctx.fillStyle = "#FF9933";
+      ctx.fillStyle = leader.color || "#FF9933";
       ctx.beginPath();
-      ctx.arc(100, 260, 60, 0, Math.PI * 2);
+      ctx.arc(104, 270, 62, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "bold 36px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(initials, 100, 274);
+      ctx.fillText(initials, 104, 284);
 
-      // Name & details
+      // Name & details — shrinks to fit so a long name stays on one line.
       ctx.textAlign = "left";
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 28px sans-serif";
-      ctx.fillText(name, 180, 230);
+      const nameSize = fitSingleLineFontSize(ctx, name, W - 380, "Inter, sans-serif", 28, 17, "700");
+      ctx.font = `700 ${nameSize}px Inter, sans-serif`;
+      ctx.fillText(name, 190, 235);
       ctx.fillStyle = "rgba(255,255,255,0.75)";
-      ctx.font = "16px sans-serif";
-      ctx.fillText(area || "Citizen Volunteer", 180, 258);
-      if (phone) { ctx.fillText("📱 " + phone, 180, 282); }
+      ctx.font = "16px Inter, sans-serif";
+      ctx.fillText(area || (hi ? "नागरिक स्वयंसेवक" : "Citizen Volunteer"), 190, 264);
+      let detailY = 290;
+      if (phone) {
+        ctx.fillText("📱 " + phone, 190, detailY);
+        detailY += 24;
+      }
       ctx.fillStyle = "#FFC36B";
-      ctx.font = "bold 15px sans-serif";
-      ctx.fillText(rank || "Nagarik", 180, 308);
+      ctx.font = "bold 15px Inter, sans-serif";
+      ctx.fillText(rankLabel || "Nagarik", 190, detailY);
+      detailY += 22;
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.font = "12px Inter, sans-serif";
+      const statsLine = `${leader.missions || 0} ${hi ? "अभियान" : "missions"} · ${leader.completedCount || 0} ${hi ? "पूर्ण" : "completed"} · ⚡ ${leader.points || 0}`;
+      ctx.fillText(statsLine, 190, detailY);
 
-      // ID number
-      const idNum = `PRAYAS-${new Date().getFullYear()}-${Math.floor(Math.random() * 90000) + 10000}`;
-      ctx.fillStyle = "rgba(255,255,255,0.4)";
-      ctx.font = "12px monospace";
-      ctx.textAlign = "right";
-      ctx.fillText(idNum, 650, 370);
+      // Footer strip above the tricolor band: ID number + membership date
+      // on the left, verification QR on the right.
+      const footerTop = H - 118;
+      ctx.strokeStyle = "rgba(255,255,255,0.15)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(28, footerTop);
+      ctx.lineTo(W - 28, footerTop);
+      ctx.stroke();
 
-      canvas.toBlob((blob) => {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `prayas-id-card-${name.replace(/\s+/g, "-").toLowerCase()}.png`;
-        link.click();
-        URL.revokeObjectURL(url);
-      });
+      ctx.textAlign = "left";
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.font = "700 13px monospace";
+      ctx.fillText(idNum, 28, footerTop + 26);
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.font = "11px Inter, sans-serif";
+      ctx.fillText(
+        memberSince
+          ? (hi ? `सदस्य: ${memberSince} से` : `Member since ${memberSince}`)
+          : (hi ? "पंजीकृत नागरिक स्वयंसेवक" : "Registered citizen volunteer"),
+        28, footerTop + 44
+      );
+
+      const finishAndDownload = () => {
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `prayas-id-card-${name.replace(/\s+/g, "-").toLowerCase()}.png`;
+          link.click();
+          URL.revokeObjectURL(url);
+        });
+      };
+
+      if (typeof QRCode === "undefined") {
+        ctx.textAlign = "right";
+        ctx.fillStyle = "rgba(255,255,255,0.5)";
+        ctx.font = "10px monospace";
+        ctx.fillText(hi ? "सत्यापन:" : "Verify:", W - 28, footerTop + 26);
+        ctx.fillText(verifyUrl, W - 28, footerTop + 40);
+        finishAndDownload();
+        return;
+      }
+
+      const qrHost = document.createElement("div");
+      qrHost.style.position = "fixed";
+      qrHost.style.left = "-9999px";
+      document.body.appendChild(qrHost);
+      new QRCode(qrHost, { text: verifyUrl, width: 130, height: 130, colorDark: "#0D2A50", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+      setTimeout(() => {
+        const qrCanvas = qrHost.querySelector("canvas");
+        const qrImg = qrHost.querySelector("img");
+        const qrSize = 62;
+        const qrX = W - 28 - qrSize;
+        const qrY = footerTop + 4;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.roundRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 6);
+        ctx.fill();
+        if (qrCanvas) ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+        else if (qrImg) ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+        document.body.removeChild(qrHost);
+
+        ctx.textAlign = "right";
+        ctx.fillStyle = "rgba(255,255,255,0.55)";
+        ctx.font = "10px Inter, sans-serif";
+        ctx.fillText(hi ? "स्कैन कर सत्यापित करें" : "Scan to verify", qrX - 10, footerTop + 22);
+
+        finishAndDownload();
+      }, 150);
     }
 
     // ── Share passport on WhatsApp ────────────────────────────────────────────
