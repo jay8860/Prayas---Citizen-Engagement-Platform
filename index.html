@@ -5802,6 +5802,14 @@
       ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 14, W, 8);
       ctx.fillStyle = "#138808"; ctx.fillRect(0, 22, W, 14);
 
+      // Formal outer border, matching the static bilingual posters' framed look
+      ctx.strokeStyle = "#C8A96A";
+      ctx.lineWidth = 6;
+      ctx.strokeRect(20, 46, W - 40, H - 66);
+      ctx.strokeStyle = "#1B3A6B";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(30, 56, W - 60, H - 86);
+
       // Navy header band
       const headerH = 300;
       const grad = ctx.createLinearGradient(0, 36, 0, headerH);
@@ -5823,6 +5831,28 @@
 
       ctx.font = "800 78px Georgia";
       ctx.fillText(categoryEmoji(category), W / 2, 230);
+
+      // District emblem (left) and Prayas logo (right), flanking the header —
+      // drawn last among the header elements so they sit on top of the band.
+      const drawLogo = (src, x, y, size) => {
+        try {
+          const img = new Image();
+          img.onload = () => {
+            ctx.save();
+            ctx.beginPath();
+            ctx.fillStyle = "#FFFFFF";
+            ctx.arc(x + size / 2, y + size / 2, size / 2 + 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.drawImage(img, x, y, size, size);
+            ctx.restore();
+          };
+          img.src = src;
+        } catch (error) {
+          // Logo is decorative; never block poster generation on it.
+        }
+      };
+      drawLogo("assets/dhamtari-emblem.png", 44, 56, 72);
+      drawLogo("assets/prayas-logo.png", W - 116, 56, 72);
 
       // Title block
       ctx.fillStyle = "#1B3A6B";
@@ -5892,9 +5922,10 @@
         W - 60, H - 46
       );
 
-      // QR code linking back to the portal (or the mission page if one was picked)
-      const missionId = Number(document.getElementById("posterMissionPicker").value || 0);
-      const qrTarget = missionId ? `${window.location.origin}${window.location.pathname}?mission=${missionId}` : window.location.origin;
+      // QR code linking to the volunteer registration section — this poster
+      // recruits new volunteers, so it must never point at a mission
+      // check-in link (that's what the admin check-in poster is for).
+      const qrTarget = `${window.location.origin}${window.location.pathname}#volunteer`;
       const qrHost = document.createElement("div");
       qrHost.style.position = "fixed";
       qrHost.style.left = "-9999px";
@@ -7014,11 +7045,10 @@
             : "";
           const timing = missionTimingBadge(mission);
           const hi = state.lang === "hi";
-          // The QR + code are shown right on the public card (not just in the
-          // admin panel) so any volunteer can scan or tap it on their own
-          // phone to check in — no need to find an admin or open a separate
-          // screen. Hidden once a mission is closed/completed.
-          const showCheckin = mission.checkInCode && !["completed", "closed"].includes(mission.status);
+          // Check-in QR/code are intentionally NOT shown on the public card —
+          // that would let anyone check in remotely from the website instead
+          // of only at the physical venue, defeating attendance verification.
+          // They remain visible in the admin mission list for organizers.
 
           return `
             <article class="mission-card">
@@ -7040,15 +7070,6 @@
                   <span><strong>${mission.volunteers}</strong> ${hi ? "स्वयंसेवक जुड़े" : "volunteers joined"} · ${percentage}% ${hi ? "भरा" : "filled"}</span>
                 </div>
                 <div class="progress-bar"><div class="progress-fill" style="width:${percentage}%"></div></div>
-                ${showCheckin ? `
-                <div class="mission-checkin">
-                  <div id="qr-card-${mission.id}" class="mission-checkin-qr" title="${hi ? "चेक-इन के लिए स्कैन करें" : "Scan with your phone to check in"}"></div>
-                  <div class="mission-checkin-info">
-                    <span class="mission-checkin-label">${hi ? "चेक-इन कोड" : "Check-in code"}</span>
-                    <span class="mission-checkin-code">${escapeHtml(mission.checkInCode)}</span>
-                  </div>
-                  <button type="button" class="mission-checkin-btn" onclick="openMissionCheckIn('${escapeHtml(mission.checkInCode)}')">${hi ? "चेक इन" : "Check In"}</button>
-                </div>` : ""}
                 <div class="mission-footer" style="${avatars ? "" : "justify-content:flex-end"}">
                   ${avatars ? `<div class="volunteers-avatars">${avatars}</div>` : ""}
                   <div class="mission-actions">
@@ -7639,7 +7660,8 @@
                 <div style="font-size:22px;font-weight:700;letter-spacing:4px">${escapeHtml(mission.checkInCode)}</div>
                 <div style="font-size:11px;color:var(--muted)">Display at venue for volunteer check-in</div>
               </div>
-            </div>` : ""}
+            </div>
+            <button class="btn btn-soft" type="button" onclick="downloadCheckinPoster(${mission.id})" style="margin-bottom:8px">📄 ${state.lang === "hi" ? "चेक-इन पोस्टर डाउनलोड करें" : "Download Check-in Poster"}</button>` : ""}
             <div class="message-actions">
               <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
               ${mission.status !== "completed" ? `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>` : `<button class="btn btn-soft" type="button" onclick="confirmUnmarkCompleted(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्न हटाएं" : "Unmark Completed"}</button>`}
@@ -7650,6 +7672,142 @@
         `)
         .join("");
       renderQrCodes();
+    }
+
+    // Admin-only: a large-format, printable poster for a single mission's
+    // physical check-in — meant to be taped up at the venue. The QR is drawn
+    // deliberately huge (well past what's readable on screen) because a QR
+    // that scans fine on a monitor can fail once printed and shrunk/creased.
+    function downloadCheckinPoster(missionId) {
+      const mission = state.missions.find((item) => item.id === missionId);
+      if (!mission || !mission.checkInCode) return;
+      if (typeof QRCode === "undefined") {
+        showToast(state.lang === "hi" ? "QR लाइब्रेरी लोड नहीं हुई।" : "QR library not loaded.", "⚠️");
+        return;
+      }
+      const hi = state.lang === "hi";
+      const checkinUrl = `${window.location.origin}${window.location.pathname}?checkin=${mission.checkInCode}`;
+
+      const W = 1200;
+      const H = 1600;
+      const canvas = document.createElement("canvas");
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext("2d");
+
+      // Background + tricolor strip + formal border, matching the district's
+      // established poster brand language.
+      ctx.fillStyle = "#FBF7EE";
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#FF9933"; ctx.fillRect(0, 0, W, 16);
+      ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 16, W, 8);
+      ctx.fillStyle = "#138808"; ctx.fillRect(0, 24, W, 16);
+      ctx.strokeStyle = "#C8A96A";
+      ctx.lineWidth = 6;
+      ctx.strokeRect(24, 56, W - 48, H - 76);
+      ctx.strokeStyle = "#1B3A6B";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(36, 68, W - 72, H - 100);
+
+      // Header band
+      const headerH = 190;
+      ctx.fillStyle = "#1B3A6B";
+      ctx.fillRect(0, 56, W, headerH - 56);
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#FFC36B";
+      ctx.font = "700 26px Inter";
+      ctx.fillText(
+        hi ? `${state.districtName} जिला प्रशासन · प्रयास` : `${state.districtName} District Administration · Prayas`,
+        W / 2, 108
+      );
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "700 34px Inter";
+      ctx.fillText(hi ? "मिशन चेक-इन" : "MISSION CHECK-IN", W / 2, 158);
+
+      // Logos flanking the header
+      const drawLogo = (src, x, y, size) => {
+        try {
+          const img = new Image();
+          img.onload = () => {
+            ctx.save();
+            ctx.beginPath();
+            ctx.fillStyle = "#FFFFFF";
+            ctx.arc(x + size / 2, y + size / 2, size / 2 + 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.drawImage(img, x, y, size, size);
+            ctx.restore();
+          };
+          img.src = src;
+        } catch (error) { /* decorative only */ }
+      };
+      drawLogo("assets/dhamtari-emblem.png", 70, 70, 90);
+      drawLogo("assets/prayas-logo.png", W - 160, 70, 90);
+
+      // Mission title / date / location
+      ctx.fillStyle = "#1B3A6B";
+      ctx.font = "800 52px Georgia";
+      const titleEndY = wrapCanvasText(ctx, mission.title, W / 2, headerH + 90, W - 200, 60, 3);
+
+      ctx.fillStyle = "#1F2937";
+      ctx.font = "600 30px Inter";
+      const metaLine = `${hi ? "📅 तिथि" : "📅 Date"}: ${mission.date}   ·   ${hi ? "📍 स्थान" : "📍 Venue"}: ${mission.location || wardLabel(missionArea(mission))}`;
+      const metaEndY = wrapCanvasText(ctx, metaLine, W / 2, titleEndY + 50, W - 200, 38, 2);
+
+      ctx.fillStyle = "#6B7280";
+      ctx.font = "600 26px Inter";
+      ctx.fillText(
+        hi ? "इस मिशन के लिए चेक-इन हेतु स्कैन करें" : "Scan to check in for this mission",
+        W / 2, metaEndY + 54
+      );
+
+      // Huge QR — printable and reliably scannable up close.
+      const qrSize = 600;
+      const qrX = (W - qrSize) / 2;
+      const qrY = metaEndY + 90;
+      const qrHost = document.createElement("div");
+      qrHost.style.position = "fixed";
+      qrHost.style.left = "-9999px";
+      document.body.appendChild(qrHost);
+      new QRCode(qrHost, { text: checkinUrl, width: qrSize, height: qrSize, colorDark: "#1B3A6B", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+
+      const finish = () => {
+        const qrCanvas = qrHost.querySelector("canvas");
+        const qrImg = qrHost.querySelector("img");
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(qrX - 16, qrY - 16, qrSize + 32, qrSize + 32);
+        ctx.strokeStyle = "#1B3A6B";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(qrX - 16, qrY - 16, qrSize + 32, qrSize + 32);
+        if (qrCanvas) ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+        else if (qrImg) ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+        document.body.removeChild(qrHost);
+
+        // Large fallback code for manual entry.
+        const codeY = qrY + qrSize + 100;
+        ctx.fillStyle = "#6B7280";
+        ctx.font = "600 26px Inter";
+        ctx.fillText(hi ? "अथवा इस कोड को दर्ज करें" : "Or enter this code manually", W / 2, codeY);
+        ctx.fillStyle = "#1B3A6B";
+        ctx.font = "800 90px Inter";
+        ctx.fillText(mission.checkInCode, W / 2, codeY + 90);
+
+        // Footer
+        ctx.fillStyle = "#138808";
+        ctx.fillRect(0, H - 84, W, 84);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "700 22px Inter";
+        ctx.fillText(
+          (state.districtName || "District") + " · " + (state.stateName || "State") + " · Prayas Citizen Engagement Platform",
+          W / 2, H - 40
+        );
+
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = `${mission.title.replace(/\s+/g, "_").slice(0, 60)}_checkin_poster.png`;
+        link.click();
+        showToast(hi ? "चेक-इन पोस्टर डाउनलोड हो गया।" : "Check-in poster downloaded.", "🖼️");
+      };
+      setTimeout(finish, 150);
     }
 
     function confirmDeleteMission(missionId) {

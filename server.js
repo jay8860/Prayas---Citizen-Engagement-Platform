@@ -1016,7 +1016,8 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/bootstrap") {
-      return sendJson(res, 200, buildBootstrapPayload());
+      const isAdmin = Boolean(tryGetAdmin(req));
+      return sendJson(res, 200, buildBootstrapPayload(isAdmin));
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/login") {
@@ -1760,6 +1761,21 @@ function requireAdmin(req) {
   return verifyAdminToken(token);
 }
 
+// Non-throwing check for endpoints (like /api/bootstrap) that serve both the
+// public site and the logged-in admin panel from the same handler: returns
+// the verified admin payload, or null for anonymous/invalid/expired tokens —
+// never throws, so a public visitor with no token just gets null.
+function tryGetAdmin(req) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  if (!token) return null;
+  try {
+    return verifyAdminToken(token);
+  } catch (error) {
+    return null;
+  }
+}
+
 function requireSuperAdmin(req) {
   const admin = requireAdmin(req);
   if (admin.role !== "super_admin") {
@@ -1906,7 +1922,7 @@ function base64Url(value) {
   return Buffer.from(value, "utf8").toString("base64url");
 }
 
-function buildBootstrapPayload() {
+function buildBootstrapPayload(isAdmin = false) {
   const dataMode = getSetting("portal_data_mode", "demo") === "real" ? "real" : "demo";
   const demoFlag = dataMode === "demo" ? 1 : 0;
   const locations = safeJsonArray(getSetting("location_catalog_json", "[]"));
@@ -1977,7 +1993,12 @@ function buildBootstrapPayload() {
     outcomeNote: mission.outcome_note || "",
     actualTurnout: mission.actual_turnout || 0,
     photoUrl: mission.photo_url || "",
-    checkInCode: mission.check_in_code || "",
+    // The real check-in code is only meaningful when read out at the venue —
+    // shipping it to every anonymous /api/bootstrap caller would let anyone
+    // "check in" remotely from the public website. Only a verified admin
+    // request (the logged-in admin panel, which calls this same endpoint)
+    // gets the real value; everyone else gets "".
+    checkInCode: isAdmin ? (mission.check_in_code || "") : "",
     completionRequested: Boolean(mission.completion_requested),
     completionRequestedBy: mission.completion_requested_by || "",
     completionRequestedNote: mission.completion_requested_note || "",
