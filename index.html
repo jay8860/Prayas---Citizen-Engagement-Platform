@@ -9963,6 +9963,7 @@
         : (Number(mission.volunteers) > 0 ? Number(mission.volunteers) : null);
       const coordinator = String(mission.coordinator || mission.hostName || "").trim();
       const outcome = String(mission.outcomeNote || "").trim();
+      const categoryArticle = /^[aeiou]/i.test(category) ? "an" : "a";
 
       const sentences = [];
 
@@ -9978,8 +9979,8 @@
       } else {
         sentences.push(
           turnout
-            ? `${dateStr ? "On " + dateStr + ", " : ""}${district} district administration's Prayas platform saw ${turnout} citizens participate in "${title}", a ${category} initiative${place ? ` held at ${place}` : ""}.`
-            : `${district} district administration's Prayas platform hosted "${title}", a ${category} initiative${place ? ` held at ${place}` : ""}${dateStr ? ` on ${dateStr}` : ""}.`
+            ? `${dateStr ? "On " + dateStr + ", " : ""}${district} district administration's Prayas platform saw ${turnout} citizens participate in "${title}", ${categoryArticle} ${category} initiative${place ? ` held at ${place}` : ""}.`
+            : `${district} district administration's Prayas platform hosted "${title}", ${categoryArticle} ${category} initiative${place ? ` held at ${place}` : ""}${dateStr ? ` on ${dateStr}` : ""}.`
         );
         if (outcome) sentences.push(outcome);
         if (coordinator) sentences.push(`The activity was coordinated by ${coordinator}.`);
