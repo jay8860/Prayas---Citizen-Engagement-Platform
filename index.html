@@ -3850,6 +3850,26 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="mediaStoryModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">📰 <span id="mediaStoryModalTitleText">Media Story Draft</span></h2>
+          <p class="modal-subtitle" id="mediaStoryModalSubtitle">Auto-drafted from data recorded in the system.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="mediaStoryModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <textarea id="mediaStoryText" rows="9" style="width:100%;font-family:inherit;font-size:14px;line-height:1.5"></textarea>
+        </div>
+        <p id="mediaStoryCaption" style="font-size:12px;color:var(--muted);margin:-6px 0 14px">This is an auto-generated draft built only from data recorded in the system. Please review and edit before sending to media.</p>
+        <div id="mediaStoryPhotos"></div>
+        <button class="btn btn-primary" type="button" style="width:100%" onclick="copyMediaStoryText()">📋 <span id="mediaStoryCopyLabel">Copy to Clipboard</span></button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="myMissionsModal">
     <div class="modal-shell narrow">
       <div class="modal-header">
@@ -7643,6 +7663,7 @@
             <div class="message-actions">
               <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
               ${mission.status !== "completed" ? `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>` : `<button class="btn btn-soft" type="button" onclick="confirmUnmarkCompleted(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्न हटाएं" : "Unmark Completed"}</button>`}
+              ${mission.status === "completed" ? `<button class="btn btn-soft" type="button" onclick="openMediaStoryModal(${mission.id})">📰 ${state.lang === "hi" ? "मीडिया स्टोरी बनाएं" : "Generate Media Story"}</button>` : ""}
               ${mission.status !== "closed" ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'closed')">${state.lang === "hi" ? "अस्थायी बंद" : "Close Temporarily"}</button>` : `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>`}
               <button class="btn btn-soft" type="button" onclick="archiveMission(${mission.id})">${state.lang === "hi" ? "संग्रहीत करें" : "Archive"}</button>
             </div>
@@ -7702,6 +7723,7 @@
             <div class="message-actions">
               <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
               ${mission.status !== "completed" ? `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>` : `<button class="btn btn-soft" type="button" onclick="confirmUnmarkCompleted(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्न हटाएं" : "Unmark Completed"}</button>`}
+              ${mission.status === "completed" ? `<button class="btn btn-soft" type="button" onclick="openMediaStoryModal(${mission.id})">📰 ${state.lang === "hi" ? "मीडिया स्टोरी बनाएं" : "Generate Media Story"}</button>` : ""}
               ${mission.status !== "closed" ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'closed')">${state.lang === "hi" ? "अस्थायी बंद" : "Close"}</button>` : `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>`}
               <button class="btn btn-soft" type="button" onclick="archiveMission(${mission.id})">${state.lang === "hi" ? "संग्रहीत करें" : "Archive"}</button>
               <button class="btn btn-danger" type="button" onclick="confirmDeleteMission(${mission.id})">${state.lang === "hi" ? "हटाएं" : "Delete"}</button>
@@ -9343,6 +9365,93 @@
       });
     }
 
+    // ── Media story draft (admin, completed missions only) ─────────────────────
+    // Builds a short press-style blurb using ONLY fields already recorded on the
+    // mission. No number is invented/estimated — a clause is omitted entirely
+    // when its underlying field is missing/empty.
+    function generateMediaStory(mission) {
+      const hi = state.lang === "hi";
+      const district = state.districtName || (hi ? "जिला" : "the district");
+      const category = categoryLabel(mission.category);
+      const location = String(mission.location || "").trim();
+      const ward = wardLabel(missionArea(mission));
+      const place = [location, ward].filter(Boolean).join(", ");
+      const dateStr = String(mission.date || "").trim();
+      const title = String(mission.title || "").trim();
+      // Prefer the real post-completion turnout; fall back to registered
+      // volunteers only if turnout was never recorded. Never fabricate a number.
+      const turnout = Number(mission.actualTurnout) > 0
+        ? Number(mission.actualTurnout)
+        : (Number(mission.volunteers) > 0 ? Number(mission.volunteers) : null);
+      const coordinator = String(mission.coordinator || mission.hostName || "").trim();
+      const outcome = String(mission.outcomeNote || "").trim();
+
+      const sentences = [];
+
+      if (hi) {
+        sentences.push(
+          turnout
+            ? `${dateStr ? dateStr + " को " : ""}${district} जिला प्रशासन के प्रयास मंच के तहत '${title}' नामक ${category} गतिविधि में ${turnout} नागरिकों ने भाग लिया${place ? `, जो ${place} में आयोजित हुई।` : "।"}`
+            : `${district} जिला प्रशासन के प्रयास मंच के तहत '${title}' नामक ${category} गतिविधि ${place ? `${place} में ` : ""}${dateStr ? dateStr + " को " : ""}आयोजित की गई।`
+        );
+        if (outcome) sentences.push(outcome);
+        if (coordinator) sentences.push(`इस गतिविधि का समन्वय ${coordinator} द्वारा किया गया।`);
+        sentences.push(`प्रयास, जिला पंचायत ${district} का नागरिक सहभागिता मंच है, जो नागरिकों को सार्वजनिक सेवा गतिविधियों में भाग लेने का अवसर देता है।`);
+      } else {
+        sentences.push(
+          turnout
+            ? `${dateStr ? "On " + dateStr + ", " : ""}${district} district administration's Prayas platform saw ${turnout} citizens participate in "${title}", a ${category} initiative${place ? ` held at ${place}` : ""}.`
+            : `${district} district administration's Prayas platform hosted "${title}", a ${category} initiative${place ? ` held at ${place}` : ""}${dateStr ? ` on ${dateStr}` : ""}.`
+        );
+        if (outcome) sentences.push(outcome);
+        if (coordinator) sentences.push(`The activity was coordinated by ${coordinator}.`);
+        sentences.push(`Prayas is Zila Panchayat ${district}'s citizen engagement platform for civic participation.`);
+      }
+
+      return sentences.join(" ");
+    }
+
+    function openMediaStoryModal(missionId) {
+      const mission = state.missions.find((item) => item.id === missionId);
+      if (!mission) return;
+      const hi = state.lang === "hi";
+      document.getElementById("mediaStoryModalTitleText").textContent = hi ? "मीडिया समाचार ड्राफ्ट" : "Media Story Draft";
+      document.getElementById("mediaStoryModalSubtitle").textContent = hi
+        ? "सिस्टम में दर्ज वास्तविक डेटा से स्वतः तैयार किया गया।"
+        : "Auto-drafted from data recorded in the system.";
+      document.getElementById("mediaStoryText").value = generateMediaStory(mission);
+      document.getElementById("mediaStoryCaption").textContent = hi
+        ? "यह एक स्वतः-जनरेट किया गया ड्राफ्ट है — केवल टेम्पलेट लॉजिक से बना है, किसी AI/LLM से नहीं। मीडिया को भेजने से पहले कृपया इसकी समीक्षा और आवश्यकतानुसार संपादन करें; इसकी तथ्य-जांच सिस्टम में दर्ज जानकारी से आगे नहीं की गई है।"
+        : "This is an auto-generated draft — built by template logic from recorded data, not by an AI. Please review and edit it before sending to media; it has not been fact-checked beyond what the system recorded.";
+      document.getElementById("mediaStoryCopyLabel").textContent = hi ? "क्लिपबोर्ड पर कॉपी करें" : "Copy to Clipboard";
+      const photos = Array.isArray(mission.photos) ? mission.photos : [];
+      const photosEl = document.getElementById("mediaStoryPhotos");
+      photosEl.innerHTML = photos.length ? `
+        <div style="font-size:12px;color:var(--muted);margin:10px 0 6px">${hi ? "साझा करते समय ये फोटो संलग्न करें:" : "Attach these photos when sharing:"}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-bottom:14px">
+          ${photos.map((photo) => `<img src="${escapeHtml(photo.dataUrl)}" alt="${escapeHtml(photo.caption || mission.title)}" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px;border:1px solid var(--border)" />`).join("")}
+        </div>
+      ` : "";
+      openModal("mediaStoryModal");
+    }
+
+    function copyMediaStoryText() {
+      const textarea = document.getElementById("mediaStoryText");
+      const hi = state.lang === "hi";
+      const text = textarea.value;
+      const fallbackCopy = () => {
+        textarea.select();
+        showToast(hi ? "कृपया मैन्युअल रूप से कॉपी करें (टेक्स्ट चुना गया है)।" : "Please copy manually (text is selected).", "⚠️");
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+          .then(() => showToast(hi ? "ड्राफ्ट क्लिपबोर्ड पर कॉपी हो गया।" : "Draft copied to clipboard.", "📋"))
+          .catch(fallbackCopy);
+      } else {
+        fallbackCopy();
+      }
+    }
+
     async function deleteMission(missionId) {
       try {
         await apiRequest(`/api/admin/missions/${missionId}/delete`, { method: "POST" });
@@ -9780,6 +9889,7 @@
             photoUrl: document.getElementById("completionPhoto").value.trim()
           });
           closeModal("completionSummaryModal");
+          if (state.adminLoggedIn) openMediaStoryModal(missionId);
         } catch (error) {
           handleRequestError(error);
         } finally {
