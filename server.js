@@ -9,6 +9,7 @@ const APP_ROOT = __dirname;
 const DB_DIR = path.join(APP_ROOT, "data");
 const DB_PATH = process.env.PRAYAS_DB_PATH || path.join(DB_DIR, "prayas.sqlite");
 const INDEX_PATH = path.join(APP_ROOT, "index.html");
+const ASSETS_DIR = path.join(APP_ROOT, "assets");
 const ADMIN_PASSWORD = process.env.PRAYAS_ADMIN_PASSWORD || "Prayas@2026";
 const TOKEN_SECRET = process.env.PRAYAS_TOKEN_SECRET || "replace-this-secret-before-production";
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 2; // 2 hours
@@ -1464,6 +1465,24 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(204);
       res.end();
       return;
+    }
+
+    // ── Static logo/emblem assets used by the certificate & ID card canvases ──
+    // Deliberately narrow: only serves flat filenames (no path traversal) with
+    // an allow-listed image extension, straight out of /assets.
+    if (req.method === "GET" && /^\/assets\/[A-Za-z0-9][A-Za-z0-9._-]*\.(png|svg)$/.test(url.pathname)) {
+      const fileName = path.basename(url.pathname);
+      const filePath = path.join(ASSETS_DIR, fileName);
+      if (path.dirname(filePath) === ASSETS_DIR && fs.existsSync(filePath)) {
+        const ext = path.extname(fileName).toLowerCase();
+        res.writeHead(200, {
+          "Content-Type": ext === ".svg" ? "image/svg+xml" : "image/png",
+          "Cache-Control": "public, max-age=86400",
+          ...securityHeaders()
+        });
+        res.end(fs.readFileSync(filePath));
+        return;
+      }
     }
 
     sendJson(res, 404, { error: "Not found." });

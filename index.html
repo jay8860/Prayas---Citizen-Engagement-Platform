@@ -5770,6 +5770,18 @@
       return size;
     }
 
+    // Loads an <img> for canvas drawImage() use. Resolves to `null` (never
+    // rejects) on failure, so a missing/blocked logo asset degrades the
+    // certificate/ID card layout gracefully instead of breaking the download.
+    function loadImage(src) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
     function generateEventPoster() {
       const lang = document.getElementById("posterLang").value || "en";
       const title = document.getElementById("posterTitle").value.trim();
@@ -8973,7 +8985,7 @@
       }
     }
 
-    function downloadCertificate() {
+    async function downloadCertificate() {
       const leader = activePassportLeader();
       if (!leader) return;
       const attended = Array.isArray(leader.attended) ? leader.attended : [];
@@ -8984,6 +8996,11 @@
       }
       const hi = state.lang === "hi";
       const W = 1120;
+      // Rendered at 2x and downscaled via a scaled drawing context, so the
+      // exported PNG stays crisp at print/A4 resolution without touching any
+      // of the logical layout math below (fonts/measurements stay in the
+      // same logical units; only the final raster pixel density changes).
+      const SCALE = 2;
       // A stable, human-checkable certificate number — deterministic from the
       // volunteer's own record ID, never random, so re-downloading the same
       // certificate always produces the same number.
@@ -8994,6 +9011,15 @@
       const bodyText = hi
         ? `ने ${state.districtName} जिले में प्रयास नागरिक सहभागिता मंच के अंतर्गत नीचे सूचीबद्ध सत्यापित सार्वजनिक सेवा गतिविधियों में सफलतापूर्वक भाग लिया है।`
         : `has successfully contributed to the verified public service activities listed below, under the Prayas Citizen Engagement Platform in ${state.districtName} district.`;
+
+      // Official-style logos — loaded once up front so the real draw pass
+      // (draw=true) can drop them straight in with drawImage(). Both resolve
+      // to null (rather than rejecting) if the asset can't load, in which
+      // case the layout below simply omits that logo.
+      const [districtLogo, prayasLogo] = await Promise.all([
+        loadImage("assets/dhamtari-emblem.png"),
+        loadImage("assets/prayas-logo.png")
+      ]);
 
       // Renders the whole certificate onto `ctx` (sized W x H) and always
       // returns where the verification footer landed. Called twice: once
@@ -9029,28 +9055,6 @@
           }
           ctx.restore();
 
-          const drawSeal = (x, y, radius, topText, bottomText, centerText) => {
-            ctx.save();
-            ctx.strokeStyle = "#8B6A2F";
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.arc(x, y, radius - 10, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.fillStyle = "#1B3A6B";
-            ctx.font = "700 13px Inter";
-            ctx.textAlign = "center";
-            ctx.fillText(topText, x, y - radius - 10);
-            ctx.fillText(bottomText, x, y + radius + 24);
-            ctx.fillStyle = "#8B6A2F";
-            ctx.font = "700 24px Georgia";
-            ctx.fillText(centerText, x, y + 8);
-            ctx.restore();
-          };
-
           const drawCornerFlourish = (x, y, flipX, flipY) => {
             ctx.save();
             ctx.translate(x, y);
@@ -9078,12 +9082,18 @@
           ctx.fillStyle = "#138808";
           ctx.fillRect(0, 30, W, 18);
 
+          // Formal triple-rule frame: a bold outer rule, a fine gold
+          // mid-rule, and a fine inner navy rule — the classic
+          // "double-rule" certificate border convention.
           ctx.strokeStyle = "#1B3A6B";
           ctx.lineWidth = 7;
           ctx.strokeRect(28, 28, W - 56, H - 56);
           ctx.lineWidth = 2;
           ctx.strokeStyle = "#C8A96A";
           ctx.strokeRect(44, 44, W - 88, H - 88);
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = "#1B3A6B";
+          ctx.strokeRect(52, 52, W - 104, H - 104);
 
           drawCornerFlourish(48, 48, 1, 1);
           drawCornerFlourish(W - 48, 48, -1, 1);
@@ -9094,7 +9104,7 @@
           ctx.font = "700 18px Inter";
           ctx.fillText(hi ? "छत्तीसगढ़ सरकार" : "GOVERNMENT OF CHHATTISGARH", W / 2, 108);
           ctx.font = "700 30px Georgia";
-          ctx.fillText(hi ? `${state.districtName} जिला प्रशासन` : `${state.districtName} District Administration`, W / 2, 148);
+          ctx.fillText(hi ? `जिला पंचायत ${state.districtName}` : `Zila Panchayat ${state.districtName}`, W / 2, 148);
           ctx.font = "700 26px Georgia";
           ctx.fillText(hi ? "प्रयास नागरिक सहभागिता मंच" : "Prayas Citizen Engagement Platform", W / 2, 186);
 
@@ -9102,8 +9112,12 @@
           ctx.font = "600 16px Inter";
           ctx.fillText(hi ? "नागरिक योगदान का आधिकारिक प्रमाणपत्र" : "Official Certificate of Civic Contribution", W / 2, 220);
 
-          drawSeal(190, 156, 48, "Government of", state.stateName, state.stateAbbr);
-          drawSeal(W - 190, 156, 48, "Prayas", "Certificate Seal", "P");
+          // District emblem (left) and Prayas badge (right) flank the
+          // header — both official-style placeholder logos, easily swapped
+          // out later for the real district seal / Prayas artwork.
+          const logoSize = 104;
+          if (districtLogo) ctx.drawImage(districtLogo, 190 - logoSize / 2, 156 - logoSize / 2, logoSize, logoSize);
+          if (prayasLogo) ctx.drawImage(prayasLogo, (W - 190) - logoSize / 2, 156 - logoSize / 2, logoSize, logoSize);
 
           ctx.fillStyle = "#6B7280";
           ctx.font = "18px Georgia";
@@ -9195,15 +9209,19 @@
           ctx.lineTo(950, sigY + 52);
           ctx.stroke();
 
+          // Left = date of issue, right = authorised signatory — the
+          // conventional two-column sign-off on a formal certificate.
           ctx.fillStyle = "#1B3A6B";
           ctx.font = "700 16px Inter";
-          ctx.fillText(hi ? `${state.districtName} जिला प्रशासन` : `${state.districtName} District Administration`, 270, sigY + 78);
-          ctx.fillText(hi ? "जिला प्रशासन" : "District Administration", 850, sigY + 78);
+          ctx.fillText(hi ? formatDate(new Date(), "hi") : formatDate(new Date(), "en"), 270, sigY + 78);
+          ctx.fillText(hi ? "अधिकृत हस्ताक्षरकर्ता" : "Authorised Signatory", 850, sigY + 78);
 
           ctx.fillStyle = "#6B7280";
           ctx.font = "14px Inter";
-          ctx.fillText(hi ? "प्रयास नागरिक सहभागिता मंच" : "Prayas Citizen Engagement Platform", 270, sigY + 102);
-          ctx.fillText(hi ? "अधिकृत हस्ताक्षरकर्ता" : "Authorised Signatory", 850, sigY + 102);
+          ctx.fillText(hi ? "जारी करने की तिथि" : "Date of Issue", 270, sigY + 102);
+          const ceoLine = hi ? `सीईओ, जिला पंचायत ${state.districtName}` : `CEO, Zila Panchayat ${state.districtName}`;
+          fitSingleLineFontSize(ctx, ceoLine, 220, "Inter", 14, 10, "400");
+          ctx.fillText(ceoLine, 850, sigY + 102);
         }
 
         // Verification footer sits a fixed gap AFTER the signature block —
@@ -9228,11 +9246,16 @@
       const measuredFooterY = paint(scratch.getContext("2d"), 0, false);
       const H = Math.max(measuredFooterY + 110, 760);
 
-      // Pass 2: draw for real on a canvas sized exactly right.
+      // Pass 2: draw for real on a canvas sized exactly right. The backing
+      // canvas is allocated at SCALE x the logical size and the context is
+      // scaled to match, so the exported PNG is print-resolution while every
+      // coordinate/font-size in `paint()` stays in the same logical units
+      // used for measurement above.
       const canvas = document.createElement("canvas");
-      canvas.width = W;
-      canvas.height = H;
+      canvas.width = W * SCALE;
+      canvas.height = H * SCALE;
       const ctx = canvas.getContext("2d");
+      ctx.scale(SCALE, SCALE);
       const footerY = paint(ctx, H, true);
 
       const finishAndDownload = () => {
@@ -10445,7 +10468,7 @@
 
     // ── Volunteer ID card (canvas) ────────────────────────────────────────────
 
-    function downloadIdCard() {
+    async function downloadIdCard() {
       const leader = activePassportLeader();
       if (!leader) return;
       const hi = state.lang === "hi";
@@ -10467,11 +10490,23 @@
         : "";
       const verifyUrl = `${window.location.origin}${window.location.pathname}?verify=${leader.id}`;
 
+      // Official-style logos for the header row — see downloadCertificate()
+      // for the same loader; both resolve to null (not a rejection) if the
+      // asset can't load, so the card still renders without them.
+      const [districtLogo, prayasLogo] = await Promise.all([
+        loadImage("assets/dhamtari-emblem.png"),
+        loadImage("assets/prayas-logo.png")
+      ]);
+
       const W = 720, H = 460;
+      // Rendered at 2x via a scaled context for a crisp, print-quality PNG —
+      // every coordinate below stays in the same logical 720x460 space.
+      const SCALE = 2;
       const canvas = document.createElement("canvas");
-      canvas.width = W;
-      canvas.height = H;
+      canvas.width = W * SCALE;
+      canvas.height = H * SCALE;
       const ctx = canvas.getContext("2d");
+      ctx.scale(SCALE, SCALE);
 
       // Card background
       const grad = ctx.createLinearGradient(0, 0, W, H);
@@ -10482,11 +10517,24 @@
       ctx.roundRect(0, 0, W, H, 22);
       ctx.fill();
 
-      // Fine border for a more finished, printable-card look
+      // Fine double border for a more finished, institutional-card look
       ctx.strokeStyle = "rgba(255,255,255,0.18)";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.roundRect(6, 6, W - 12, H - 12, 18);
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(200,169,106,0.55)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(11, 11, W - 22, H - 22, 15);
+      ctx.stroke();
+
+      // Header rule under the logos/title row
+      ctx.strokeStyle = "rgba(255,255,255,0.14)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(28, 132);
+      ctx.lineTo(W - 28, 132);
       ctx.stroke();
 
       // Tricolor stripe band along the bottom
@@ -10497,24 +10545,36 @@
       ctx.fillStyle = "#138808";
       ctx.fillRect(0, H - 20, W, 20);
 
-      // Logo circle
+      // Header row: district emblem (left) and Prayas badge (right) —
+      // both small, flanking the title, mirroring the certificate header.
+      const headerLogoSize = 60;
       ctx.fillStyle = "rgba(255,255,255,0.12)";
       ctx.beginPath();
-      ctx.arc(84, 100, 50, 0, Math.PI * 2);
+      ctx.arc(58, 66, headerLogoSize / 2 + 6, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#FF9933";
-      ctx.font = "bold 38px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("🇮🇳", 84, 115);
+      if (districtLogo) ctx.drawImage(districtLogo, 58 - headerLogoSize / 2, 66 - headerLogoSize / 2, headerLogoSize, headerLogoSize);
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      ctx.beginPath();
+      ctx.arc(W - 50, 60, headerLogoSize / 2, 0, Math.PI * 2);
+      ctx.fill();
+      if (prayasLogo) ctx.drawImage(prayasLogo, W - 50 - (headerLogoSize - 12) / 2, 60 - (headerLogoSize - 12) / 2, headerLogoSize - 12, headerLogoSize - 12);
 
       // Title
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 22px Inter, sans-serif";
+      ctx.font = "bold 21px Inter, sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText(hi ? "प्रयास — नागरिक स्वयंसेवक" : "PRAYAS — Citizen Volunteer", 156, 80);
-      ctx.fillStyle = "rgba(255,255,255,0.65)";
-      ctx.font = "14px Inter, sans-serif";
-      ctx.fillText((state.districtName || "District") + " · " + (state.stateName || "State"), 156, 108);
+      ctx.fillText(hi ? "प्रयास — नागरिक स्वयंसेवक परिचय पत्र" : "PRAYAS — Citizen Volunteer ID", 100, 58);
+      ctx.fillStyle = "rgba(255,255,255,0.68)";
+      ctx.font = "13px Inter, sans-serif";
+      ctx.fillText(
+        hi
+          ? `जिला पंचायत ${state.districtName || "जिला"} · ${state.stateName || "राज्य"}`
+          : `Zila Panchayat ${state.districtName || "District"} · ${state.stateName || "State"}`,
+        100, 80
+      );
+      ctx.fillStyle = "#C8A96A";
+      ctx.font = "700 10.5px Inter, sans-serif";
+      ctx.fillText(hi ? "आधिकारिक स्वयंसेवक पहचान पत्र" : "OFFICIAL VOLUNTEER IDENTITY CARD", 100, 100);
 
       // Avatar circle
       const initials = name.split(" ").slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "PV";
@@ -10522,6 +10582,11 @@
       ctx.beginPath();
       ctx.arc(104, 270, 62, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(104, 270, 62, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "bold 36px sans-serif";
       ctx.textAlign = "center";
@@ -10571,6 +10636,19 @@
           ? (hi ? `सदस्य: ${memberSince} से` : `Member since ${memberSince}`)
           : (hi ? "पंजीकृत नागरिक स्वयंसेवक" : "Registered citizen volunteer"),
         28, footerTop + 44
+      );
+
+      // Formal identity strip along the very bottom of the tricolor band —
+      // ties the card back to the issuing authority, matching the
+      // certificate's header wording.
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(13,42,80,0.92)";
+      ctx.font = "700 10.5px Inter, sans-serif";
+      ctx.fillText(
+        hi
+          ? `जिला पंचायत ${state.districtName || "जिला"} · छत्तीसगढ़ शासन`
+          : `Zila Panchayat ${state.districtName || "District"} · Govt. of Chhattisgarh`,
+        W / 2, H - 38
       );
 
       const finishAndDownload = () => {
