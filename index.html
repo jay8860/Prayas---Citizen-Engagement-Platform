@@ -2040,6 +2040,160 @@
       letter-spacing: 0.3px;
     }
 
+    /* ── Prayas Samman: incentive ladder ── */
+    .samman-ladder {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .samman-row {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 22px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 22px 26px;
+      box-shadow: var(--shadow);
+    }
+    .samman-row.top-tier {
+      border-color: var(--saffron);
+      border-width: 2px;
+    }
+    .samman-rank-col {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      justify-content: center;
+      border-right: 1px solid var(--border);
+      padding-right: 20px;
+    }
+    .samman-rank-name {
+      font-family: "Playfair Display", serif;
+      color: var(--navy);
+      font-size: 21px;
+      line-height: 1.25;
+    }
+    .samman-rank-hi {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .samman-points-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      align-self: flex-start;
+      margin-top: 4px;
+      padding: 3px 11px;
+      border-radius: 999px;
+      background: var(--saffron-light);
+      color: var(--saffron-dark);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .samman-incentive-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .samman-incentive-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      color: var(--text);
+      font-size: 14.5px;
+      line-height: 1.55;
+    }
+    .samman-incentive-list li i {
+      color: var(--green);
+      margin-top: 3px;
+      flex-shrink: 0;
+      font-size: 13px;
+    }
+    @media (max-width: 720px) {
+      .samman-row {
+        grid-template-columns: 1fr;
+      }
+      .samman-rank-col {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding-right: 0;
+        padding-bottom: 14px;
+      }
+    }
+
+    /* ── Prayas Samman: annual Champions spotlight ── */
+    .samman-champions {
+      margin-top: 32px;
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      text-align: center;
+      color: #fff;
+      background: linear-gradient(135deg, var(--navy) 0%, #0F2547 60%, #061530 100%);
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+    }
+    .samman-champions::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 85% 15%, rgba(255,153,51,0.35), transparent 55%);
+      pointer-events: none;
+    }
+    .samman-champions-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 16px;
+      border-radius: 999px;
+      background: rgba(255,153,51,0.18);
+      border: 1px solid var(--saffron);
+      color: var(--saffron);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .samman-champions h3 {
+      font-family: "Playfair Display", serif;
+      font-size: 27px;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .samman-champions p {
+      max-width: 680px;
+      margin: 0 auto;
+      color: #D9E2F2;
+      font-size: 15.5px;
+      line-height: 1.7;
+      position: relative;
+    }
+    .samman-champions .samman-occasions {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+      position: relative;
+    }
+    .samman-occasions span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      font-weight: 600;
+      font-size: 14px;
+    }
+    body[data-theme="dark"] .samman-row.top-tier { background: #17110A; }
+
     /* ── Streak pill on leader card ── */
     .streak-pill {
       font-size: 12px;
@@ -2977,6 +3131,7 @@
           <li><a href="#district-map" data-i18n="nav-map">District Map</a></li>
           <li><a href="#showcase" data-i18n="nav-showcase">Showcase</a></li>
           <li><a href="#leaderboard" data-i18n="nav-leaders">Leaders</a></li>
+          <li><a href="#incentives" data-i18n="nav-incentives">Prayas Samman</a></li>
           <li><a href="#volunteer" data-i18n="nav-volunteer">Volunteer</a></li>
         </ul>
       </nav>
@@ -2997,6 +3152,7 @@
       <a href="#district-map" data-i18n="nav-map" onclick="closeMobileMenu()">District Map</a>
       <a href="#showcase" data-i18n="nav-showcase" onclick="closeMobileMenu()">Showcase</a>
       <a href="#leaderboard" data-i18n="nav-leaders" onclick="closeMobileMenu()">Leaders</a>
+      <a href="#incentives" data-i18n="nav-incentives" onclick="closeMobileMenu()">Prayas Samman</a>
       <a href="#volunteer" data-i18n="nav-volunteer" onclick="closeMobileMenu()">Volunteer</a>
       <button type="button" onclick="openAdminLogin(); closeMobileMenu();" data-i18n="nav-admin">Admin</button>
     </div>
@@ -3363,6 +3519,114 @@
       </div>
     </section>
 
+    <section class="section alt" id="incentives">
+      <div class="section-inner">
+        <div class="section-top center">
+          <div>
+            <div class="section-badge" style="background:var(--saffron-light);color:var(--saffron-dark)">
+              <i class="fa-solid fa-award"></i>
+              <span data-i18n="samman-badge">Recognition &amp; Incentives</span>
+            </div>
+            <h2 class="section-title" data-i18n="samman-title">Prayas Samman — every rank is honoured</h2>
+            <p class="section-subtitle" data-i18n="samman-subtitle">
+              As your civic rank grows with every mission you complete, so does the district's recognition of your service. Here is what awaits you at each step of the Prayas ladder.
+            </p>
+          </div>
+        </div>
+
+        <div class="samman-ladder">
+          <div class="samman-row">
+            <div class="samman-rank-col">
+              <div class="samman-rank-name" data-i18n="samman-rank-nagarik">Nagarik</div>
+              <div class="samman-rank-hi">नागरिक</div>
+              <div class="samman-points-pill"><i class="fa-solid fa-star"></i> <span data-i18n="samman-pts-nagarik">0+ points · Entry Rank</span></div>
+            </div>
+            <ul class="samman-incentive-list">
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-nagarik-1">A digital welcome certificate on joining the platform.</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-nagarik-2">Your name and photo featured on the portal's public Wall of Fame.</span></li>
+            </ul>
+          </div>
+
+          <div class="samman-row">
+            <div class="samman-rank-col">
+              <div class="samman-rank-name" data-i18n="samman-rank-sevak">Sevak</div>
+              <div class="samman-rank-hi">सेवक</div>
+              <div class="samman-points-pill"><i class="fa-solid fa-star"></i> <span data-i18n="samman-pts-sevak">50+ points</span></div>
+            </div>
+            <ul class="samman-incentive-list">
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-sevak-1">A certificate signed by the Block / Janpad CEO.</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-sevak-2">A shout-out on the district's official social media handle.</span></li>
+            </ul>
+          </div>
+
+          <div class="samman-row">
+            <div class="samman-rank-col">
+              <div class="samman-rank-name" data-i18n="samman-rank-prabhari">Prabhari</div>
+              <div class="samman-rank-hi">प्रभारी</div>
+              <div class="samman-points-pill"><i class="fa-solid fa-star"></i> <span data-i18n="samman-pts-prabhari">150+ points</span></div>
+            </div>
+            <ul class="samman-incentive-list">
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-prabhari-1">A letter of appreciation usable in school/college applications and scholarships.</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-prabhari-2">An invitation to the quarterly district volunteer meet-up.</span></li>
+            </ul>
+          </div>
+
+          <div class="samman-row">
+            <div class="samman-rank-col">
+              <div class="samman-rank-name" data-i18n="samman-rank-karyakarta">Karyakarta</div>
+              <div class="samman-rank-hi">कार्यकर्ता</div>
+              <div class="samman-points-pill"><i class="fa-solid fa-star"></i> <span data-i18n="samman-pts-karyakarta">300+ points</span></div>
+            </div>
+            <ul class="samman-incentive-list">
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-karyakarta-1">Personal recognition by the SDM / Janpad CEO.</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-karyakarta-2">A guest invite to a district function.</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-karyakarta-3">Preferential selection for a DMF-sponsored short skill course (ITI / polytechnic).</span></li>
+            </ul>
+          </div>
+
+          <div class="samman-row">
+            <div class="samman-rank-col">
+              <div class="samman-rank-name" data-i18n="samman-rank-jansewak">Jan Sewak</div>
+              <div class="samman-rank-hi">जन सेवक</div>
+              <div class="samman-points-pill"><i class="fa-solid fa-star"></i> <span data-i18n="samman-pts-jansewak">500+ points</span></div>
+            </div>
+            <ul class="samman-incentive-list">
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-1">A scheduled meeting with the Collector.</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-2">A guest / panelist slot at a district event.</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-3">The "Prayas Fellow" title with a formal certificate.</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-4">Preferential selection for exposure visits to other cities (e.g. Delhi, Hyderabad) or leading institutions.</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-5">Mentorship access to leading personalities from the district and beyond.</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-6">Your verified volunteer record counted as a scored criterion in local recruitment (e.g. Rozgar Sahayak, Anganwadi Worker).</span></li>
+            </ul>
+          </div>
+
+          <div class="samman-row top-tier">
+            <div class="samman-rank-col">
+              <div class="samman-rank-name" data-i18n="samman-rank-loknayak">Lok Nayak</div>
+              <div class="samman-rank-hi">लोक नायक</div>
+              <div class="samman-points-pill"><i class="fa-solid fa-crown"></i> <span data-i18n="samman-pts-loknayak">1000+ points · Top Rank</span></div>
+            </div>
+            <ul class="samman-incentive-list">
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-loknayak-1">Every incentive listed above, at every rank you've earned.</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-loknayak-2">Eligibility for the annual "Prayas Champions" recognition — the district's highest civic honour.</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="samman-champions">
+          <div class="samman-champions-badge"><i class="fa-solid fa-medal"></i> <span data-i18n="samman-champions-badge">Prayas Champions · Annual Honour</span></div>
+          <h3 data-i18n="samman-champions-title">Felicitated before the entire district</h3>
+          <p data-i18n="samman-champions-text">
+            Every year, the district's Top 10 Prayas Champions are felicitated on stage by the Chief Guest — at the Republic Day function and at Rajyotsav (Chhattisgarh State Formation Day), the district's two biggest public occasions.
+          </p>
+          <div class="samman-occasions">
+            <span><i class="fa-solid fa-flag"></i> <span data-i18n="samman-occasion-1">Republic Day, 26 January</span></span>
+            <span><i class="fa-solid fa-champagne-glasses"></i> <span data-i18n="samman-occasion-2">Rajyotsav, 1 November</span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="section alt" id="district-pulse">
       <div class="section-inner">
         <div class="section-top">
@@ -3562,6 +3826,7 @@
             <li><a href="#district-map" data-i18n="nav-map">District Map</a></li>
             <li><a href="#showcase" data-i18n="nav-showcase">Showcase</a></li>
             <li><a href="#leaderboard" data-i18n="nav-leaders">Leaders</a></li>
+            <li><a href="#incentives" data-i18n="nav-incentives">Prayas Samman</a></li>
           </ul>
         </div>
 
@@ -4958,6 +5223,7 @@
       "nav-map": { en: "District Map", hi: "जिला दृश्य" },
       "nav-showcase": { en: "Showcase", hi: "प्रदर्शनी" },
       "nav-leaders": { en: "Leaders", hi: "लीडर्स" },
+      "nav-incentives": { en: "Prayas Samman", hi: "प्रयास सम्मान" },
       "nav-volunteer": { en: "Volunteer", hi: "स्वयंसेवक" },
       "nav-admin": { en: "Admin", hi: "प्रशासक" },
       "nav-join": { en: "Join Now", hi: "अभी जुड़ें" },
@@ -5037,6 +5303,51 @@
       "leader-badge": { en: "Monthly Leaders", hi: "मासिक लीडर्स" },
       "leader-title": { en: "Top contributors - April 2026", hi: "शीर्ष योगदानकर्ता - अप्रैल 2026" },
       "leader-subtitle": { en: "Meet the citizens whose time, effort, and consistency are moving the district forward.", hi: "उन नागरिकों से मिलिए जिनका समय, श्रम और निरंतरता जिले को आगे बढ़ा रही है।" },
+
+      "samman-badge": { en: "Recognition & Incentives", hi: "पहचान एवं प्रोत्साहन" },
+      "samman-title": { en: "Prayas Samman — every rank is honoured", hi: "प्रयास सम्मान — हर रैंक का सम्मान" },
+      "samman-subtitle": { en: "As your civic rank grows with every mission you complete, so does the district's recognition of your service. Here is what awaits you at each step of the Prayas ladder.", hi: "जैसे-जैसे आपकी हर पूर्ण की गई मुहिम से आपकी नागरिक रैंक बढ़ती है, वैसे-वैसे आपकी सेवा के प्रति जिले का सम्मान भी बढ़ता है। प्रयास की सीढ़ी के हर पड़ाव पर आपका क्या इंतज़ार कर रहा है, देखिए।" },
+
+      "samman-rank-nagarik": { en: "Nagarik", hi: "नागरिक" },
+      "samman-pts-nagarik": { en: "0+ points · Entry Rank", hi: "0+ अंक · प्रारंभिक रैंक" },
+      "samman-nagarik-1": { en: "A digital welcome certificate on joining the platform.", hi: "पोर्टल से जुड़ने पर एक डिजिटल स्वागत प्रमाण पत्र।" },
+      "samman-nagarik-2": { en: "Your name and photo featured on the portal's public Wall of Fame.", hi: "पोर्टल की सार्वजनिक 'गौरव दीवार' पर आपका नाम और फोटो।" },
+
+      "samman-rank-sevak": { en: "Sevak", hi: "सेवक" },
+      "samman-pts-sevak": { en: "50+ points", hi: "50+ अंक" },
+      "samman-sevak-1": { en: "A certificate signed by the Block / Janpad CEO.", hi: "जनपद सीईओ द्वारा हस्ताक्षरित प्रमाण पत्र।" },
+      "samman-sevak-2": { en: "A shout-out on the district's official social media handle.", hi: "जिले के आधिकारिक सोशल मीडिया हैंडल पर विशेष उल्लेख।" },
+
+      "samman-rank-prabhari": { en: "Prabhari", hi: "प्रभारी" },
+      "samman-pts-prabhari": { en: "150+ points", hi: "150+ अंक" },
+      "samman-prabhari-1": { en: "A letter of appreciation usable in school/college applications and scholarships.", hi: "प्रशंसा पत्र, जिसका उपयोग स्कूल/कॉलेज आवेदन एवं छात्रवृत्ति में किया जा सकता है।" },
+      "samman-prabhari-2": { en: "An invitation to the quarterly district volunteer meet-up.", hi: "त्रैमासिक जिला स्वयंसेवक सम्मेलन का निमंत्रण।" },
+
+      "samman-rank-karyakarta": { en: "Karyakarta", hi: "कार्यकर्ता" },
+      "samman-pts-karyakarta": { en: "300+ points", hi: "300+ अंक" },
+      "samman-karyakarta-1": { en: "Personal recognition by the SDM / Janpad CEO.", hi: "एसडीएम / जनपद सीईओ द्वारा व्यक्तिगत सम्मान।" },
+      "samman-karyakarta-2": { en: "A guest invite to a district function.", hi: "जिला स्तरीय कार्यक्रम में अतिथि के रूप में आमंत्रण।" },
+      "samman-karyakarta-3": { en: "Preferential selection for a DMF-sponsored short skill course (ITI / polytechnic).", hi: "डीएमएफ द्वारा प्रायोजित लघु कौशल पाठ्यक्रम (आईटीआई / पॉलिटेक्निक) हेतु वरीयता आधारित चयन।" },
+
+      "samman-rank-jansewak": { en: "Jan Sewak", hi: "जन सेवक" },
+      "samman-pts-jansewak": { en: "500+ points", hi: "500+ अंक" },
+      "samman-jansewak-1": { en: "A scheduled meeting with the Collector.", hi: "कलेक्टर महोदय से निर्धारित भेंट।" },
+      "samman-jansewak-2": { en: "A guest / panelist slot at a district event.", hi: "जिला कार्यक्रम में अतिथि / पैनलिस्ट के रूप में भागीदारी।" },
+      "samman-jansewak-3": { en: "The \"Prayas Fellow\" title with a formal certificate.", hi: "औपचारिक प्रमाण पत्र सहित \"प्रयास फेलो\" की उपाधि।" },
+      "samman-jansewak-4": { en: "Preferential selection for exposure visits to other cities (e.g. Delhi, Hyderabad) or leading institutions.", hi: "अन्य शहरों (जैसे दिल्ली, हैदराबाद) या प्रमुख संस्थानों के भ्रमण हेतु वरीयता आधारित चयन।" },
+      "samman-jansewak-5": { en: "Mentorship access to leading personalities from the district and beyond.", hi: "जिले एवं बाहर की प्रतिष्ठित हस्तियों से मार्गदर्शन प्राप्त करने का अवसर।" },
+      "samman-jansewak-6": { en: "Your verified volunteer record counted as a scored criterion in local recruitment (e.g. Rozgar Sahayak, Anganwadi Worker).", hi: "स्थानीय भर्तियों (जैसे रोज़गार सहायक, आंगनवाड़ी कार्यकर्ता) में आपका सत्यापित स्वयंसेवी रिकॉर्ड एक अंकित मानदंड के रूप में गिना जाएगा।" },
+
+      "samman-rank-loknayak": { en: "Lok Nayak", hi: "लोक नायक" },
+      "samman-pts-loknayak": { en: "1000+ points · Top Rank", hi: "1000+ अंक · शीर्ष रैंक" },
+      "samman-loknayak-1": { en: "Every incentive listed above, at every rank you've earned.", hi: "आपके द्वारा अर्जित प्रत्येक रैंक के सभी उपरोक्त लाभ।" },
+      "samman-loknayak-2": { en: "Eligibility for the annual \"Prayas Champions\" recognition — the district's highest civic honour.", hi: "वार्षिक \"प्रयास चैंपियंस\" सम्मान — जिले का सर्वोच्च नागरिक सम्मान — हेतु पात्रता।" },
+
+      "samman-champions-badge": { en: "Prayas Champions · Annual Honour", hi: "प्रयास चैंपियंस · वार्षिक सम्मान" },
+      "samman-champions-title": { en: "Felicitated before the entire district", hi: "संपूर्ण जिले के समक्ष सम्मानित" },
+      "samman-champions-text": { en: "Every year, the district's Top 10 Prayas Champions are felicitated on stage by the Chief Guest — at the Republic Day function and at Rajyotsav (Chhattisgarh State Formation Day), the district's two biggest public occasions.", hi: "प्रत्येक वर्ष जिले के शीर्ष 10 प्रयास चैंपियंस को मुख्य अतिथि द्वारा मंच पर सम्मानित किया जाता है — गणतंत्र दिवस समारोह तथा राज्योत्सव (छत्तीसगढ़ राज्य स्थापना दिवस) पर, जो जिले के दो सबसे बड़े सार्वजनिक अवसर हैं।" },
+      "samman-occasion-1": { en: "Republic Day, 26 January", hi: "गणतंत्र दिवस, 26 जनवरी" },
+      "samman-occasion-2": { en: "Rajyotsav, 1 November", hi: "राज्योत्सव, 1 नवंबर" },
       "pulse-badge": { en: "District Pulse", hi: "जिला पल्स" },
       "pulse-title": { en: "A live civic operations view for the district", hi: "जिले के लिए एक लाइव नागरिक संचालन दृश्य" },
       "pulse-subtitle": { en: "See who is leading, what just happened, and which activities have recently gone live or been completed across the portal.", hi: "देखें कौन आगे है, अभी क्या हुआ, और कौन-सी गतिविधियाँ हाल में लाइव हुईं या पूरी हुईं।" },
