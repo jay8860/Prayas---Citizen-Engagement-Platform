@@ -2976,6 +2976,7 @@
           <li><a href="#host-mission" data-i18n="nav-funding">Host Mission</a></li>
           <li><a href="#district-map" data-i18n="nav-map">District Map</a></li>
           <li><a href="#showcase" data-i18n="nav-showcase">Showcase</a></li>
+          <li><a href="#gallery" data-i18n="nav-gallery">Gallery</a></li>
           <li><a href="#leaderboard" data-i18n="nav-leaders">Leaders</a></li>
           <li><a href="#volunteer" data-i18n="nav-volunteer">Volunteer</a></li>
         </ul>
@@ -2996,6 +2997,7 @@
       <a href="#host-mission" data-i18n="nav-funding" onclick="closeMobileMenu()">Host Mission</a>
       <a href="#district-map" data-i18n="nav-map" onclick="closeMobileMenu()">District Map</a>
       <a href="#showcase" data-i18n="nav-showcase" onclick="closeMobileMenu()">Showcase</a>
+      <a href="#gallery" data-i18n="nav-gallery" onclick="closeMobileMenu()">Gallery</a>
       <a href="#leaderboard" data-i18n="nav-leaders" onclick="closeMobileMenu()">Leaders</a>
       <a href="#volunteer" data-i18n="nav-volunteer" onclick="closeMobileMenu()">Volunteer</a>
       <button type="button" onclick="openAdminLogin(); closeMobileMenu();" data-i18n="nav-admin">Admin</button>
@@ -3329,6 +3331,25 @@
       </div>
     </section>
 
+    <section class="section" id="gallery">
+      <div class="section-inner">
+        <div class="section-top">
+          <div>
+            <div class="section-badge" style="background:var(--navy-light);color:var(--navy)">
+              <i class="fa-solid fa-images"></i>
+              <span data-i18n="gallery-badge">Photo Gallery</span>
+            </div>
+            <h2 class="section-title" data-i18n="gallery-title">Every mission, one photo wall</h2>
+            <p class="section-subtitle" data-i18n="gallery-subtitle">
+              Browse activity photos uploaded across all missions in one place, newest first.
+            </p>
+          </div>
+        </div>
+
+        <div id="galleryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px"></div>
+      </div>
+    </section>
+
     <section class="section" id="leaderboard">
       <div class="section-inner">
         <div class="section-top center">
@@ -3561,6 +3582,7 @@
             <li><a href="#host-mission" data-i18n="nav-funding">Host Mission</a></li>
             <li><a href="#district-map" data-i18n="nav-map">District Map</a></li>
             <li><a href="#showcase" data-i18n="nav-showcase">Showcase</a></li>
+            <li><a href="#gallery" data-i18n="nav-gallery">Gallery</a></li>
             <li><a href="#leaderboard" data-i18n="nav-leaders">Leaders</a></li>
           </ul>
         </div>
@@ -4628,8 +4650,13 @@
   <div class="modal-overlay" id="photoLightbox" onclick="if(event.target===this) closePhotoLightbox()" style="z-index:1200">
     <button type="button" onclick="closePhotoLightbox()" aria-label="Close"
       style="position:absolute;top:18px;right:22px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:20px;cursor:pointer;z-index:1">✕</button>
-    <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:24px" onclick="event.stopPropagation()">
-      <img id="photoLightboxImg" src="" alt="" style="max-width:min(92vw,900px);max-height:88vh;object-fit:contain;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,0.5)" />
+    <button type="button" id="photoLightboxPrevBtn" onclick="event.stopPropagation(); shiftPhotoLightbox(-1)" aria-label="Previous photo"
+      style="position:absolute;top:50%;left:14px;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:24px;cursor:pointer;z-index:1">‹</button>
+    <button type="button" id="photoLightboxNextBtn" onclick="event.stopPropagation(); shiftPhotoLightbox(1)" aria-label="Next photo"
+      style="position:absolute;top:50%;right:14px;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:24px;cursor:pointer;z-index:1">›</button>
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;padding:24px;gap:12px" onclick="event.stopPropagation()">
+      <img id="photoLightboxImg" src="" alt="" style="max-width:min(92vw,900px);max-height:78vh;object-fit:contain;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,0.5)" />
+      <div id="photoLightboxCaption" style="color:#fff;font-size:14px;text-align:center;max-width:min(92vw,900px)"></div>
     </div>
   </div>
 
@@ -4977,7 +5004,12 @@
       "nav-funding": { en: "Host Mission", hi: "मिशन होस्ट करें" },
       "nav-map": { en: "District Map", hi: "जिला दृश्य" },
       "nav-showcase": { en: "Showcase", hi: "प्रदर्शनी" },
+      "nav-gallery": { en: "Gallery", hi: "गैलरी" },
       "nav-leaders": { en: "Leaders", hi: "लीडर्स" },
+      "gallery-badge": { en: "Photo Gallery", hi: "फोटो गैलरी" },
+      "gallery-title": { en: "Every mission, one photo wall", hi: "हर अभियान, एक ही फोटो दीवार पर" },
+      "gallery-subtitle": { en: "Browse activity photos uploaded across all missions in one place, newest first.", hi: "सभी अभियानों की गतिविधि फोटो एक ही जगह, नवीनतम सबसे पहले देखें।" },
+      "gallery-empty": { en: "No mission photos have been uploaded yet. Check back after the next activity!", hi: "अभी तक कोई अभियान फोटो अपलोड नहीं हुई है। अगली गतिविधि के बाद फिर देखें!" },
       "nav-volunteer": { en: "Volunteer", hi: "स्वयंसेवक" },
       "nav-admin": { en: "Admin", hi: "प्रशासक" },
       "nav-join": { en: "Join Now", hi: "अभी जुड़ें" },
@@ -8080,10 +8112,10 @@
       const canUploadMore = photos.length < maxPhotos;
       const grid = photos.length
         ? `<div class="mission-photo-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin:14px 0">
-            ${photos.map((photo) => `
+            ${photos.map((photo, idx) => `
               <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);aspect-ratio:1/1">
                 <img src="${escapeHtml(photo.dataUrl)}" alt="${escapeHtml(photo.caption || mission.title)}" loading="lazy"
-                     style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="openPhotoLightbox(this.src, this.alt)" />
+                     style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="openMissionPhotoLightbox(${mission.id}, ${idx})" />
                 ${photo.uploadedBy ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:#fff;font-size:10px;padding:3px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(photo.uploadedBy)}</div>` : ""}
                 ${state.adminLoggedIn ? `<button type="button" onclick="deleteMissionPhotoAsAdmin(${photo.id})" title="${hi ? "फोटो हटाएं" : "Delete photo"}"
                     style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(220,38,38,0.9);color:#fff;font-size:12px;line-height:1;cursor:pointer">✕</button>` : ""}
@@ -8115,6 +8147,59 @@
           ${uploadBlock}
         </div>
       `;
+    }
+
+    // Opens the shared lightbox for a single mission's photo grid (per-mission
+    // gallery), starting at `idx`, with Prev/Next cycling within that mission's
+    // own photos only.
+    function openMissionPhotoLightbox(missionId, idx) {
+      const mission = state.missions.find((item) => item.id === missionId);
+      if (!mission || !Array.isArray(mission.photos) || !mission.photos.length) return;
+      const photos = mission.photos.map((photo) => ({
+        src: photo.dataUrl,
+        caption: photo.caption || mission.title
+      }));
+      openPhotoLightbox(photos, idx);
+    }
+
+    // ── Cross-mission Gallery tab: flattens every mission's photos into one
+    // newest-first array so the whole district's activity photos live in one
+    // browsable place, with the shared lightbox providing Prev/Next across it.
+    function getAllGalleryPhotos() {
+      return state.missions
+        .flatMap((mission) =>
+          (Array.isArray(mission.photos) ? mission.photos : []).map((photo) => ({
+            src: photo.dataUrl,
+            caption: `${mission.title || ""}${mission.date ? " · " + mission.date : ""}`,
+            missionTitle: mission.title,
+            missionDate: mission.date,
+            createdAt: photo.createdAt || ""
+          }))
+        )
+        .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    }
+
+    function renderGallery() {
+      const grid = document.getElementById("galleryGrid");
+      if (!grid) return;
+      const hi = state.lang === "hi";
+      const photos = getAllGalleryPhotos();
+      if (!photos.length) {
+        grid.innerHTML = `<p style="grid-column:1/-1;font-size:14px;color:var(--muted);text-align:center;padding:30px 0">${tr("gallery-empty")}</p>`;
+        return;
+      }
+      grid.innerHTML = photos
+        .map((photo, idx) => `
+          <div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);background:var(--card);box-shadow:var(--shadow);cursor:pointer" onclick="openPhotoLightbox(getAllGalleryPhotos(), ${idx})">
+            <div style="aspect-ratio:1/1;overflow:hidden">
+              <img src="${escapeHtml(photo.src)}" alt="${escapeHtml(photo.caption)}" loading="lazy" style="width:100%;height:100%;object-fit:cover" />
+            </div>
+            <div style="padding:8px 10px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              ${escapeHtml(photo.missionTitle || "")}${photo.missionDate ? ` · ${escapeHtml(photo.missionDate)}` : ""}
+            </div>
+          </div>
+        `)
+        .join("");
     }
 
     let pendingMissionPhotoFiles = [];
@@ -8378,6 +8463,7 @@
       renderCategoryFilters();
       renderMissions();
       renderLocationCoverage();
+      renderGallery();
       renderStories();
       renderLeaders();
       renderLeaderReport();
@@ -10070,6 +10156,10 @@
           document.body.classList.remove("modal-open");
           closeMobileMenu();
         }
+        if (document.getElementById("photoLightbox")?.classList.contains("active")) {
+          if (event.key === "ArrowLeft") shiftPhotoLightbox(-1);
+          if (event.key === "ArrowRight") shiftPhotoLightbox(1);
+        }
       });
     }
 
@@ -10240,16 +10330,51 @@
     });
 
     // ── Full-screen photo lightbox ──────────────────────────────────────────────
-    function openPhotoLightbox(src, caption) {
+    // Supports two call shapes for backward compatibility:
+    //   openPhotoLightbox(src, caption)              -- single image, no navigation
+    //   openPhotoLightbox(photosArray, startIndex)    -- browsable set with Prev/Next
+    // photosArray entries look like { dataUrl, caption, missionTitle, missionDate }.
+    let lightboxPhotos = [];
+    let lightboxIndex = 0;
+
+    function renderPhotoLightboxCurrent() {
       const img = document.getElementById("photoLightboxImg");
-      img.src = src;
-      img.alt = caption || "";
+      const captionEl = document.getElementById("photoLightboxCaption");
+      const prevBtn = document.getElementById("photoLightboxPrevBtn");
+      const nextBtn = document.getElementById("photoLightboxNextBtn");
+      const multi = lightboxPhotos.length > 1;
+      if (prevBtn) prevBtn.style.display = multi ? "" : "none";
+      if (nextBtn) nextBtn.style.display = multi ? "" : "none";
+      if (!lightboxPhotos.length) return;
+      const photo = lightboxPhotos[lightboxIndex];
+      img.src = photo.src;
+      img.alt = photo.caption || "";
+      if (captionEl) captionEl.textContent = photo.caption || "";
+    }
+
+    function shiftPhotoLightbox(delta) {
+      if (!lightboxPhotos.length) return;
+      lightboxIndex = (lightboxIndex + delta + lightboxPhotos.length) % lightboxPhotos.length;
+      renderPhotoLightboxCurrent();
+    }
+
+    function openPhotoLightbox(srcOrArray, captionOrIndex) {
+      if (Array.isArray(srcOrArray)) {
+        lightboxPhotos = srcOrArray;
+        lightboxIndex = Number(captionOrIndex) || 0;
+      } else {
+        lightboxPhotos = [{ src: srcOrArray, caption: captionOrIndex || "" }];
+        lightboxIndex = 0;
+      }
+      renderPhotoLightboxCurrent();
       openModal("photoLightbox");
     }
     function closePhotoLightbox() {
       closeModal("photoLightbox");
       const img = document.getElementById("photoLightboxImg");
       img.src = "";
+      lightboxPhotos = [];
+      lightboxIndex = 0;
     }
 
     function exportVolunteers() {
