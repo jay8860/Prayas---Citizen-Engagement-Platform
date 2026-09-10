@@ -10,7 +10,7 @@ const DB_DIR = path.join(APP_ROOT, "data");
 const DB_PATH = process.env.PRAYAS_DB_PATH || path.join(DB_DIR, "prayas.sqlite");
 const INDEX_PATH = path.join(APP_ROOT, "index.html");
 const ASSETS_DIR = path.join(APP_ROOT, "assets");
-const ADMIN_PASSWORD = process.env.PRAYAS_ADMIN_PASSWORD || "Prayas@2026";
+const ADMIN_PASSWORD = process.env.PRAYAS_ADMIN_PASSWORD || "JanPrayas@2026";
 const TOKEN_SECRET = process.env.PRAYAS_TOKEN_SECRET || "replace-this-secret-before-production";
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 2; // 2 hours
 const DISTRICT_NAME = process.env.PRAYAS_DISTRICT_NAME || "Your District";
@@ -332,7 +332,7 @@ async function sendEmail(to, subject, html) {
   const t = getTransporter();
   if (!t) return false;
   try {
-    await t.sendMail({ from: `"Prayas Portal" <${GMAIL_USER}>`, to, subject, html });
+    await t.sendMail({ from: `"JanPrayas Portal" <${GMAIL_USER}>`, to, subject, html });
     return true;
   } catch (err) {
     console.error("[EMAIL] Failed:", to, err.message);
@@ -350,7 +350,7 @@ function adminAlertHtml(title, bodyHtml) {
   return `
   <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f4f4f4;padding:20px">
     <div style="background:#1B3A6B;color:#fff;padding:14px 20px;border-radius:8px 8px 0 0">
-      <span style="font-size:16px;font-weight:700">Prayas Portal</span>
+      <span style="font-size:16px;font-weight:700">JanPrayas Portal</span>
       <span style="font-size:13px;opacity:.8;margin-left:8px">Admin Alert</span>
     </div>
     <div style="background:#fff;padding:24px;border-radius:0 0 8px 8px;border:1px solid #ddd">
@@ -358,7 +358,7 @@ function adminAlertHtml(title, bodyHtml) {
       ${bodyHtml}
     </div>
     <p style="color:#aaa;font-size:11px;text-align:center;margin-top:10px">
-      ${DISTRICT_NAME} District Administration · Prayas Citizen Engagement Platform
+      ${DISTRICT_NAME} District Administration · JanPrayas Citizen Engagement Platform
     </p>
   </div>`;
 }
@@ -370,7 +370,7 @@ function newsletterEmailHtml(subject, bodyText) {
   return `
   <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
     <div style="background:#FF9933;padding:20px;text-align:center;border-radius:8px 8px 0 0">
-      <h1 style="color:#fff;margin:0;font-size:26px;letter-spacing:1px">प्रयास · Prayas</h1>
+      <h1 style="color:#fff;margin:0;font-size:26px;letter-spacing:1px">जनप्रयास · JanPrayas</h1>
       <p style="color:#fff;margin:4px 0 0;font-size:13px;opacity:.9">
         ${DISTRICT_NAME} District · Citizen Engagement Platform
       </p>
@@ -381,7 +381,7 @@ function newsletterEmailHtml(subject, bodyText) {
     </div>
     <div style="background:#f9f9f9;padding:16px;text-align:center;font-size:12px;color:#aaa;
                 border:1px solid #eee;border-top:none;border-radius:0 0 8px 8px">
-      You are receiving this because you subscribed to district updates from Prayas.<br>
+      You are receiving this because you subscribed to district updates from JanPrayas.<br>
       ${DISTRICT_NAME} District Administration
     </div>
   </div>`;
@@ -1494,7 +1494,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Prayas portal running on http://localhost:${PORT}`);
+  console.log(`JanPrayas portal running on http://localhost:${PORT}`);
   if (ALLOWED_ORIGIN === "*") {
     console.warn("[WARN] PRAYAS_ALLOWED_ORIGIN is not set — CORS allows all origins. Set this env var to your domain before going public.");
   }
@@ -1511,7 +1511,7 @@ function gracefulShutdown(signal) {
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
-// Set PRAYAS_ALLOWED_ORIGIN to your domain in production (e.g. "https://prayas.example.com").
+// Set PRAYAS_ALLOWED_ORIGIN to your domain in production (e.g. "https://janprayas.example.com").
 // Defaults to "*" for local development only.
 const ALLOWED_ORIGIN = process.env.PRAYAS_ALLOWED_ORIGIN || "*";
 

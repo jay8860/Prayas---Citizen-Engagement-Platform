@@ -1,8 +1,8 @@
-# Prayas Citizen Engagement Platform
+# JanPrayas Citizen Engagement Platform
 
-Prayas is a district-facing citizen engagement portal that combines beautiful public-facing mission discovery with a shared backend for real multi-user participation.
+JanPrayas is a district-facing citizen engagement portal that combines beautiful public-facing mission discovery with a shared backend for real multi-user participation.
 
-This version keeps the stronger `prayas.html` visual language and adds a real Node + SQLite data layer so citizen submissions and admin actions are shared across users instead of living only in one browser.
+This version keeps the stronger `janprayas.html` visual language and adds a real Node + SQLite data layer so citizen submissions and admin actions are shared across users instead of living only in one browser.
 
 ## Stack
 
