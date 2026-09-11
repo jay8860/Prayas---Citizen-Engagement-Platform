@@ -3600,8 +3600,8 @@
             </div>
             <ul class="samman-incentive-list">
               <li><i class="fa-solid fa-check"></i><span data-i18n="samman-karyakarta-1">Personal recognition by the SDM / Janpad CEO.</span></li>
-              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-karyakarta-2">A guest invite to a district function.</span></li>
-              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-karyakarta-3">Preferential selection for a DMF-sponsored short skill course (ITI / polytechnic).</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-karyakarta-2">A guest invite to a district function, subject to availability.*</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-karyakarta-3">Preferential selection for a DMF-sponsored short skill course (ITI / polytechnic), as seats and funds allow.*</span></li>
             </ul>
           </div>
 
@@ -3612,12 +3612,12 @@
               <div class="samman-points-pill"><i class="fa-solid fa-star"></i> <span data-i18n="samman-pts-jansewak">500+ points</span></div>
             </div>
             <ul class="samman-incentive-list">
-              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-1">A scheduled meeting with the Collector.</span></li>
-              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-2">A guest / panelist slot at a district event.</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-1">A scheduled meeting with the Collector, subject to availability.*</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-2">A guest / panelist slot at a district event, when a suitable one arises.*</span></li>
               <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-3">The "JanPrayas Fellow" title with a formal certificate.</span></li>
-              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-4">Preferential selection for exposure visits to other cities (e.g. Delhi, Hyderabad) or leading institutions.</span></li>
-              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-5">Mentorship access to leading personalities from the district and beyond.</span></li>
-              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-6">Your verified volunteer record counted as a scored criterion in local recruitment (e.g. Rozgar Sahayak, Anganwadi Worker).</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-4">Preferential selection for exposure visits to other cities (e.g. Delhi, Hyderabad) or leading institutions, as such opportunities arise.*</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-5">Mentorship access to leading personalities from the district and beyond, where it can be arranged.*</span></li>
+              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-6">Your verified volunteer record considered as a positive factor in local recruitment (e.g. Rozgar Sahayak, Anganwadi Worker), subject to the recruitment rules in force at that time.*</span></li>
             </ul>
           </div>
 
@@ -3633,6 +3633,8 @@
             </ul>
           </div>
         </div>
+
+        <p style="margin:18px 0 0;font-size:13px;color:#6b7280;text-align:center" data-i18n="samman-footnote">* Subject to availability, applicable rules and the district administration's discretion each year.</p>
 
         <div class="samman-champions">
           <div class="samman-champions-badge"><i class="fa-solid fa-medal"></i> <span data-i18n="samman-champions-badge">JanPrayas Champions · Annual Honour</span></div>
@@ -3781,8 +3783,9 @@
               </div>
 
               <div class="form-group full" id="volSkillsGroup">
-                <label data-i18n="vol-skills-label">Your Skills - select all that apply</label>
+                <label data-i18n="vol-skills-label">Your Skills - select at least one *</label>
                 <div class="skills-grid" id="skillsGrid"></div>
+                <input id="volSkillsOther" type="text" style="margin-top:10px" data-i18n-placeholder="vol-skills-other-placeholder" placeholder="Other skills? Type them here, separated by commas" />
               </div>
 
               <div class="form-group full" id="volAvailabilityGroup">
@@ -5378,17 +5381,17 @@
       "samman-rank-karyakarta": { en: "Karyakarta", hi: "कार्यकर्ता" },
       "samman-pts-karyakarta": { en: "300+ points", hi: "300+ अंक" },
       "samman-karyakarta-1": { en: "Personal recognition by the SDM / Janpad CEO.", hi: "एसडीएम / जनपद सीईओ द्वारा व्यक्तिगत सम्मान।" },
-      "samman-karyakarta-2": { en: "A guest invite to a district function.", hi: "जिला स्तरीय कार्यक्रम में अतिथि के रूप में आमंत्रण।" },
-      "samman-karyakarta-3": { en: "Preferential selection for a DMF-sponsored short skill course (ITI / polytechnic).", hi: "डीएमएफ द्वारा प्रायोजित लघु कौशल पाठ्यक्रम (आईटीआई / पॉलिटेक्निक) हेतु वरीयता आधारित चयन।" },
+      "samman-karyakarta-2": { en: "A guest invite to a district function, subject to availability.*", hi: "जिला स्तरीय कार्यक्रम में अतिथि के रूप में आमंत्रण, उपलब्धता के अधीन।*" },
+      "samman-karyakarta-3": { en: "Preferential selection for a DMF-sponsored short skill course (ITI / polytechnic), as seats and funds allow.*", hi: "डीएमएफ द्वारा प्रायोजित लघु कौशल पाठ्यक्रम (आईटीआई / पॉलिटेक्निक) हेतु वरीयता आधारित चयन, सीटों व निधि की उपलब्धता के अधीन।*" },
 
       "samman-rank-jansewak": { en: "Jan Sewak", hi: "जन सेवक" },
       "samman-pts-jansewak": { en: "500+ points", hi: "500+ अंक" },
-      "samman-jansewak-1": { en: "A scheduled meeting with the Collector.", hi: "कलेक्टर महोदय से निर्धारित भेंट।" },
-      "samman-jansewak-2": { en: "A guest / panelist slot at a district event.", hi: "जिला कार्यक्रम में अतिथि / पैनलिस्ट के रूप में भागीदारी।" },
+      "samman-jansewak-1": { en: "A scheduled meeting with the Collector, subject to availability.*", hi: "कलेक्टर महोदय से निर्धारित भेंट, उपलब्धता के अधीन।*" },
+      "samman-jansewak-2": { en: "A guest / panelist slot at a district event, when a suitable one arises.*", hi: "जिला कार्यक्रम में अतिथि / पैनलिस्ट के रूप में भागीदारी, उपयुक्त अवसर आने पर।*" },
       "samman-jansewak-3": { en: "The \"JanPrayas Fellow\" title with a formal certificate.", hi: "औपचारिक प्रमाण पत्र सहित \"जनप्रयास फेलो\" की उपाधि।" },
-      "samman-jansewak-4": { en: "Preferential selection for exposure visits to other cities (e.g. Delhi, Hyderabad) or leading institutions.", hi: "अन्य शहरों (जैसे दिल्ली, हैदराबाद) या प्रमुख संस्थानों के भ्रमण हेतु वरीयता आधारित चयन।" },
-      "samman-jansewak-5": { en: "Mentorship access to leading personalities from the district and beyond.", hi: "जिले एवं बाहर की प्रतिष्ठित हस्तियों से मार्गदर्शन प्राप्त करने का अवसर।" },
-      "samman-jansewak-6": { en: "Your verified volunteer record counted as a scored criterion in local recruitment (e.g. Rozgar Sahayak, Anganwadi Worker).", hi: "स्थानीय भर्तियों (जैसे रोज़गार सहायक, आंगनवाड़ी कार्यकर्ता) में आपका सत्यापित स्वयंसेवी रिकॉर्ड एक अंकित मानदंड के रूप में गिना जाएगा।" },
+      "samman-jansewak-4": { en: "Preferential selection for exposure visits to other cities (e.g. Delhi, Hyderabad) or leading institutions, as such opportunities arise.*", hi: "अन्य शहरों (जैसे दिल्ली, हैदराबाद) या प्रमुख संस्थानों के भ्रमण हेतु वरीयता आधारित चयन, ऐसे अवसर आने पर।*" },
+      "samman-jansewak-5": { en: "Mentorship access to leading personalities from the district and beyond, where it can be arranged.*", hi: "जिले एवं बाहर की प्रतिष्ठित हस्तियों से मार्गदर्शन प्राप्त करने का अवसर, जहाँ संभव हो सके।*" },
+      "samman-jansewak-6": { en: "Your verified volunteer record considered as a positive factor in local recruitment (e.g. Rozgar Sahayak, Anganwadi Worker), subject to the recruitment rules in force at that time.*", hi: "स्थानीय भर्तियों (जैसे रोज़गार सहायक, आंगनवाड़ी कार्यकर्ता) में आपका सत्यापित स्वयंसेवी रिकॉर्ड एक सकारात्मक कारक माना जाएगा, उस समय लागू भर्ती नियमों के अधीन।*" },
 
       "samman-rank-loknayak": { en: "Lok Nayak", hi: "लोक नायक" },
       "samman-pts-loknayak": { en: "1000+ points · Top Rank", hi: "1000+ अंक · शीर्ष रैंक" },
@@ -5400,6 +5403,7 @@
       "samman-champions-text": { en: "Every year, the district's Top 10 JanPrayas Champions are felicitated on stage by the Chief Guest — at the Republic Day function and at Rajyotsav (Chhattisgarh State Formation Day), the district's two biggest public occasions.", hi: "प्रत्येक वर्ष जिले के शीर्ष 10 जनप्रयास चैंपियंस को मुख्य अतिथि द्वारा मंच पर सम्मानित किया जाता है — गणतंत्र दिवस समारोह तथा राज्योत्सव (छत्तीसगढ़ राज्य स्थापना दिवस) पर, जो जिले के दो सबसे बड़े सार्वजनिक अवसर हैं।" },
       "samman-occasion-1": { en: "Republic Day, 26 January", hi: "गणतंत्र दिवस, 26 जनवरी" },
       "samman-occasion-2": { en: "Rajyotsav, 1 November", hi: "राज्योत्सव, 1 नवंबर" },
+      "samman-footnote": { en: "* Subject to availability, applicable rules and the district administration's discretion each year.", hi: "* प्रत्येक वर्ष उपलब्धता, लागू नियमों एवं जिला प्रशासन के विवेकाधिकार के अधीन।" },
       "pulse-badge": { en: "District Pulse", hi: "जिला पल्स" },
       "pulse-title": { en: "A live civic operations view for the district", hi: "जिले के लिए एक लाइव नागरिक संचालन दृश्य" },
       "pulse-subtitle": { en: "See who is leading, what just happened, and which activities have recently gone live or been completed across the portal.", hi: "देखें कौन आगे है, अभी क्या हुआ, और कौन-सी गतिविधियाँ हाल में लाइव हुईं या पूरी हुईं।" },
@@ -5430,7 +5434,8 @@
       "vol-area-placeholder": { en: "Ward, gram panchayat, town, colony or village", hi: "वार्ड, ग्राम पंचायत, कस्बा, कॉलोनी या गांव" },
       "vol-occupation-label": { en: "Profession / Occupation", hi: "पेशा / व्यवसाय" },
       "vol-occupation-placeholder": { en: "Teacher, engineer, student, homemaker, retired officer", hi: "शिक्षक, इंजीनियर, छात्र, गृहिणी, सेवानिवृत्त अधिकारी" },
-      "vol-skills-label": { en: "Your Skills - select all that apply", hi: "आपके कौशल - सभी लागू विकल्प चुनें" },
+      "vol-skills-label": { en: "Your Skills - select at least one *", hi: "आपके कौशल - कम से कम एक चुनें *" },
+      "vol-skills-other-placeholder": { en: "Other skills? Type them here, separated by commas", hi: "अन्य कौशल? यहाँ लिखें, अल्पविराम से अलग करें" },
       "vol-availability-label": { en: "Availability", hi: "उपलब्धता" },
       "vol-message-label": { en: "Why do you want to contribute?", hi: "आप योगदान क्यों देना चाहते हैं?" },
       "vol-message-placeholder": { en: "Tell us how you want to help your district.", hi: "बताइए आप अपने जिले की कैसे मदद करना चाहते हैं।" },
@@ -7335,7 +7340,13 @@
         { id: "tech", labelEn: "Tech / IT", labelHi: "टेक / आईटी", emoji: "💻" },
         { id: "speak", labelEn: "Public Speaking", labelHi: "जनसंपर्क / भाषण", emoji: "🎙️" },
         { id: "labour", labelEn: "Physical Labour", labelHi: "शारीरिक श्रम", emoji: "🏗️" },
-        { id: "drive", labelEn: "Driving / Logistics", labelHi: "ड्राइविंग / लॉजिस्टिक्स", emoji: "🚗" }
+        { id: "drive", labelEn: "Driving / Logistics", labelHi: "ड्राइविंग / लॉजिस्टिक्स", emoji: "🚗" },
+        { id: "cooking", labelEn: "Cooking", labelHi: "खाना बनाना", emoji: "🍳" },
+        { id: "medical", labelEn: "Medical / Nursing", labelHi: "चिकित्सा / नर्सिंग", emoji: "⚕️" },
+        { id: "repair", labelEn: "Electrical / Plumbing", labelHi: "इलेक्ट्रिकल / प्लंबिंग", emoji: "🔧" },
+        { id: "social", labelEn: "Social Media", labelHi: "सोशल मीडिया", emoji: "📱" },
+        { id: "event", labelEn: "Event Management", labelHi: "आयोजन प्रबंधन", emoji: "🎪" },
+        { id: "finance", labelEn: "Accounting / Finance", labelHi: "लेखा / वित्त", emoji: "📊" }
       ];
       document.getElementById("skillsGrid").innerHTML = skills
         .map((skill) => `
@@ -9210,9 +9221,15 @@
       document.getElementById("volOccupation").value = profile.occupation || "";
       document.getElementById("volAvailability").value = profile.availability || "";
       document.getElementById("volMessage").value = profile.message || "";
+      const knownSkillValues = Array.from(document.querySelectorAll('#skillsGrid input[name="skills"]')).map((input) => input.value);
       document.querySelectorAll('#skillsGrid input[name="skills"]').forEach((input) => {
         input.checked = Array.isArray(profile.skills) && profile.skills.includes(input.value);
       });
+      const otherSkillsInput = document.getElementById("volSkillsOther");
+      if (otherSkillsInput) {
+        const extraSkills = Array.isArray(profile.skills) ? profile.skills.filter((skill) => !knownSkillValues.includes(skill)) : [];
+        otherSkillsInput.value = extraSkills.join(", ");
+      }
     }
 
     function updateVolunteerFormMode() {
@@ -9307,7 +9324,18 @@
       event.preventDefault();
       const form = event.target;
       const formData = new FormData(form);
-      const skills = formData.getAll("skills");
+      const checkedSkills = formData.getAll("skills");
+      const skillsGroupHidden = document.getElementById("volSkillsGroup")?.classList.contains("hidden");
+      if (!skillsGroupHidden && !checkedSkills.length) {
+        showToast(
+          state.lang === "hi" ? "कृपया कम से कम एक कौशल चुनें।" : "Please select at least one skill.",
+          "ℹ️"
+        );
+        return;
+      }
+      const otherSkillsRaw = String(document.getElementById("volSkillsOther")?.value || "");
+      const otherSkills = otherSkillsRaw.split(",").map((item) => item.trim()).filter(Boolean);
+      const skills = [...checkedSkills, ...otherSkills];
       const selectedMission = state.missions.find((mission) => mission.id === state.selectedMissionId) || null;
       const volunteerName = String(formData.get("volName") || document.getElementById("volName").value || "").trim();
       if (selectedMission && state.volunteerJoinMode === "returning" && state.volunteerLookup.checkedKey === "") {
