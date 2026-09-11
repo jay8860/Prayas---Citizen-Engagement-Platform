@@ -1399,6 +1399,7 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      position: relative;
     }
 
     .showcase-top-band {
@@ -3130,6 +3131,7 @@
           <li><a href="#host-mission" data-i18n="nav-funding">Host Mission</a></li>
           <li><a href="#district-map" data-i18n="nav-map">District Map</a></li>
           <li><a href="#showcase" data-i18n="nav-showcase">Showcase</a></li>
+          <li><a href="#org-showcase" data-i18n="nav-org-showcase">Organizations</a></li>
           <li><a href="#gallery" data-i18n="nav-gallery">Gallery</a></li>
           <li><a href="#leaderboard" data-i18n="nav-leaders">Leaders</a></li>
           <li><a href="#incentives" data-i18n="nav-incentives">JanPrayas Samman</a></li>
@@ -3152,6 +3154,7 @@
       <a href="#host-mission" data-i18n="nav-funding" onclick="closeMobileMenu()">Host Mission</a>
       <a href="#district-map" data-i18n="nav-map" onclick="closeMobileMenu()">District Map</a>
       <a href="#showcase" data-i18n="nav-showcase" onclick="closeMobileMenu()">Showcase</a>
+      <a href="#org-showcase" data-i18n="nav-org-showcase" onclick="closeMobileMenu()">Organizations</a>
       <a href="#gallery" data-i18n="nav-gallery" onclick="closeMobileMenu()">Gallery</a>
       <a href="#leaderboard" data-i18n="nav-leaders" onclick="closeMobileMenu()">Leaders</a>
       <a href="#incentives" data-i18n="nav-incentives" onclick="closeMobileMenu()">JanPrayas Samman</a>
@@ -3381,9 +3384,22 @@
                 <input id="hostMissionSlots" type="number" min="1" max="10000" value="25" required />
               </div>
             </div>
+            <div class="form-group full">
+              <label data-i18n="host-type-label">Who is hosting this activity? *</label>
+              <div style="display:flex;gap:18px;margin-top:6px">
+                <label style="display:flex;align-items:center;gap:6px;font-weight:500;cursor:pointer">
+                  <input type="radio" name="hostMissionType" value="individual" checked onchange="updateHostMissionTypeLabel()" />
+                  <span data-i18n="host-type-individual">An individual</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-weight:500;cursor:pointer">
+                  <input type="radio" name="hostMissionType" value="organization" onchange="updateHostMissionTypeLabel()" />
+                  <span data-i18n="host-type-organization">An NGO / civic organization</span>
+                </label>
+              </div>
+            </div>
             <div class="form-row">
               <div class="form-group">
-                <label for="hostMissionName" data-i18n="host-name-label">Host Name</label>
+                <label for="hostMissionName" id="hostMissionNameLabel" data-i18n="host-name-label">Host Name</label>
                 <input id="hostMissionName" type="text" maxlength="100" required />
               </div>
               <div class="form-group">
@@ -3441,6 +3457,7 @@
         </div>
 
         <div class="showcase-grid" id="showcaseGrid"></div>
+        <div style="display:flex;justify-content:center;gap:10px;margin-top:18px" id="showcasePager"></div>
 
         <div class="story-form-wrap">
           <button class="btn btn-saffron story-toggle" type="button" id="storyToggleBtn">
@@ -3468,8 +3485,8 @@
                   <select id="storyCategory" required></select>
                 </div>
                 <div class="form-group">
-                  <label for="storyPhoto" data-i18n="story-photo-label">Photo (Optional)</label>
-                  <input id="storyPhoto" type="file" accept="image/*" />
+                  <label for="storyPhoto" data-i18n="story-photo-label">Photos (up to 5, optional)</label>
+                  <input id="storyPhoto" type="file" accept="image/*" multiple />
                 </div>
               </div>
               <div class="form-group full">
@@ -3482,6 +3499,139 @@
               </div>
               <button class="btn btn-primary" type="submit" data-i18n="story-submit">Publish Story</button>
             </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="org-showcase">
+      <div class="section-inner">
+        <div class="section-top">
+          <div>
+            <div class="section-badge" style="background:var(--saffron-light);color:var(--saffron-dark)">
+              <i class="fa-solid fa-people-group"></i>
+              <span data-i18n="org-showcase-badge">Organizational Showcase</span>
+            </div>
+            <h2 class="section-title" data-i18n="org-showcase-title">NGOs and civic groups working in the district</h2>
+            <p class="section-subtitle" data-i18n="org-showcase-subtitle">
+              Registered organizations share what they do, a few photos, and a link for citizens who want to get involved.
+            </p>
+          </div>
+        </div>
+
+        <div class="showcase-grid" id="orgShowcaseGrid"></div>
+        <div style="display:flex;justify-content:center;gap:10px;margin-top:18px" id="orgShowcasePager"></div>
+
+        <div class="story-form-wrap">
+          <button class="btn btn-saffron story-toggle" type="button" id="orgAuthToggleBtn" onclick="toggleOrgAuthCard()">
+            <i class="fa-solid fa-building-flag"></i>
+            <span data-i18n="org-auth-toggle">Register / Log In Your Organization</span>
+          </button>
+
+          <div class="story-form-card hidden" id="orgAuthCard">
+            <!-- Logged-out: login + signup -->
+            <div id="orgAuthLoggedOut">
+              <div style="display:flex;gap:10px;margin-bottom:18px" id="orgAuthTabs">
+                <button class="btn btn-secondary" type="button" id="orgTabLoginBtn" onclick="switchOrgAuthTab('login')" data-i18n="org-tab-login">Log In</button>
+                <button class="btn btn-ghost" type="button" id="orgTabSignupBtn" onclick="switchOrgAuthTab('signup')" data-i18n="org-tab-signup">New Organization? Sign Up</button>
+              </div>
+
+              <form id="orgLoginForm">
+                <h3 class="form-card-title" data-i18n="org-login-title">Organization Login</h3>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="orgLoginUsername" data-i18n="org-username-label">Username</label>
+                    <input id="orgLoginUsername" type="text" required autocomplete="username" />
+                  </div>
+                  <div class="form-group">
+                    <label for="orgLoginPassword" data-i18n="org-password-label">Password</label>
+                    <input id="orgLoginPassword" type="password" required autocomplete="current-password" />
+                  </div>
+                </div>
+                <button class="btn btn-primary" type="submit" data-i18n="org-login-submit">Log In</button>
+              </form>
+
+              <form id="orgSignupForm" class="hidden">
+                <h3 class="form-card-title" data-i18n="org-signup-title">Register Your Organization</h3>
+                <p class="form-card-subtitle" data-i18n="org-signup-subtitle">A district administrator will review your account before it appears publicly on the showcase.</p>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="orgSignupName" data-i18n="org-name-label">Organization Name *</label>
+                    <input id="orgSignupName" type="text" required />
+                  </div>
+                  <div class="form-group">
+                    <label for="orgSignupUsername" data-i18n="org-username-label">Username *</label>
+                    <input id="orgSignupUsername" type="text" required data-i18n-placeholder="org-username-placeholder" placeholder="lowercase, no spaces" autocomplete="username" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="orgSignupPassword" data-i18n="org-password-label">Password *</label>
+                    <input id="orgSignupPassword" type="password" required minlength="8" autocomplete="new-password" />
+                  </div>
+                  <div class="form-group">
+                    <label for="orgSignupPhone" data-i18n="org-phone-label">Contact Phone</label>
+                    <input id="orgSignupPhone" type="tel" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="orgSignupEmail" data-i18n="org-email-label">Contact Email</label>
+                    <input id="orgSignupEmail" type="email" />
+                  </div>
+                  <div class="form-group">
+                    <label for="orgSignupJoinLink" data-i18n="org-joinlink-label">Join / Website Link</label>
+                    <input id="orgSignupJoinLink" type="url" data-i18n-placeholder="org-joinlink-placeholder" placeholder="https://" />
+                  </div>
+                </div>
+                <div class="form-group full">
+                  <label for="orgSignupDescription" data-i18n="org-description-label">What does your organization do?</label>
+                  <textarea id="orgSignupDescription" data-i18n-placeholder="org-description-placeholder" placeholder="Describe your organization's work in the district."></textarea>
+                </div>
+                <button class="btn btn-primary" type="submit" data-i18n="org-signup-submit">Create Account</button>
+              </form>
+            </div>
+
+            <!-- Logged-in: profile + photo manager -->
+            <div id="orgAuthLoggedIn" class="hidden">
+              <div id="orgStatusBanner"></div>
+              <form id="orgProfileForm">
+                <h3 class="form-card-title" data-i18n="org-dashboard-title">Your Organization Profile</h3>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="orgProfileName" data-i18n="org-name-label">Organization Name *</label>
+                    <input id="orgProfileName" type="text" required />
+                  </div>
+                  <div class="form-group">
+                    <label for="orgProfileJoinLink" data-i18n="org-joinlink-label">Join / Website Link</label>
+                    <input id="orgProfileJoinLink" type="url" data-i18n-placeholder="org-joinlink-placeholder" placeholder="https://" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="orgProfilePhone" data-i18n="org-phone-label">Contact Phone</label>
+                    <input id="orgProfilePhone" type="tel" />
+                  </div>
+                  <div class="form-group">
+                    <label for="orgProfileEmail" data-i18n="org-email-label">Contact Email</label>
+                    <input id="orgProfileEmail" type="email" />
+                  </div>
+                </div>
+                <div class="form-group full">
+                  <label for="orgProfileDescription" data-i18n="org-description-label">What does your organization do?</label>
+                  <textarea id="orgProfileDescription" data-i18n-placeholder="org-description-placeholder" placeholder="Describe your organization's work in the district."></textarea>
+                </div>
+                <button class="btn btn-primary" type="submit" data-i18n="org-save-submit">Save Changes</button>
+              </form>
+
+              <div style="margin-top:24px">
+                <h3 class="form-card-title" data-i18n="org-photos-title">Photos (up to 10)</h3>
+                <div id="orgPhotoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:12px"></div>
+                <input id="orgPhotoInput" type="file" accept="image/*" />
+              </div>
+
+              <button class="btn btn-ghost" type="button" style="margin-top:20px" onclick="logoutOrg()" data-i18n="org-logout">Log Out</button>
+            </div>
           </div>
         </div>
       </div>
@@ -3849,6 +3999,7 @@
             <li><a href="#host-mission" data-i18n="nav-funding">Host Mission</a></li>
             <li><a href="#district-map" data-i18n="nav-map">District Map</a></li>
             <li><a href="#showcase" data-i18n="nav-showcase">Showcase</a></li>
+            <li><a href="#org-showcase" data-i18n="nav-org-showcase">Organizations</a></li>
             <li><a href="#gallery" data-i18n="nav-gallery">Gallery</a></li>
             <li><a href="#leaderboard" data-i18n="nav-leaders">Leaders</a></li>
             <li><a href="#incentives" data-i18n="nav-incentives">JanPrayas Samman</a></li>
@@ -4236,6 +4387,7 @@
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="exports">Exports</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="audit">Audit Log</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="announcements" data-i18n="admin-tab-announcements">Announcements</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="organizations" data-i18n="admin-tab-organizations">Organizations</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="branding" data-i18n="admin-tab-branding">Branding</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="locations" data-i18n="admin-tab-locations">Locations</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="missionsetup" data-i18n="admin-tab-missionsetup">Mission Setup</button>
@@ -4563,6 +4715,14 @@
               <button class="btn btn-primary" type="button" id="saveTickerSpeedBtn">Save Speed</button>
             </div>
             <div id="tickerSpeedStatus" style="margin-top:8px;font-size:13px;color:var(--muted)"></div>
+          </div>
+        </div>
+
+        <div class="admin-pane" id="adminPaneOrganizations">
+          <div class="panel-card">
+            <h3 data-i18n="admin-org-title">Organizational Showcase — Review Queue</h3>
+            <p data-i18n="admin-org-subtitle">Approve organizations before they appear publicly, or edit/remove anything already published to deal with fake accounts or inappropriate photos.</p>
+            <div id="adminOrgManageList"></div>
           </div>
         </div>
 
@@ -5272,6 +5432,32 @@
       "nav-funding": { en: "Host Mission", hi: "मिशन होस्ट करें" },
       "nav-map": { en: "District Map", hi: "जिला दृश्य" },
       "nav-showcase": { en: "Showcase", hi: "प्रदर्शनी" },
+      "nav-org-showcase": { en: "Organizations", hi: "संगठन" },
+      "org-showcase-badge": { en: "Organizational Showcase", hi: "संगठन प्रदर्शनी" },
+      "org-showcase-title": { en: "NGOs and civic groups working in the district", hi: "जिले में कार्यरत एनजीओ और नागरिक संगठन" },
+      "org-showcase-subtitle": { en: "Registered organizations share what they do, a few photos, and a link for citizens who want to get involved.", hi: "पंजीकृत संगठन अपना कार्य, कुछ फोटो और जुड़ने के इच्छुक नागरिकों के लिए एक लिंक साझा करते हैं।" },
+      "org-auth-toggle": { en: "Register / Log In Your Organization", hi: "अपना संगठन पंजीकृत करें / लॉग इन करें" },
+      "org-tab-login": { en: "Log In", hi: "लॉग इन" },
+      "org-tab-signup": { en: "New Organization? Sign Up", hi: "नया संगठन? साइन अप करें" },
+      "org-login-title": { en: "Organization Login", hi: "संगठन लॉगिन" },
+      "org-username-label": { en: "Username", hi: "उपयोगकर्ता नाम" },
+      "org-username-placeholder": { en: "lowercase, no spaces", hi: "छोटे अक्षर, बिना स्पेस" },
+      "org-password-label": { en: "Password", hi: "पासवर्ड" },
+      "org-login-submit": { en: "Log In", hi: "लॉग इन करें" },
+      "org-signup-title": { en: "Register Your Organization", hi: "अपना संगठन पंजीकृत करें" },
+      "org-signup-subtitle": { en: "A district administrator will review your account before it appears publicly on the showcase.", hi: "प्रदर्शनी में सार्वजनिक रूप से दिखने से पहले जिला प्रशासक आपके खाते की समीक्षा करेंगे।" },
+      "org-name-label": { en: "Organization Name *", hi: "संगठन का नाम *" },
+      "org-phone-label": { en: "Contact Phone", hi: "संपर्क फ़ोन" },
+      "org-email-label": { en: "Contact Email", hi: "संपर्क ईमेल" },
+      "org-joinlink-label": { en: "Join / Website Link", hi: "जुड़ें / वेबसाइट लिंक" },
+      "org-joinlink-placeholder": { en: "https://", hi: "https://" },
+      "org-description-label": { en: "What does your organization do?", hi: "आपका संगठन क्या कार्य करता है?" },
+      "org-description-placeholder": { en: "Describe your organization's work in the district.", hi: "जिले में अपने संगठन के कार्य का वर्णन करें।" },
+      "org-signup-submit": { en: "Create Account", hi: "खाता बनाएँ" },
+      "org-dashboard-title": { en: "Your Organization Profile", hi: "आपकी संगठन प्रोफ़ाइल" },
+      "org-save-submit": { en: "Save Changes", hi: "परिवर्तन सहेजें" },
+      "org-photos-title": { en: "Photos (up to 10)", hi: "फोटो (10 तक)" },
+      "org-logout": { en: "Log Out", hi: "लॉग आउट" },
       "nav-gallery": { en: "Gallery", hi: "गैलरी" },
       "nav-leaders": { en: "Leaders", hi: "लीडर्स" },
       "gallery-badge": { en: "Photo Gallery", hi: "फोटो गैलरी" },
@@ -5320,6 +5506,10 @@
       "host-duration-label": { en: "Duration", hi: "अवधि" },
       "host-slots-label": { en: "Volunteer Slots", hi: "स्वयंसेवक स्लॉट" },
       "host-name-label": { en: "Host Name", hi: "होस्ट का नाम" },
+      "host-org-name-label": { en: "Organization Name", hi: "संगठन का नाम" },
+      "host-type-label": { en: "Who is hosting this activity? *", hi: "यह गतिविधि कौन आयोजित कर रहा है? *" },
+      "host-type-individual": { en: "An individual", hi: "एक व्यक्ति" },
+      "host-type-organization": { en: "An NGO / civic organization", hi: "एक एनजीओ / नागरिक संगठन" },
       "host-phone-label": { en: "Phone Number", hi: "फोन नंबर" },
       "host-email-label": { en: "Email ID", hi: "ईमेल आईडी" },
       "host-description-label": { en: "Description", hi: "विवरण" },
@@ -5344,12 +5534,12 @@
       "showcase-subtitle": { en: "Public service deserves public visibility. Celebrate the stories, photos, and impact behind every mission.", hi: "सार्वजनिक सेवा को सार्वजनिक दृश्यता मिलनी चाहिए। हर योगदान की कहानी और प्रभाव को सामने लाएँ।" },
       "story-toggle": { en: "Share Your Story", hi: "अपनी कहानी साझा करें" },
       "story-form-title": { en: "Share what you did for your district", hi: "जिले के लिए आपने क्या किया, बताइए" },
-      "story-form-subtitle": { en: "Add a story, optionally attach a photo, and feature the contribution on the public showcase.", hi: "एक कहानी जोड़ें, चाहें तो फोटो लगाएँ, और अपने योगदान को सार्वजनिक प्रदर्शनी में दिखाएँ।" },
+      "story-form-subtitle": { en: "Add a story, optionally attach up to 5 photos, and feature the contribution on the public showcase.", hi: "एक कहानी जोड़ें, चाहें तो 5 तक फोटो लगाएँ, और अपने योगदान को सार्वजनिक प्रदर्शनी में दिखाएँ।" },
       "story-name-label": { en: "Name", hi: "नाम" },
       "story-role-label": { en: "Your Role", hi: "आपकी भूमिका" },
       "story-role-placeholder": { en: "Community Volunteer", hi: "समुदाय स्वयंसेवक" },
       "story-category-label": { en: "Mission Category", hi: "अभियान श्रेणी" },
-      "story-photo-label": { en: "Photo (Optional)", hi: "फोटो (वैकल्पिक)" },
+      "story-photo-label": { en: "Photos (up to 5, optional)", hi: "फोटो (5 तक, वैकल्पिक)" },
       "story-headline-label": { en: "Story Title", hi: "कहानी का शीर्षक" },
       "story-headline-placeholder": { en: "What changed because of your effort?", hi: "आपके जनप्रयास से क्या बदला?" },
       "story-text-label": { en: "Your Story", hi: "आपकी कहानी" },
@@ -5524,10 +5714,15 @@
       "admin-panel-title": { en: "Admin Control Panel", hi: "प्रशासक नियंत्रण पैनल" },
       "admin-panel-subtitle": { en: "Manage missions, volunteers, announcements, and newsletter communication.", hi: "अभियान, स्वयंसेवक, घोषणाएँ और न्यूज़लेटर प्रबंधन करें।" },
       "admin-tab-overview": { en: "Overview", hi: "अवलोकन" },
+      "admin-tab-missions": { en: "Missions", hi: "अभियान" },
+      "admin-tab-missionsetup": { en: "Mission Setup", hi: "अभियान सेटअप" },
       "admin-tab-post": { en: "Post Mission", hi: "अभियान पोस्ट करें" },
       "admin-tab-poster": { en: "Poster Maker", hi: "पोस्टर बनाएं" },
       "admin-tab-volunteers": { en: "Volunteers", hi: "स्वयंसेवक" },
       "admin-tab-announcements": { en: "Announcements", hi: "घोषणाएँ" },
+      "admin-tab-organizations": { en: "Organizations", hi: "संगठन" },
+      "admin-org-title": { en: "Organizational Showcase — Review Queue", hi: "संगठन प्रदर्शनी — समीक्षा सूची" },
+      "admin-org-subtitle": { en: "Approve organizations before they appear publicly, or edit/remove anything already published to deal with fake accounts or inappropriate photos.", hi: "संगठनों को सार्वजनिक रूप से दिखाई देने से पहले स्वीकृत करें, या फर्जी खातों या अनुचित फोटो से निपटने के लिए प्रकाशित सामग्री संपादित/हटाएँ।" },
       "admin-tab-branding": { en: "Branding", hi: "ब्रांडिंग" },
       "admin-branding-title": { en: "District Branding", hi: "जिला ब्रांडिंग" },
       "admin-branding-subtitle": { en: "Customise the badge line shown at the top of the hero section so this deployment reads correctly for your district. This does not change the \"JanPrayas\" platform name.", hi: "हीरो सेक्शन के ऊपर दिखने वाली बैज लाइन को अपने जिले के अनुसार बदलें। इससे \"जनप्रयास\" प्लेटफ़ॉर्म का नाम नहीं बदलता।" },
@@ -5805,6 +6000,7 @@
     const UI_STORAGE_KEY = "janprayas-portal-ui-v2";
     const ADMIN_TOKEN_KEY = "janprayas-admin-token-v1";
     const ADMIN_USER_KEY = "janprayas-admin-user-v1";
+    const ORG_TOKEN_KEY = "janprayas-org-token-v1";
     const persistKeys = ["lang", "theme", "newsletterDraft"];
 
     function deepClone(value) {
@@ -5835,6 +6031,9 @@
         announcementRecords: [],
         missions: [],
         stories: [],
+        showcasePage: 1,
+        organizations: [],
+        orgAuth: { token: null, org: null, photos: [] },
         leaders: [],
         volunteers: [],
         volunteerEvents: [],
@@ -5903,6 +6102,40 @@
 
     function isSuperAdmin() {
       return Boolean(state.adminUser && state.adminUser.role === "super_admin");
+    }
+
+    function getOrgToken() {
+      return window.localStorage.getItem(ORG_TOKEN_KEY) || "";
+    }
+
+    function setOrgToken(token) {
+      if (!token) {
+        window.localStorage.removeItem(ORG_TOKEN_KEY);
+        return;
+      }
+      window.localStorage.setItem(ORG_TOKEN_KEY, token);
+    }
+
+    function clearOrgToken() {
+      window.localStorage.removeItem(ORG_TOKEN_KEY);
+    }
+
+    // Same shape as apiRequest(), but authenticates as the logged-in
+    // organization instead of the admin — the two token types are never
+    // interchangeable server-side (see requireOrg/requireAdmin), so a
+    // separate helper keeps that boundary obvious on the client too.
+    async function orgApiRequest(url, options = {}) {
+      const token = getOrgToken();
+      const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const response = await fetch(url, { ...options, headers });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(payload.error || "Request failed.");
+        error.status = response.status;
+        throw error;
+      }
+      return payload;
     }
 
     function adminScope() {
@@ -6427,6 +6660,7 @@
       state.announcementRecords = Array.isArray(payload.announcementRecords) ? payload.announcementRecords : [];
       state.missions = Array.isArray(payload.missions) ? payload.missions : [];
       state.stories = Array.isArray(payload.stories) ? payload.stories : [];
+      state.organizations = Array.isArray(payload.organizations) ? payload.organizations : [];
       state.leaders = Array.isArray(payload.leaders) ? payload.leaders : deepClone(leaders);
       state.volunteers = Array.isArray(payload.volunteers) ? payload.volunteers : [];
       state.volunteerEvents = Array.isArray(payload.volunteerEvents) ? payload.volunteerEvents : [];
@@ -7670,18 +7904,31 @@
     }
 
     function storyCardMedia(story) {
-      if (story.imageUrl) {
-        return `<div class="story-image-shell"><img src="${escapeHtml(story.imageUrl)}" alt="${escapeHtml(story.title)}" /></div>`;
+      const photos = Array.isArray(story.photos) && story.photos.length ? story.photos : (story.imageUrl ? [{ dataUrl: story.imageUrl }] : []);
+      if (photos.length) {
+        const extra = photos.length > 1 ? `<span style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.65);color:#fff;font-size:12px;font-weight:700;padding:2px 8px;border-radius:20px">+${photos.length - 1}</span>` : "";
+        return `<div class="story-image-shell"><img src="${escapeHtml(photos[0].dataUrl)}" alt="${escapeHtml(story.title)}" />${extra}</div>`;
       }
       return `<div class="showcase-top-band" style="background:${story.bg}">${story.emoji}</div>`;
     }
 
+    const SHOWCASE_PAGE_SIZE = 9;
+
     function renderStories() {
+      const grid = document.getElementById("showcaseGrid");
+      const pager = document.getElementById("showcasePager");
       if (!state.stories.length) {
-        document.getElementById("showcaseGrid").innerHTML = `<div class="mission-card" style="grid-column:1/-1;padding:32px;text-align:center"><h3 class="mission-title">${state.lang === "hi" ? "अभी तक कोई सार्वजनिक कहानी नहीं है।" : "No public stories yet."}</h3><p class="mission-desc" style="display:block">${state.lang === "hi" ? "जैसे ही वास्तविक योगदान आने लगेंगे, यहाँ कहानियाँ दिखाई देंगी।" : "Stories will appear here as soon as real contributions come in."}</p></div>`;
+        grid.innerHTML = `<div class="mission-card" style="grid-column:1/-1;padding:32px;text-align:center"><h3 class="mission-title">${state.lang === "hi" ? "अभी तक कोई सार्वजनिक कहानी नहीं है।" : "No public stories yet."}</h3><p class="mission-desc" style="display:block">${state.lang === "hi" ? "जैसे ही वास्तविक योगदान आने लगेंगे, यहाँ कहानियाँ दिखाई देंगी।" : "Stories will appear here as soon as real contributions come in."}</p></div>`;
+        if (pager) pager.innerHTML = "";
         return;
       }
-      document.getElementById("showcaseGrid").innerHTML = state.stories
+      const totalPages = Math.max(1, Math.ceil(state.stories.length / SHOWCASE_PAGE_SIZE));
+      state.showcasePage = Math.min(Math.max(1, state.showcasePage || 1), totalPages);
+      const start = (state.showcasePage - 1) * SHOWCASE_PAGE_SIZE;
+      const pageStories = state.stories.slice(start, start + SHOWCASE_PAGE_SIZE);
+      const isAdmin = Boolean(getAdminToken());
+
+      grid.innerHTML = pageStories
         .map(
           (story) => `
             <article class="showcase-card">
@@ -7704,12 +7951,328 @@
                 <div class="showcase-actions">
                   <button class="showcase-action-btn" type="button" onclick="cheerStory(${story.id})">👏 ${story.likes}</button>
                   <button class="showcase-action-btn" type="button" onclick="openCommentsModal(${story.id})">💬 ${story.comments.length}</button>
+                  ${isAdmin ? `<button class="showcase-action-btn" type="button" style="color:#B91C1C" onclick="adminDeleteStoryPrompt(${story.id})">🗑️ ${state.lang === "hi" ? "हटाएँ" : "Delete"}</button>` : ""}
                 </div>
               </div>
             </article>
           `
         )
         .join("");
+
+      if (pager) {
+        if (totalPages <= 1) {
+          pager.innerHTML = "";
+        } else {
+          const buttons = [];
+          buttons.push(`<button class="btn btn-ghost" type="button" ${state.showcasePage === 1 ? "disabled" : ""} onclick="goToShowcasePage(${state.showcasePage - 1})">‹ ${state.lang === "hi" ? "पिछला" : "Prev"}</button>`);
+          buttons.push(`<span style="align-self:center;font-size:13px;color:var(--muted)">${state.lang === "hi" ? `पृष्ठ ${state.showcasePage} / ${totalPages}` : `Page ${state.showcasePage} of ${totalPages}`}</span>`);
+          buttons.push(`<button class="btn btn-ghost" type="button" ${state.showcasePage === totalPages ? "disabled" : ""} onclick="goToShowcasePage(${state.showcasePage + 1})">${state.lang === "hi" ? "अगला" : "Next"} ›</button>`);
+          pager.innerHTML = buttons.join("");
+        }
+      }
+    }
+
+    function goToShowcasePage(page) {
+      state.showcasePage = page;
+      renderStories();
+      document.getElementById("showcaseGrid")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    async function adminDeleteStoryPrompt(storyId) {
+      if (!confirm(state.lang === "hi" ? "क्या आप वाकई इस कहानी को हटाना चाहते हैं?" : "Delete this story? This cannot be undone.")) return;
+      try {
+        await apiRequest(`/api/admin/stories/${storyId}/delete`, { method: "POST" });
+        showToast(state.lang === "hi" ? "कहानी हटा दी गई।" : "Story deleted.", "🗑️");
+        await refreshPortalData();
+        renderStories();
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    // ── Organizational Showcase ───────────────────────────────────────────────
+
+    const ORG_PAGE_SIZE = 6;
+
+    function orgCardMedia(org) {
+      const photos = Array.isArray(org.photos) ? org.photos : [];
+      if (!photos.length) {
+        return `<div class="showcase-top-band" style="background:linear-gradient(135deg,#EAF2FF,#D4E7FF)">🏢</div>`;
+      }
+      const extra = photos.length > 1 ? `<span style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.65);color:#fff;font-size:12px;font-weight:700;padding:2px 8px;border-radius:20px">+${photos.length - 1}</span>` : "";
+      return `<div class="story-image-shell"><img src="${escapeHtml(photos[0].dataUrl)}" alt="${escapeHtml(org.name)}" />${extra}</div>`;
+    }
+
+    function renderOrganizations() {
+      const grid = document.getElementById("orgShowcaseGrid");
+      const pager = document.getElementById("orgShowcasePager");
+      if (!grid) return;
+      if (!state.organizations.length) {
+        grid.innerHTML = `<div class="mission-card" style="grid-column:1/-1;padding:32px;text-align:center"><h3 class="mission-title">${state.lang === "hi" ? "अभी तक कोई पंजीकृत संगठन नहीं है।" : "No registered organizations yet."}</h3><p class="mission-desc" style="display:block">${state.lang === "hi" ? "जैसे ही संगठन पंजीकृत और स्वीकृत होंगे, वे यहाँ दिखाई देंगे।" : "Organizations will appear here once registered and approved."}</p></div>`;
+        if (pager) pager.innerHTML = "";
+        return;
+      }
+      const totalPages = Math.max(1, Math.ceil(state.organizations.length / ORG_PAGE_SIZE));
+      state.orgPage = Math.min(Math.max(1, state.orgPage || 1), totalPages);
+      const start = (state.orgPage - 1) * ORG_PAGE_SIZE;
+      const pageOrgs = state.organizations.slice(start, start + ORG_PAGE_SIZE);
+      const isAdmin = Boolean(getAdminToken());
+
+      grid.innerHTML = pageOrgs
+        .map(
+          (org) => `
+            <article class="showcase-card">
+              ${orgCardMedia(org)}
+              <div class="showcase-body">
+                <h3 class="showcase-title">${escapeHtml(org.name)}</h3>
+                <p class="showcase-story">${escapeHtml(org.description || "")}</p>
+                <div class="showcase-actions" style="flex-wrap:wrap">
+                  ${org.joinLink ? `<a class="btn btn-saffron" style="text-decoration:none" href="${escapeHtml(org.joinLink)}" target="_blank" rel="noopener noreferrer">${state.lang === "hi" ? "जुड़ें" : "Join / Learn More"}</a>` : ""}
+                  ${isAdmin ? `<button class="showcase-action-btn" type="button" style="color:#B91C1C" onclick="adminDeleteOrgPrompt(${org.id})">🗑️ ${state.lang === "hi" ? "हटाएँ" : "Delete"}</button>` : ""}
+                </div>
+              </div>
+            </article>
+          `
+        )
+        .join("");
+
+      if (pager) {
+        if (totalPages <= 1) {
+          pager.innerHTML = "";
+        } else {
+          pager.innerHTML = [
+            `<button class="btn btn-ghost" type="button" ${state.orgPage === 1 ? "disabled" : ""} onclick="goToOrgPage(${state.orgPage - 1})">‹ ${state.lang === "hi" ? "पिछला" : "Prev"}</button>`,
+            `<span style="align-self:center;font-size:13px;color:var(--muted)">${state.lang === "hi" ? `पृष्ठ ${state.orgPage} / ${totalPages}` : `Page ${state.orgPage} of ${totalPages}`}</span>`,
+            `<button class="btn btn-ghost" type="button" ${state.orgPage === totalPages ? "disabled" : ""} onclick="goToOrgPage(${state.orgPage + 1})">${state.lang === "hi" ? "अगला" : "Next"} ›</button>`
+          ].join("");
+        }
+      }
+    }
+
+    function goToOrgPage(page) {
+      state.orgPage = page;
+      renderOrganizations();
+      document.getElementById("orgShowcaseGrid")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    async function adminDeleteOrgPrompt(organizationId) {
+      if (!confirm(state.lang === "hi" ? "क्या आप वाकई इस संगठन को हटाना चाहते हैं?" : "Delete this organization and all its photos? This cannot be undone.")) return;
+      try {
+        await apiRequest(`/api/admin/organizations/${organizationId}/delete`, { method: "POST" });
+        showToast(state.lang === "hi" ? "संगठन हटा दिया गया।" : "Organization deleted.", "🗑️");
+        await refreshPortalData();
+        renderOrganizations();
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function toggleOrgAuthCard() {
+      const card = document.getElementById("orgAuthCard");
+      const nowHidden = card.classList.toggle("hidden");
+      if (!nowHidden) {
+        card.scrollIntoView({ behavior: "smooth", block: "start" });
+        refreshOrgAuthView();
+      }
+    }
+
+    function switchOrgAuthTab(tab) {
+      const loginForm = document.getElementById("orgLoginForm");
+      const signupForm = document.getElementById("orgSignupForm");
+      const loginBtn = document.getElementById("orgTabLoginBtn");
+      const signupBtn = document.getElementById("orgTabSignupBtn");
+      const showLogin = tab === "login";
+      loginForm.classList.toggle("hidden", !showLogin);
+      signupForm.classList.toggle("hidden", showLogin);
+      loginBtn.className = showLogin ? "btn btn-secondary" : "btn btn-ghost";
+      signupBtn.className = showLogin ? "btn btn-ghost" : "btn btn-secondary";
+    }
+
+    async function refreshOrgAuthView() {
+      const loggedOutView = document.getElementById("orgAuthLoggedOut");
+      const loggedInView = document.getElementById("orgAuthLoggedIn");
+      const token = getOrgToken();
+      if (!token) {
+        loggedOutView.classList.remove("hidden");
+        loggedInView.classList.add("hidden");
+        return;
+      }
+      try {
+        const payload = await orgApiRequest("/api/organizations/me");
+        state.orgAuth = { token, org: payload.org, photos: payload.photos || [] };
+        loggedOutView.classList.add("hidden");
+        loggedInView.classList.remove("hidden");
+        renderOrgDashboard();
+      } catch (error) {
+        clearOrgToken();
+        loggedOutView.classList.remove("hidden");
+        loggedInView.classList.add("hidden");
+      }
+    }
+
+    function renderOrgDashboard() {
+      const org = state.orgAuth.org;
+      if (!org) return;
+      document.getElementById("orgProfileName").value = org.name || "";
+      document.getElementById("orgProfileJoinLink").value = org.joinLink || "";
+      document.getElementById("orgProfilePhone").value = org.contactPhone || "";
+      document.getElementById("orgProfileEmail").value = org.contactEmail || "";
+      document.getElementById("orgProfileDescription").value = org.description || "";
+
+      const banner = document.getElementById("orgStatusBanner");
+      const statusCopy = {
+        pending: { en: "⏳ Your account is awaiting district review. It will appear on the public showcase once approved — you can still edit your profile and photos now.", hi: "⏳ आपका खाता जिला समीक्षा की प्रतीक्षा में है। स्वीकृति के बाद यह सार्वजनिक प्रदर्शनी में दिखेगा — आप अभी भी अपनी प्रोफ़ाइल और फोटो संपादित कर सकते हैं।", bg: "#FEF3C7", color: "#B45309" },
+        approved: { en: "✅ Your organization is live on the public showcase.", hi: "✅ आपका संगठन सार्वजनिक प्रदर्शनी में लाइव है।", bg: "#DCFCE7", color: "#166534" },
+        rejected: { en: "❌ Your account was not approved. Contact the district office for details.", hi: "❌ आपका खाता स्वीकृत नहीं हुआ। विवरण हेतु जिला कार्यालय से संपर्क करें।", bg: "#FEE2E2", color: "#B91C1C" },
+        suspended: { en: "⛔ Your account has been suspended by the district administration.", hi: "⛔ आपके खाते को जिला प्रशासन द्वारा निलंबित कर दिया गया है।", bg: "#FEE2E2", color: "#B91C1C" }
+      }[org.status] || statusCopyFallback();
+      function statusCopyFallback() { return { en: "", hi: "", bg: "transparent", color: "inherit" }; }
+      if (statusCopy.en) {
+        banner.innerHTML = `<div style="background:${statusCopy.bg};color:${statusCopy.color};padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:16px">${state.lang === "hi" ? statusCopy.hi : statusCopy.en}</div>`;
+      } else {
+        banner.innerHTML = "";
+      }
+
+      const photoGrid = document.getElementById("orgPhotoGrid");
+      photoGrid.innerHTML = (state.orgAuth.photos || [])
+        .map(
+          (photo) => `
+            <div style="position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+              <img src="${escapeHtml(photo.dataUrl)}" alt="" style="width:100%;height:100%;object-fit:cover" />
+              <button type="button" onclick="deleteOrgPhotoPrompt(${photo.id})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:13px">✕</button>
+            </div>
+          `
+        )
+        .join("");
+      document.getElementById("orgPhotoInput").disabled = (state.orgAuth.photos || []).length >= 10;
+    }
+
+    async function submitOrgLogin(event) {
+      event.preventDefault();
+      const btn = event.target.querySelector("[type='submit']");
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      try {
+        const payload = await orgApiRequest("/api/organizations/login", {
+          method: "POST",
+          body: JSON.stringify({
+            username: document.getElementById("orgLoginUsername").value.trim(),
+            password: document.getElementById("orgLoginPassword").value
+          })
+        });
+        setOrgToken(payload.token);
+        state.orgAuth = { token: payload.token, org: payload.org, photos: payload.photos || [] };
+        event.target.reset();
+        await refreshOrgAuthView();
+        showToast(state.lang === "hi" ? "लॉग इन सफल।" : "Logged in.", "✅");
+      } catch (error) {
+        handleRequestError(error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+
+    async function submitOrgSignup(event) {
+      event.preventDefault();
+      const btn = event.target.querySelector("[type='submit']");
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      try {
+        const payload = await orgApiRequest("/api/organizations/signup", {
+          method: "POST",
+          body: JSON.stringify({
+            name: document.getElementById("orgSignupName").value.trim(),
+            username: document.getElementById("orgSignupUsername").value.trim(),
+            password: document.getElementById("orgSignupPassword").value,
+            contactPhone: document.getElementById("orgSignupPhone").value.trim(),
+            contactEmail: document.getElementById("orgSignupEmail").value.trim(),
+            joinLink: document.getElementById("orgSignupJoinLink").value.trim(),
+            description: document.getElementById("orgSignupDescription").value.trim()
+          })
+        });
+        setOrgToken(payload.token);
+        state.orgAuth = { token: payload.token, org: payload.org, photos: payload.photos || [] };
+        event.target.reset();
+        await refreshOrgAuthView();
+        showToast(state.lang === "hi" ? "खाता बन गया! समीक्षा लंबित है।" : "Account created! Awaiting district review.", "🎉");
+      } catch (error) {
+        handleRequestError(error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+
+    async function submitOrgProfile(event) {
+      event.preventDefault();
+      const btn = event.target.querySelector("[type='submit']");
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      try {
+        const payload = await orgApiRequest("/api/organizations/me", {
+          method: "POST",
+          body: JSON.stringify({
+            name: document.getElementById("orgProfileName").value.trim(),
+            joinLink: document.getElementById("orgProfileJoinLink").value.trim(),
+            contactPhone: document.getElementById("orgProfilePhone").value.trim(),
+            contactEmail: document.getElementById("orgProfileEmail").value.trim(),
+            description: document.getElementById("orgProfileDescription").value.trim()
+          })
+        });
+        state.orgAuth.org = payload.org;
+        state.orgAuth.photos = payload.photos || [];
+        renderOrgDashboard();
+        await refreshPortalData();
+        showToast(state.lang === "hi" ? "प्रोफ़ाइल सहेजी गई।" : "Profile saved.", "💾");
+      } catch (error) {
+        handleRequestError(error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+
+    async function uploadOrgPhoto(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const photoData = await compressImageToDataUrl(file, 1280, 0.72);
+        const payload = await orgApiRequest("/api/organizations/me/photos", {
+          method: "POST",
+          body: JSON.stringify({ photoData })
+        });
+        state.orgAuth.org = payload.org;
+        state.orgAuth.photos = payload.photos || [];
+        renderOrgDashboard();
+        await refreshPortalData();
+        showToast(state.lang === "hi" ? "फोटो जोड़ी गई।" : "Photo added.", "📸");
+      } catch (error) {
+        handleRequestError(error);
+      } finally {
+        event.target.value = "";
+      }
+    }
+
+    async function deleteOrgPhotoPrompt(photoId) {
+      if (!confirm(state.lang === "hi" ? "क्या आप यह फोटो हटाना चाहते हैं?" : "Remove this photo?")) return;
+      try {
+        const payload = await orgApiRequest(`/api/organizations/me/photos/${photoId}/delete`, { method: "POST" });
+        state.orgAuth.org = payload.org;
+        state.orgAuth.photos = payload.photos || [];
+        renderOrgDashboard();
+        await refreshPortalData();
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function logoutOrg() {
+      clearOrgToken();
+      state.orgAuth = { token: null, org: null, photos: [] };
+      document.getElementById("orgAuthLoggedIn").classList.add("hidden");
+      document.getElementById("orgAuthLoggedOut").classList.remove("hidden");
+      showToast(state.lang === "hi" ? "लॉग आउट हो गया।" : "Logged out.", "👋");
     }
 
     function renderLeaders() {
@@ -8567,7 +9130,9 @@
                 <div class="message-card thread-card">
                   <div class="message-name">${escapeHtml(entry.name)}</div>
                   <div class="message-text">${escapeHtml(entry.text)}</div>
-                  <div class="message-time">${escapeHtml(entry.time)}</div>
+                  <div class="message-time">${escapeHtml(entry.time)}
+                    ${getAdminToken() ? `<button type="button" style="margin-left:10px;color:#B91C1C;background:none;border:none;cursor:pointer;font-size:12px" onclick="adminDeleteDiscussionPrompt(${mission.id}, ${entry.id})">🗑️ ${state.lang === "hi" ? "हटाएँ" : "Delete"}</button>` : ""}
+                  </div>
                 </div>
               `
             )
@@ -8848,7 +9413,9 @@
                 <div class="message-card thread-card">
                   <div class="message-name">${escapeHtml(comment.name)}</div>
                   <div class="message-text">${escapeHtml(comment.text)}</div>
-                  <div class="message-time">${escapeHtml(comment.time)}</div>
+                  <div class="message-time">${escapeHtml(comment.time)}
+                    ${getAdminToken() ? `<button type="button" style="margin-left:10px;color:#B91C1C;background:none;border:none;cursor:pointer;font-size:12px" onclick="adminDeleteCommentPrompt(${story.id}, ${comment.id})">🗑️ ${state.lang === "hi" ? "हटाएँ" : "Delete"}</button>` : ""}
+                  </div>
                 </div>
               `
             )
@@ -8945,6 +9512,7 @@
       renderLocationCoverage();
       renderGallery();
       renderStories();
+      renderOrganizations();
       renderLeaders();
       renderLeaderReport();
       if (state.activeLbTab === "ward") renderWardLeaderboard();
@@ -9188,6 +9756,18 @@
         await refreshPortalData();
         renderMissionModal();
         showToast(state.lang === "hi" ? "चर्चा जोड़ दी गई।" : "Discussion message posted.", "💬");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function adminDeleteDiscussionPrompt(missionId, discussionId) {
+      if (!confirm(state.lang === "hi" ? "क्या आप इस संदेश को हटाना चाहते हैं?" : "Delete this message?")) return;
+      try {
+        await apiRequest(`/api/admin/missions/${missionId}/discussion/${discussionId}/delete`, { method: "POST" });
+        await refreshPortalData();
+        renderMissionModal();
+        showToast(state.lang === "hi" ? "संदेश हटा दिया गया।" : "Message deleted.", "🗑️");
       } catch (error) {
         handleRequestError(error);
       }
@@ -9438,6 +10018,12 @@
       document.getElementById("storyFormCard").classList.toggle("hidden");
     }
 
+    function updateHostMissionTypeLabel() {
+      const isOrg = (document.querySelector('input[name="hostMissionType"]:checked') || {}).value === "organization";
+      const label = document.getElementById("hostMissionNameLabel");
+      if (label) label.textContent = tr(isOrg ? "host-org-name-label" : "host-name-label");
+    }
+
     function toggleHostMissionForm() {
       const card = document.getElementById("hostMissionFormCard");
       const nowHidden = card.classList.toggle("hidden");
@@ -9454,8 +10040,12 @@
       btn.disabled = true;
       btn.textContent = state.lang === "hi" ? "सेव हो रहा है..." : "Saving...";
       try {
-        const file = document.getElementById("storyPhoto").files[0];
+        const files = Array.from(document.getElementById("storyPhoto").files || []).slice(0, 5);
         const category = document.getElementById("storyCategory").value;
+        const photos = [];
+        for (const file of files) {
+          photos.push(await compressImageToDataUrl(file, 1280, 0.72));
+        }
         await apiRequest("/api/stories", {
           method: "POST",
           body: JSON.stringify({
@@ -9464,7 +10054,7 @@
             category,
             title: document.getElementById("storyHeadline").value.trim(),
             story: document.getElementById("storyText").value.trim(),
-            imageUrl: await toDataUrl(file)
+            photos
           })
         });
         event.target.reset();
@@ -9509,6 +10099,18 @@
         await refreshPortalData();
         renderCommentsModal();
         showToast(state.lang === "hi" ? "टिप्पणी जोड़ दी गई।" : "Comment posted.", "💬");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function adminDeleteCommentPrompt(storyId, commentId) {
+      if (!confirm(state.lang === "hi" ? "क्या आप इस टिप्पणी को हटाना चाहते हैं?" : "Delete this comment?")) return;
+      try {
+        await apiRequest(`/api/admin/stories/${storyId}/comments/${commentId}/delete`, { method: "POST" });
+        await refreshPortalData();
+        renderCommentsModal();
+        showToast(state.lang === "hi" ? "टिप्पणी हटा दी गई।" : "Comment deleted.", "🗑️");
       } catch (error) {
         handleRequestError(error);
       }
@@ -10145,6 +10747,7 @@
             hostName: document.getElementById("hostMissionName").value.trim(),
             hostPhone: document.getElementById("hostMissionPhone").value.trim(),
             hostEmail: document.getElementById("hostMissionEmail").value.trim(),
+            hostType: (document.querySelector('input[name="hostMissionType"]:checked') || {}).value || "individual",
             coordinator: document.getElementById("hostMissionName").value.trim(),
             desc: document.getElementById("hostMissionDescription").value.trim(),
             impact: state.lang === "hi" ? "एडमिन समीक्षा लंबित" : "Pending admin review"
@@ -10252,6 +10855,7 @@
         exports: "adminPaneExports",
         audit: "adminPaneAudit",
         announcements: "adminPaneAnnouncements",
+        organizations: "adminPaneOrganizations",
         branding: "adminPaneBranding",
         locations: "adminPaneLocations",
         missionsetup: "adminPaneMissionSetup",
@@ -10269,6 +10873,7 @@
       if (tab === "poster") renderPosterMissionOptions();
       if (tab === "post") applyCoordinatorPostLock();
       if (tab === "missions") renderAdminMissionsList();
+      if (tab === "organizations") loadAdminOrganizations();
       if (tab === "missionsetup") { renderCategoryEditor(); renderDepartmentEditor(); renderTemplateEditor(); }
       if (tab === "announcements") {
         const speedInput = document.getElementById("tickerSpeedInput");
@@ -10285,6 +10890,136 @@
         document.getElementById("brandingBadgeEn").value = state.siteBadgeEn || "";
         document.getElementById("brandingBadgeHi").value = state.siteBadgeHi || "";
         document.getElementById("brandingSaveStatus").textContent = "";
+      }
+    }
+
+    async function loadAdminOrganizations() {
+      const container = document.getElementById("adminOrgManageList");
+      if (!container) return;
+      container.innerHTML = `<p style="color:var(--muted)">${state.lang === "hi" ? "लोड हो रहा है..." : "Loading..."}</p>`;
+      try {
+        const payload = await apiRequest("/api/admin/organizations");
+        renderAdminOrganizationsList(payload.organizations || []);
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function orgStatusBadge(status) {
+      const map = {
+        pending: { label: state.lang === "hi" ? "समीक्षा लंबित" : "Pending review", bg: "#FEF3C7", color: "#B45309" },
+        approved: { label: state.lang === "hi" ? "स्वीकृत" : "Approved", bg: "#DCFCE7", color: "#166534" },
+        rejected: { label: state.lang === "hi" ? "अस्वीकृत" : "Rejected", bg: "#FEE2E2", color: "#B91C1C" },
+        suspended: { label: state.lang === "hi" ? "निलंबित" : "Suspended", bg: "#FEE2E2", color: "#B91C1C" }
+      }[status] || { label: status, bg: "#F1F5F9", color: "#475569" };
+      return `<span style="background:${map.bg};color:${map.color};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">${map.label}</span>`;
+    }
+
+    function renderAdminOrganizationsList(orgs) {
+      const container = document.getElementById("adminOrgManageList");
+      if (!orgs.length) {
+        container.innerHTML = `<p style="color:var(--muted)">${state.lang === "hi" ? "अभी तक कोई संगठन पंजीकृत नहीं है।" : "No organizations have registered yet."}</p>`;
+        return;
+      }
+      container.innerHTML = orgs
+        .map(
+          (org) => `
+            <div class="panel-card" style="margin-bottom:14px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+                <div>
+                  <strong>${escapeHtml(org.name)}</strong> ${orgStatusBadge(org.status)}
+                  <div style="font-size:12px;color:var(--muted);margin-top:2px">@${escapeHtml(org.username)} · ${escapeHtml(org.contactPhone || "—")} · ${escapeHtml(org.contactEmail || "—")}</div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  ${org.status !== "approved" ? `<button class="btn btn-primary" style="font-size:12px;padding:6px 12px" type="button" onclick="adminReviewOrg(${org.id},'approved')">${state.lang === "hi" ? "स्वीकृत करें" : "Approve"}</button>` : ""}
+                  ${org.status !== "rejected" ? `<button class="btn btn-soft" style="font-size:12px;padding:6px 12px" type="button" onclick="adminReviewOrg(${org.id},'rejected')">${state.lang === "hi" ? "अस्वीकृत करें" : "Reject"}</button>` : ""}
+                  ${org.status !== "suspended" ? `<button class="btn btn-soft" style="font-size:12px;padding:6px 12px" type="button" onclick="adminReviewOrg(${org.id},'suspended')">${state.lang === "hi" ? "निलंबित करें" : "Suspend"}</button>` : `<button class="btn btn-soft" style="font-size:12px;padding:6px 12px" type="button" onclick="adminReviewOrg(${org.id},'approved')">${state.lang === "hi" ? "पुनः स्वीकृत करें" : "Reinstate"}</button>`}
+                  <button class="btn btn-soft" style="font-size:12px;padding:6px 12px" type="button" onclick="adminEditOrgPrompt(${org.id})">✏️ ${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
+                  <button class="btn btn-danger" style="font-size:12px;padding:6px 12px" type="button" onclick="adminDeleteOrgFromPanel(${org.id})">🗑️ ${state.lang === "hi" ? "हटाएँ" : "Delete"}</button>
+                </div>
+              </div>
+              <p style="margin:10px 0;font-size:13px;white-space:pre-wrap">${escapeHtml(org.description || "")}</p>
+              ${org.joinLink ? `<div style="font-size:12px;margin-bottom:10px"><a href="${escapeHtml(org.joinLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(org.joinLink)}</a></div>` : ""}
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px">
+                ${(org.photos || [])
+                  .map(
+                    (photo) => `
+                      <div style="position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+                        <img src="${escapeHtml(photo.dataUrl)}" alt="" style="width:100%;height:100%;object-fit:cover" />
+                        <button type="button" onclick="adminDeleteOrgPhotoFromPanel(${photo.id})" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px">✕</button>
+                      </div>
+                    `
+                  )
+                  .join("") || `<span style="font-size:12px;color:var(--muted)">${state.lang === "hi" ? "कोई फोटो नहीं" : "No photos"}</span>`}
+              </div>
+            </div>
+          `
+        )
+        .join("");
+    }
+
+    async function adminReviewOrg(organizationId, status) {
+      try {
+        await apiRequest(`/api/admin/organizations/${organizationId}/review`, {
+          method: "POST",
+          body: JSON.stringify({ status })
+        });
+        await loadAdminOrganizations();
+        await refreshPortalData();
+        renderOrganizations();
+        showToast(state.lang === "hi" ? "स्थिति अपडेट हो गई।" : "Status updated.", "✅");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function adminEditOrgPrompt(organizationId) {
+      const payload = await apiRequest("/api/admin/organizations");
+      const org = (payload.organizations || []).find((item) => item.id === organizationId);
+      if (!org) return;
+      const name = prompt(state.lang === "hi" ? "संगठन का नाम:" : "Organization name:", org.name);
+      if (name === null) return;
+      const description = prompt(state.lang === "hi" ? "विवरण:" : "Description:", org.description || "");
+      if (description === null) return;
+      const joinLink = prompt(state.lang === "hi" ? "जुड़ें लिंक:" : "Join link:", org.joinLink || "");
+      if (joinLink === null) return;
+      try {
+        await apiRequest(`/api/admin/organizations/${organizationId}/update`, {
+          method: "POST",
+          body: JSON.stringify({ name: name.trim(), description: description.trim(), joinLink: joinLink.trim() })
+        });
+        await loadAdminOrganizations();
+        await refreshPortalData();
+        renderOrganizations();
+        showToast(state.lang === "hi" ? "सहेजा गया।" : "Saved.", "💾");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function adminDeleteOrgFromPanel(organizationId) {
+      if (!confirm(state.lang === "hi" ? "क्या आप वाकई इस संगठन को स्थायी रूप से हटाना चाहते हैं?" : "Permanently delete this organization and all its photos?")) return;
+      try {
+        await apiRequest(`/api/admin/organizations/${organizationId}/delete`, { method: "POST" });
+        await loadAdminOrganizations();
+        await refreshPortalData();
+        renderOrganizations();
+        showToast(state.lang === "hi" ? "संगठन हटा दिया गया।" : "Organization deleted.", "🗑️");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function adminDeleteOrgPhotoFromPanel(photoId) {
+      if (!confirm(state.lang === "hi" ? "इस फोटो को हटाएँ?" : "Delete this photo?")) return;
+      try {
+        await apiRequest(`/api/admin/organizations/photos/${photoId}/delete`, { method: "POST" });
+        await loadAdminOrganizations();
+        await refreshPortalData();
+        renderOrganizations();
+        showToast(state.lang === "hi" ? "फोटो हटा दी गई।" : "Photo deleted.", "🗑️");
+      } catch (error) {
+        handleRequestError(error);
       }
     }
 
@@ -10619,6 +11354,10 @@
       document.getElementById("volunteerSearchSort")?.addEventListener("change", () => runVolunteerSearch());
       document.getElementById("storyForm").addEventListener("submit", submitStoryForm);
       document.getElementById("hostMissionForm").addEventListener("submit", submitHostMissionForm);
+      document.getElementById("orgLoginForm").addEventListener("submit", submitOrgLogin);
+      document.getElementById("orgSignupForm").addEventListener("submit", submitOrgSignup);
+      document.getElementById("orgProfileForm").addEventListener("submit", submitOrgProfile);
+      document.getElementById("orgPhotoInput").addEventListener("change", uploadOrgPhoto);
       document.getElementById("commentForm").addEventListener("submit", submitCommentForm);
       document.getElementById("adminLoginForm").addEventListener("submit", submitAdminLogin);
       document.getElementById("postMissionForm").addEventListener("submit", submitPostMissionForm);

@@ -13,6 +13,7 @@ const ASSETS_DIR = path.join(APP_ROOT, "assets");
 const ADMIN_PASSWORD = process.env.PRAYAS_ADMIN_PASSWORD || "JanPrayas@2026";
 const TOKEN_SECRET = process.env.PRAYAS_TOKEN_SECRET || "replace-this-secret-before-production";
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 2; // 2 hours
+const ORG_TOKEN_TTL_MS = 1000 * 60 * 60 * 6; // 6 hours — organization login sessions
 const DISTRICT_NAME = process.env.PRAYAS_DISTRICT_NAME || "Your District";
 const STATE_NAME = process.env.PRAYAS_STATE_NAME || "Your State";
 const STATE_ABBR = process.env.PRAYAS_STATE_ABBR || "ST";
@@ -989,6 +990,48 @@ try {
     )
   `);
 } catch (error) {}
+try {
+  db.exec("ALTER TABLE missions ADD COLUMN host_type TEXT NOT NULL DEFAULT 'individual'");
+} catch (error) {}
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS organizations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      password_salt TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      join_link TEXT NOT NULL DEFAULT '',
+      contact_phone TEXT NOT NULL DEFAULT '',
+      contact_email TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+} catch (error) {}
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS organization_photos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      photo_data TEXT NOT NULL,
+      caption TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+} catch (error) {}
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS story_photos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+      photo_data TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+} catch (error) {}
 
 seedDatabase();
 migrateLegacyDemoRecords();
@@ -1172,6 +1215,108 @@ const server = http.createServer(async (req, res) => {
       const body = await readJsonBody(req);
       const missionId = Number(url.pathname.split("/")[3]);
       return sendJson(res, 200, addMissionDiscussion(missionId, body));
+    }
+
+    // ── Organizational Showcase — public/org-authenticated routes ─────────────
+    if (req.method === "POST" && url.pathname === "/api/organizations/signup") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, orgSignup(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/organizations/login") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, orgLogin(body));
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/organizations/me") {
+      const org = requireOrg(req);
+      return sendJson(res, 200, getOrgProfile(org));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/organizations/me") {
+      const org = requireOrg(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, updateOrgProfile(org, body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/organizations/me/photos") {
+      const org = requireOrg(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, addOrgPhoto(org, body));
+    }
+
+    if (req.method === "POST" && /^\/api\/organizations\/me\/photos\/\d+\/delete$/.test(url.pathname)) {
+      const org = requireOrg(req);
+      const photoId = Number(url.pathname.split("/")[5]);
+      return sendJson(res, 200, deleteOwnOrgPhoto(org, photoId));
+    }
+
+    // ── Organizational Showcase — admin moderation routes ──────────────────────
+    if (req.method === "GET" && url.pathname === "/api/admin/organizations") {
+      requireAdmin(req);
+      return sendJson(res, 200, { organizations: adminListOrganizations() });
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/organizations\/\d+\/review$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const body = await readJsonBody(req);
+      const organizationId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, adminReviewOrganization(organizationId, body, admin));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/organizations\/\d+\/update$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const body = await readJsonBody(req);
+      const organizationId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, adminUpdateOrganization(organizationId, body, admin));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/organizations\/\d+\/delete$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const organizationId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, adminDeleteOrganization(organizationId, admin));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/organizations\/photos\/\d+\/delete$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const photoId = Number(url.pathname.split("/")[5]);
+      return sendJson(res, 200, adminDeleteOrgPhoto(photoId, admin));
+    }
+
+    // ── Content moderation — stories, story comments, mission discussion ──────
+    if (req.method === "POST" && /^\/api\/admin\/stories\/\d+\/update$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const body = await readJsonBody(req);
+      const storyId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, adminUpdateStory(storyId, body, admin));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/stories\/\d+\/delete$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const storyId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, adminDeleteStory(storyId, admin));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/stories\/photos\/\d+\/delete$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const photoId = Number(url.pathname.split("/")[5]);
+      return sendJson(res, 200, adminDeleteStoryPhoto(photoId, admin));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/stories\/\d+\/comments\/\d+\/delete$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const parts = url.pathname.split("/");
+      const storyId = Number(parts[4]);
+      const commentId = Number(parts[6]);
+      return sendJson(res, 200, adminDeleteStoryComment(storyId, commentId, admin));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/discussion\/\d+\/delete$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const parts = url.pathname.split("/");
+      const missionId = Number(parts[4]);
+      const discussionId = Number(parts[6]);
+      return sendJson(res, 200, adminDeleteMissionDiscussion(missionId, discussionId, admin));
     }
 
     if (req.method === "POST" && url.pathname === "/api/donations") {
@@ -1847,6 +1992,62 @@ function verifyPassword(password, hash, salt) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+// ── Organization accounts (NGOs / civic groups on the Organizational Showcase) ──
+// Uses the same signed-token mechanism as admin auth (see createAdminToken /
+// verifyAdminToken above), but with its own `type: "org"` marker so an org
+// token can never be replayed against an admin-only route and vice versa.
+
+function createOrgToken(org) {
+  const payload = {
+    type: "org",
+    oid: org.id,
+    name: org.name,
+    username: org.username,
+    exp: Date.now() + ORG_TOKEN_TTL_MS
+  };
+  const encodedPayload = base64Url(JSON.stringify(payload));
+  const signature = signValue(encodedPayload);
+  return `${encodedPayload}.${signature}`;
+}
+
+function verifyOrgToken(token) {
+  const [encodedPayload, signature] = token.split(".");
+  if (!encodedPayload || !signature) {
+    throw publicError(401, "Invalid organization session.");
+  }
+  const expected = signValue(encodedPayload);
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    throw publicError(401, "Invalid organization session.");
+  }
+  const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
+  if (payload.type !== "org") {
+    throw publicError(401, "Invalid organization session.");
+  }
+  if (!payload.exp || Date.now() > payload.exp) {
+    throw publicError(401, "Organization session expired. Please log in again.");
+  }
+  return payload;
+}
+
+function requireOrg(req) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  if (!token) {
+    throw publicError(401, "Organization login required.");
+  }
+  const payload = verifyOrgToken(token);
+  const row = db.prepare("SELECT id, status FROM organizations WHERE id = ?").get(payload.oid);
+  if (!row) {
+    throw publicError(401, "This organization account no longer exists.");
+  }
+  if (row.status === "suspended") {
+    throw publicError(403, "This organization account has been suspended by the district administration. Contact the district office for details.");
+  }
+  return payload;
+}
+
 function seedAdminUsers() {
   const count = db.prepare("SELECT COUNT(*) AS n FROM admin_users").get().n;
   if (count > 0) return;
@@ -1948,11 +2149,14 @@ function buildBootstrapPayload(isAdmin = false) {
   const departments = safeJsonArray(getSetting("department_catalog_json", "[]"));
   const announcementRows = db.prepare("SELECT id, text FROM announcements WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
   const missionRows = db.prepare("SELECT * FROM missions WHERE is_demo = ? AND archived_at IS NULL ORDER BY id DESC").all(demoFlag);
-  const discussionStmt = db.prepare("SELECT name, text, time_label FROM mission_discussions WHERE mission_id = ? ORDER BY id DESC");
+  const discussionStmt = db.prepare("SELECT id, name, text, time_label FROM mission_discussions WHERE mission_id = ? ORDER BY id DESC");
   const photoStmt = db.prepare("SELECT id, photo_data, caption, uploaded_by, created_at FROM mission_photos WHERE mission_id = ? ORDER BY id ASC");
   const fundRows = [];
   const storyRows = db.prepare("SELECT * FROM stories WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
-  const storyCommentStmt = db.prepare("SELECT name, text, time_label FROM story_comments WHERE story_id = ? ORDER BY id ASC");
+  const storyCommentStmt = db.prepare("SELECT id, name, text, time_label FROM story_comments WHERE story_id = ? ORDER BY id ASC");
+  const storyPhotoStmt = db.prepare("SELECT id, photo_data FROM story_photos WHERE story_id = ? ORDER BY id ASC");
+  const organizationRows = db.prepare("SELECT * FROM organizations WHERE status = 'approved' ORDER BY id DESC").all();
+  const orgPhotoStmt = db.prepare("SELECT id, photo_data, caption FROM organization_photos WHERE organization_id = ? ORDER BY id ASC");
   const leaderRows = db.prepare("SELECT * FROM leaders WHERE is_demo = ? ORDER BY points DESC, id ASC").all(demoFlag);
   const volunteerProfileRows = db.prepare("SELECT * FROM volunteer_profiles ORDER BY last_active_at DESC, id DESC").all();
   const volunteerParticipationRows = db.prepare(`
@@ -2021,8 +2225,10 @@ function buildBootstrapPayload(isAdmin = false) {
     completionRequested: Boolean(mission.completion_requested),
     completionRequestedBy: mission.completion_requested_by || "",
     completionRequestedNote: mission.completion_requested_note || "",
+    hostType: mission.host_type || "individual",
     participantsPreview: participantsByMission.get(mission.id) || [],
     discussion: discussionStmt.all(mission.id).map((entry) => ({
+      id: entry.id,
       name: entry.name,
       text: entry.text,
       time: entry.time_label
@@ -2061,12 +2267,24 @@ function buildBootstrapPayload(isAdmin = false) {
     tags: safeJsonArray(story.tags_json),
     likes: story.likes,
     imageUrl: story.image_url,
+    photos: storyPhotoStmt.all(story.id).map((photo) => ({ id: photo.id, dataUrl: photo.photo_data })),
     date: story.date_label,
     comments: storyCommentStmt.all(story.id).map((comment) => ({
+      id: comment.id,
       name: comment.name,
       text: comment.text,
       time: comment.time_label
     }))
+  }));
+
+  const organizations = organizationRows.map((org) => ({
+    id: org.id,
+    name: org.name,
+    description: org.description || "",
+    joinLink: org.join_link || "",
+    contactPhone: org.contact_phone || "",
+    contactEmail: org.contact_email || "",
+    photos: orgPhotoStmt.all(org.id).map((photo) => ({ id: photo.id, dataUrl: photo.photo_data, caption: photo.caption }))
   }));
 
   // In real mode, compute leaders dynamically from volunteer data.
@@ -2187,6 +2405,7 @@ function buildBootstrapPayload(isAdmin = false) {
     missions,
     funds,
     stories,
+    organizations,
     leaders,
     wardLeaderboard,
     volunteers,
@@ -2667,6 +2886,16 @@ function createStory(body) {
     throw publicError(400, "Story contributor, role, category, title, and story are required.");
   }
 
+  // Up to MAX_PHOTOS_PER_STORY photos, sent by the client as an array of
+  // data-URL strings. The first one also becomes the legacy `image_url`
+  // cover field, kept for backward compatibility with older/demo records
+  // that only ever had a single photo.
+  const photos = (Array.isArray(body.photos) ? body.photos : [])
+    .map((value) => String(value || ""))
+    .filter((value) => value.startsWith("data:image/"))
+    .slice(0, MAX_PHOTOS_PER_STORY);
+  const coverImage = photos[0] || String(body.imageUrl || "");
+
   const result = db.prepare(`
     INSERT INTO stories (
       contributor, initials, color, role, title, story, bg, emoji, tags_json, likes, image_url, date_label, created_at
@@ -2682,12 +2911,19 @@ function createStory(body) {
     categoryEmoji(category),
     JSON.stringify([categoryLabel(category), "Citizen Story"]),
     0,
-    String(body.imageUrl || ""),
+    coverImage,
     displayDate(),
     isoNow()
   );
+  const newStoryId = Number(result.lastInsertRowid);
+  const insertPhoto = db.prepare("INSERT INTO story_photos (story_id, photo_data, created_at) VALUES (?, ?, ?)");
+  photos.forEach((photoData) => {
+    if (photoData.length <= MAX_PHOTO_DATA_LENGTH) {
+      insertPhoto.run(newStoryId, photoData, isoNow());
+    }
+  });
 
-  return { ok: true, id: Number(result.lastInsertRowid) };
+  return { ok: true, id: newStoryId };
 }
 
 function addStoryComment(storyId, body) {
@@ -2854,6 +3090,7 @@ function createCommunityMission(body) {
   const hostName = String(body.hostName || "").trim();
   const hostPhone = String(body.hostPhone || "").trim();
   const hostEmail = String(body.hostEmail || "").trim();
+  const hostType = String(body.hostType || "individual").trim() === "organization" ? "organization" : "individual";
 
   if (!ward || !title || !desc || !date || !location || !coordinator || !duration || total <= 0 || !hostName || !hostPhone || !hostEmail) {
     throw publicError(400, "All mission request fields are required, including phone and email.");
@@ -2861,8 +3098,8 @@ function createCommunityMission(body) {
 
   db.prepare(`
     INSERT INTO missions (
-      category, ward, emoji, bg, title, desc, date, location, volunteers, total, status, source_type, approval_status, host_name, host_phone, host_email, nodal_department, is_demo, coordinator, duration, age, impact, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', 'community', 'pending', ?, ?, ?, '', 0, ?, ?, ?, ?, ?)
+      category, ward, emoji, bg, title, desc, date, location, volunteers, total, status, source_type, approval_status, host_name, host_phone, host_email, nodal_department, is_demo, coordinator, duration, age, impact, created_at, host_type
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', 'community', 'pending', ?, ?, ?, '', 0, ?, ?, ?, ?, ?, ?)
   `).run(
     category,
     ward,
@@ -2881,9 +3118,253 @@ function createCommunityMission(body) {
     duration,
     String(body.age || "16+"),
     String(body.impact || "Awaiting admin review"),
-    isoNow()
+    isoNow(),
+    hostType
   );
 
+  return { ok: true };
+}
+
+// ── Organizational Showcase (NGOs / civic groups) ────────────────────────────
+
+function sanitizeOrgRow(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    username: row.username,
+    description: row.description || "",
+    joinLink: row.join_link || "",
+    contactPhone: row.contact_phone || "",
+    contactEmail: row.contact_email || "",
+    status: row.status || "pending",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function getOrgPhotos(organizationId) {
+  return db.prepare("SELECT id, photo_data, caption, created_at FROM organization_photos WHERE organization_id = ? ORDER BY id ASC")
+    .all(organizationId)
+    .map((photo) => ({ id: photo.id, dataUrl: photo.photo_data, caption: photo.caption, createdAt: photo.created_at }));
+}
+
+function orgSignup(body) {
+  const name = stripHtml(body.name).slice(0, 150);
+  const username = String(body.username || "").trim().toLowerCase().slice(0, 60);
+  const password = String(body.password || "");
+  const description = stripHtml(body.description).slice(0, 3000);
+  const joinLink = String(body.joinLink || "").trim().slice(0, 500);
+  const contactPhone = String(body.contactPhone || "").trim().slice(0, 20);
+  const contactEmail = String(body.contactEmail || "").trim().slice(0, 150);
+
+  if (!name || !username || !password) {
+    throw publicError(400, "Organization name, username, and password are required.");
+  }
+  if (!/^[a-z0-9._-]{4,60}$/.test(username)) {
+    throw publicError(400, "Username may only contain lowercase letters, numbers, dots, dashes and underscores (4-60 characters).");
+  }
+  if (password.length < 8) {
+    throw publicError(400, "Password must be at least 8 characters.");
+  }
+  if (joinLink && !/^https?:\/\//i.test(joinLink)) {
+    throw publicError(400, "Join link must start with http:// or https://");
+  }
+  const existing = db.prepare("SELECT id FROM organizations WHERE username = ?").get(username);
+  if (existing) {
+    throw publicError(409, "That username is already taken. Please choose another.");
+  }
+
+  const { hash, salt } = hashPassword(password);
+  const now = isoNow();
+  const result = db.prepare(`
+    INSERT INTO organizations (name, username, password_hash, password_salt, description, join_link, contact_phone, contact_email, status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+  `).run(name, username, hash, salt, description, joinLink, contactPhone, contactEmail, now, now);
+  const orgId = Number(result.lastInsertRowid);
+  const org = db.prepare("SELECT * FROM organizations WHERE id = ?").get(orgId);
+
+  notifyAdmin(
+    `New organization signed up for the Showcase: ${name}`,
+    `<p style="margin:0 0 12px;color:#666;font-size:13px">A new organization has registered and is awaiting your review before it appears publicly.</p>
+     <table style="border-collapse:collapse;width:100%;font-size:14px">
+       <tr><td style="padding:6px 10px;color:#666;width:120px">Name</td><td style="padding:6px 10px"><strong>${name}</strong></td></tr>
+       <tr style="background:#f9f9f9"><td style="padding:6px 10px;color:#666">Username</td><td style="padding:6px 10px">${username}</td></tr>
+       <tr><td style="padding:6px 10px;color:#666">Contact</td><td style="padding:6px 10px">${contactPhone} · ${contactEmail}</td></tr>
+     </table>
+     <p style="margin-top:16px;color:#666;font-size:13px">Log in to the admin panel's Organizations tab to review and approve or reject this account.</p>`
+  );
+
+  return { ok: true, token: createOrgToken(org), org: sanitizeOrgRow(org), photos: [] };
+}
+
+function orgLogin(body) {
+  const username = String(body.username || "").trim().toLowerCase();
+  const password = String(body.password || "");
+  const org = db.prepare("SELECT * FROM organizations WHERE username = ?").get(username);
+  if (!org || !verifyPassword(password, org.password_hash, org.password_salt)) {
+    throw publicError(401, "Invalid username or password.");
+  }
+  if (org.status === "suspended") {
+    throw publicError(403, "This organization account has been suspended by the district administration.");
+  }
+  return { ok: true, token: createOrgToken(org), org: sanitizeOrgRow(org), photos: getOrgPhotos(org.id) };
+}
+
+function getOrgProfile(orgPayload) {
+  const org = db.prepare("SELECT * FROM organizations WHERE id = ?").get(orgPayload.oid);
+  if (!org) throw publicError(404, "Organization not found.");
+  return { org: sanitizeOrgRow(org), photos: getOrgPhotos(org.id) };
+}
+
+function updateOrgProfile(orgPayload, body) {
+  const org = db.prepare("SELECT * FROM organizations WHERE id = ?").get(orgPayload.oid);
+  if (!org) throw publicError(404, "Organization not found.");
+  const name = stripHtml(body.name).slice(0, 150) || org.name;
+  const description = stripHtml(body.description).slice(0, 3000);
+  const joinLink = String(body.joinLink || "").trim().slice(0, 500);
+  const contactPhone = String(body.contactPhone || "").trim().slice(0, 20);
+  const contactEmail = String(body.contactEmail || "").trim().slice(0, 150);
+  if (joinLink && !/^https?:\/\//i.test(joinLink)) {
+    throw publicError(400, "Join link must start with http:// or https://");
+  }
+  db.prepare(`
+    UPDATE organizations SET name = ?, description = ?, join_link = ?, contact_phone = ?, contact_email = ?, updated_at = ?
+    WHERE id = ?
+  `).run(name, description, joinLink, contactPhone, contactEmail, isoNow(), org.id);
+  return getOrgProfile(orgPayload);
+}
+
+function addOrgPhoto(orgPayload, body) {
+  const org = ensureRowExists("organizations", orgPayload.oid, "Organization not found.");
+  const photoData = String(body.photoData || "");
+  const caption = String(body.caption || "").trim().slice(0, 200);
+  if (!photoData.startsWith("data:image/")) {
+    throw publicError(400, "Photo must be a valid image.");
+  }
+  if (photoData.length > MAX_PHOTO_DATA_LENGTH) {
+    throw publicError(413, "Photo is too large. Please use a smaller or more compressed image.");
+  }
+  const existingCount = db.prepare("SELECT COUNT(*) AS n FROM organization_photos WHERE organization_id = ?").get(org.id).n;
+  if (existingCount >= MAX_PHOTOS_PER_ORGANIZATION) {
+    throw publicError(400, `You already have the maximum of ${MAX_PHOTOS_PER_ORGANIZATION} photos. Remove one before adding another.`);
+  }
+  db.prepare("INSERT INTO organization_photos (organization_id, photo_data, caption, created_at) VALUES (?, ?, ?, ?)")
+    .run(org.id, photoData, caption, isoNow());
+  return getOrgProfile(orgPayload);
+}
+
+function deleteOwnOrgPhoto(orgPayload, photoId) {
+  const photo = db.prepare("SELECT organization_id FROM organization_photos WHERE id = ?").get(photoId);
+  if (!photo) throw publicError(404, "Photo not found.");
+  if (photo.organization_id !== orgPayload.oid) {
+    throw publicError(403, "You can only remove your own organization's photos.");
+  }
+  db.prepare("DELETE FROM organization_photos WHERE id = ?").run(photoId);
+  return getOrgProfile(orgPayload);
+}
+
+function adminListOrganizations() {
+  const rows = db.prepare("SELECT * FROM organizations ORDER BY id DESC").all();
+  return rows.map((row) => ({ ...sanitizeOrgRow(row), photos: getOrgPhotos(row.id) }));
+}
+
+function adminReviewOrganization(organizationId, body, admin) {
+  const org = ensureRowExists("organizations", organizationId, "Organization not found.");
+  const status = String(body.status || "").trim();
+  const allowed = new Set(["approved", "rejected", "pending", "suspended"]);
+  if (!allowed.has(status)) {
+    throw publicError(400, "Invalid status.");
+  }
+  db.prepare("UPDATE organizations SET status = ?, updated_at = ? WHERE id = ?").run(status, isoNow(), org.id);
+  writeAuditLog("review_organization", "organization", org.id, `Organization #${org.id} set to "${status}" by ${admin ? admin.name : "admin"}`);
+  return { ok: true };
+}
+
+function adminUpdateOrganization(organizationId, body, admin) {
+  const org = ensureRowExists("organizations", organizationId, "Organization not found.");
+  const name = stripHtml(body.name).slice(0, 150);
+  const description = stripHtml(body.description).slice(0, 3000);
+  const joinLink = String(body.joinLink || "").trim().slice(0, 500);
+  if (!name) throw publicError(400, "Organization name is required.");
+  if (joinLink && !/^https?:\/\//i.test(joinLink)) {
+    throw publicError(400, "Join link must start with http:// or https://");
+  }
+  db.prepare("UPDATE organizations SET name = ?, description = ?, join_link = ?, updated_at = ? WHERE id = ?")
+    .run(name, description, joinLink, isoNow(), org.id);
+  writeAuditLog("edit_organization", "organization", org.id, `Organization #${org.id} edited by ${admin ? admin.name : "admin"}`);
+  return { ok: true };
+}
+
+function adminDeleteOrganization(organizationId, admin) {
+  const org = ensureRowExists("organizations", organizationId, "Organization not found.");
+  db.prepare("DELETE FROM organization_photos WHERE organization_id = ?").run(org.id);
+  db.prepare("DELETE FROM organizations WHERE id = ?").run(org.id);
+  writeAuditLog("delete_organization", "organization", organizationId, `Organization #${organizationId} deleted by ${admin ? admin.name : "admin"}`);
+  return { ok: true };
+}
+
+function adminDeleteOrgPhoto(photoId, admin) {
+  const photo = db.prepare("SELECT organization_id FROM organization_photos WHERE id = ?").get(photoId);
+  if (!photo) throw publicError(404, "Photo not found.");
+  db.prepare("DELETE FROM organization_photos WHERE id = ?").run(photoId);
+  writeAuditLog("delete_organization_photo", "organization", photo.organization_id, `Photo #${photoId} deleted by ${admin ? admin.name : "admin"}`);
+  return { ok: true };
+}
+
+// ── Content moderation (stories, story comments, mission discussion) ────────
+// Reactive moderation tools for the admin: edit or remove anything already
+// published — a story, one of its photos, a comment on it, or a message in a
+// mission's discussion thread — to deal with vulgar, fake, or otherwise
+// inappropriate content after the fact.
+
+function adminUpdateStory(storyId, body, admin) {
+  ensureRowExists("stories", storyId, "Story not found.");
+  const title = stripHtml(body.title).slice(0, 200);
+  const story = stripHtml(body.story).slice(0, 5000);
+  const contributor = stripHtml(body.contributor).slice(0, 100);
+  const role = stripHtml(body.role).slice(0, 100);
+  if (!title || !story || !contributor) {
+    throw publicError(400, "Title, story text, and contributor name are required.");
+  }
+  db.prepare("UPDATE stories SET title = ?, story = ?, contributor = ?, role = ? WHERE id = ?")
+    .run(title, story, contributor, role, storyId);
+  writeAuditLog("edit_story", "story", storyId, `Story #${storyId} edited by ${admin ? admin.name : "admin"}`);
+  return { ok: true };
+}
+
+function adminDeleteStory(storyId, admin) {
+  ensureRowExists("stories", storyId, "Story not found.");
+  db.prepare("DELETE FROM story_photos WHERE story_id = ?").run(storyId);
+  db.prepare("DELETE FROM story_comments WHERE story_id = ?").run(storyId);
+  db.prepare("DELETE FROM stories WHERE id = ?").run(storyId);
+  writeAuditLog("delete_story", "story", storyId, `Story #${storyId} deleted by ${admin ? admin.name : "admin"}`);
+  return { ok: true };
+}
+
+function adminDeleteStoryPhoto(photoId, admin) {
+  const photo = db.prepare("SELECT story_id FROM story_photos WHERE id = ?").get(photoId);
+  if (!photo) throw publicError(404, "Photo not found.");
+  db.prepare("DELETE FROM story_photos WHERE id = ?").run(photoId);
+  writeAuditLog("delete_story_photo", "story", photo.story_id, `Photo #${photoId} deleted by ${admin ? admin.name : "admin"}`);
+  return { ok: true };
+}
+
+function adminDeleteStoryComment(storyId, commentId, admin) {
+  ensureRowExists("stories", storyId, "Story not found.");
+  const comment = db.prepare("SELECT id FROM story_comments WHERE id = ? AND story_id = ?").get(commentId, storyId);
+  if (!comment) throw publicError(404, "Comment not found.");
+  db.prepare("DELETE FROM story_comments WHERE id = ?").run(commentId);
+  writeAuditLog("delete_story_comment", "story", storyId, `Comment #${commentId} deleted by ${admin ? admin.name : "admin"}`);
+  return { ok: true };
+}
+
+function adminDeleteMissionDiscussion(missionId, discussionId, admin) {
+  ensureRowExists("missions", missionId, "Mission not found.");
+  assertMissionScope(admin, missionId);
+  const row = db.prepare("SELECT id FROM mission_discussions WHERE id = ? AND mission_id = ?").get(discussionId, missionId);
+  if (!row) throw publicError(404, "Message not found.");
+  db.prepare("DELETE FROM mission_discussions WHERE id = ?").run(discussionId);
+  writeAuditLog("delete_mission_discussion", "mission", missionId, `Discussion message #${discussionId} deleted by ${admin ? admin.name : "admin"}`);
   return { ok: true };
 }
 
@@ -3250,7 +3731,7 @@ function saveNewsletterDraft(body) {
   return { ok: true };
 }
 
-const ALLOWED_TABLES = new Set(["stories", "missions", "funds", "announcements", "mission_photos"]);
+const ALLOWED_TABLES = new Set(["stories", "missions", "funds", "announcements", "mission_photos", "organizations", "organization_photos", "story_photos", "story_comments", "mission_discussions"]);
 
 function ensureRowExists(table, id, message) {
   if (!ALLOWED_TABLES.has(table)) {
@@ -3650,6 +4131,8 @@ function checkInVolunteer(body) {
 // ── Mission photo gallery ──────────────────────────────────────────────────────
 
 const MAX_PHOTOS_PER_MISSION = 8;
+const MAX_PHOTOS_PER_STORY = 5;
+const MAX_PHOTOS_PER_ORGANIZATION = 10;
 const MAX_PHOTO_DATA_LENGTH = 2_000_000; // ~1.5MB decoded, plenty for a compressed JPEG
 
 function addMissionPhoto(missionId, body) {
@@ -3691,12 +4174,23 @@ function deleteMissionPhoto(photoId, admin) {
 
 function requestMissionCompletion(missionId, body) {
   const mission = ensureRowExists("missions", missionId, "Mission not found.");
-  const row = db.prepare("SELECT status, archived_at FROM missions WHERE id = ?").get(missionId);
+  const row = db.prepare("SELECT status, archived_at, source_type FROM missions WHERE id = ?").get(missionId);
   if (row.archived_at) throw publicError(400, "This mission has been archived.");
   if (row.status === "completed") throw publicError(400, "This mission is already marked completed.");
   const requestedBy = String(body.requestedBy || "").trim().slice(0, 100);
   const note = String(body.note || "").trim().slice(0, 300);
   if (!requestedBy) throw publicError(400, "Your name is required to request completion.");
+  // Anti-forgery check: a citizen- or NGO-hosted (i.e. non-admin-created)
+  // mission cannot request the "completed" state — the state that unlocks
+  // auto-generated certificates for its volunteers — without at least one
+  // photo from the activity already on record for the admin reviewer to see.
+  // Admin-created missions are exempt since an admin already vouches for them.
+  if (row.source_type === "community") {
+    const photoCount = db.prepare("SELECT COUNT(*) AS n FROM mission_photos WHERE mission_id = ?").get(missionId).n;
+    if (photoCount < 1) {
+      throw publicError(400, "Please upload at least one photo from the activity first, so the district administration can verify it before marking it complete.");
+    }
+  }
   db.prepare(`
     UPDATE missions SET completion_requested = 1, completion_requested_by = ?, completion_requested_note = ?
     WHERE id = ?
