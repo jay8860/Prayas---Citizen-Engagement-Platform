@@ -7011,7 +7011,9 @@
 
     function uniqueAreas() {
       const configured = Array.isArray(state.locations) ? state.locations : [];
-      const fromMissions = state.missions.map((mission) => missionArea(mission)).filter(Boolean);
+      // Once a location catalog has been uploaded, use only that — don't mix in
+      // ward values scraped from existing missions, which may be demo/freeform text.
+      const fromMissions = configured.length ? [] : state.missions.map((mission) => missionArea(mission)).filter(Boolean);
       return [...new Set([...configured, ...fromMissions].map((item) => String(item || "").trim()).filter(Boolean))].sort((a, b) =>
         a.localeCompare(b, "en-IN", { sensitivity: "base" })
       );
