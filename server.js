@@ -1035,6 +1035,18 @@ try {
     )
   `);
 } catch (error) {}
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS organization_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      text TEXT NOT NULL,
+      is_volunteer INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+} catch (error) {}
 
 seedDatabase();
 migrateLegacyDemoRecords();
@@ -1263,6 +1275,17 @@ const server = http.createServer(async (req, res) => {
       const org = requireOrg(req);
       const body = await readJsonBody(req);
       return sendJson(res, 200, createOrgMission(org, body));
+    }
+
+    if (req.method === "GET" && /^\/api\/organizations\/\d+\/public$/.test(url.pathname)) {
+      const orgId = Number(url.pathname.split("/")[3]);
+      return sendJson(res, 200, getOrgPublicProfile(orgId));
+    }
+
+    if (req.method === "POST" && /^\/api\/organizations\/\d+\/comments$/.test(url.pathname)) {
+      const orgId = Number(url.pathname.split("/")[3]);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, addOrgComment(orgId, body));
     }
 
     // ── Organizational Showcase — admin moderation routes ──────────────────────
@@ -3324,6 +3347,49 @@ function listOrgMissions(orgPayload) {
   return { missions: rows };
 }
 
+function getOrgPublicProfile(orgId) {
+  const org = db.prepare("SELECT * FROM organizations WHERE id = ? AND status = 'approved'").get(orgId);
+  if (!org) throw publicError(404, "Organization not found or not yet approved.");
+  const photos = getOrgPhotos(orgId);
+  const missions = db.prepare(`
+    SELECT id, title, category, emoji, ward, location, date, status, volunteers, total, actual_turnout, outcome_note
+    FROM missions WHERE org_id = ? AND approval_status = 'approved' ORDER BY date DESC
+  `).all(orgId);
+  const comments = db.prepare(`
+    SELECT id, name, text, is_volunteer, created_at FROM organization_comments
+    WHERE organization_id = ? ORDER BY created_at DESC LIMIT 50
+  `).all(orgId);
+  const totalAttendees = missions.filter((m) => m.status === "completed").reduce((s, m) => s + (m.actual_turnout || 0), 0);
+  const completedCount = missions.filter((m) => m.status === "completed").length;
+  return {
+    org: sanitizeOrgRow(org),
+    photos,
+    missions,
+    comments,
+    stats: {
+      missionCount: missions.length,
+      completedCount,
+      totalAttendees,
+      points: completedCount * 20 + totalAttendees * 5
+    }
+  };
+}
+
+function addOrgComment(orgId, body) {
+  const org = db.prepare("SELECT id FROM organizations WHERE id = ? AND status = 'approved'").get(orgId);
+  if (!org) throw publicError(404, "Organization not found.");
+  const name = stripHtml(body.name).slice(0, 100);
+  const text = stripHtml(body.text).slice(0, 1000);
+  if (!name || !text) throw publicError(400, "Name and comment text are required.");
+  const volunteerMatch = db.prepare("SELECT id FROM volunteers WHERE name = ? LIMIT 1").get(name);
+  const isVolunteer = !!volunteerMatch;
+  db.prepare(`
+    INSERT INTO organization_comments (organization_id, name, text, is_volunteer, created_at)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(orgId, name, text, isVolunteer ? 1 : 0, isoNow());
+  return { ok: true, isVolunteer };
+}
+
 function addOrgPhoto(orgPayload, body) {
   const org = ensureRowExists("organizations", orgPayload.oid, "Organization not found.");
   const photoData = String(body.photoData || "");
@@ -3561,7 +3627,7 @@ function saveLocationCatalog(body) {
 // existing dropdown/datalist/filter that already reads that list keeps
 // working without change — the structure is additive, not a schema break.
 function flattenLocationLabel(entry) {
-  if (entry.type === "municipal") return `${entry.name} (Municipal)`;
+  if (entry.type === "municipal") return entry.name; // name already has Nagar Nigam/Panchayat/Janpad prefix
   return `${entry.name} (${entry.block})`;
 }
 
