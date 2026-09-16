@@ -275,6 +275,25 @@
       filter: drop-shadow(0 8px 28px rgba(0,0,0,0.28));
     }
 
+    .org-tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-muted);
+      margin-bottom: -2px;
+      border-radius: 4px 4px 0 0;
+      transition: color 0.15s;
+    }
+    .org-tab-btn.active {
+      color: var(--navy, #1E40AF);
+      border-bottom-color: var(--navy, #1E40AF);
+    }
+    .org-tab-btn:hover:not(.active) { color: var(--text); }
+
     .logo-emblem {
       width: 44px;
       height: 44px;
@@ -3625,57 +3644,145 @@
               </form>
             </div>
 
-            <!-- Logged-in: profile + photo manager -->
+            <!-- Logged-in: tabbed dashboard -->
             <div id="orgAuthLoggedIn" class="hidden">
               <div id="orgStatusBanner"></div>
 
-              <div style="background:var(--navy-light,#EFF6FF);border:1px solid var(--navy,#1E40AF);border-radius:12px;padding:16px 18px;margin-bottom:20px">
-                <div style="font-weight:700;color:var(--navy,#1E40AF);margin-bottom:8px;font-size:15px">📋 How Mission Submission Works</div>
-                <ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.7;color:var(--text,inherit)">
-                  <li><strong>Submit a mission proposal</strong> with date, location, and expected volunteer count.</li>
-                  <li>The district admin has <strong>48 hours to review</strong>. If no action is taken, your mission is <strong>automatically published</strong> to the portal.</li>
-                  <li>On mission day, volunteers <strong>scan a QR code</strong> to mark attendance. The QR is valid only within a short window of your event time.</li>
-                  <li>After the mission, your organization earns <strong>impact points</strong>: base points + 5 per QR-verified volunteer. Consistent organizers earn bonus points.</li>
-                  <li>Top organizations by district impact are <strong>recognized publicly</strong> on the portal and at events like Republic Day.</li>
-                </ol>
+              <!-- Tab nav -->
+              <div style="display:flex;gap:6px;margin-bottom:20px;border-bottom:2px solid var(--border);padding-bottom:0">
+                <button class="org-tab-btn active" type="button" data-tab="profile" onclick="switchOrgTab('profile')">👤 Profile</button>
+                <button class="org-tab-btn" type="button" data-tab="missions" onclick="switchOrgTab('missions')">📋 Missions</button>
+                <button class="org-tab-btn" type="button" data-tab="points" onclick="switchOrgTab('points')">🏆 Points &amp; Rank</button>
               </div>
 
-              <form id="orgProfileForm">
-                <h3 class="form-card-title" data-i18n="org-dashboard-title">Your Organization Profile</h3>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="orgProfileName" data-i18n="org-name-label">Organization Name *</label>
-                    <input id="orgProfileName" type="text" required />
+              <!-- ── Profile Tab ─────────────────────────────────────── -->
+              <div class="org-tab-panel" id="orgTabProfile">
+                <form id="orgProfileForm">
+                  <h3 class="form-card-title" data-i18n="org-dashboard-title">Your Organization Profile</h3>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="orgProfileName" data-i18n="org-name-label">Organization Name *</label>
+                      <input id="orgProfileName" type="text" required />
+                    </div>
+                    <div class="form-group">
+                      <label for="orgProfileJoinLink" data-i18n="org-joinlink-label">Join / Website Link</label>
+                      <input id="orgProfileJoinLink" type="url" data-i18n-placeholder="org-joinlink-placeholder" placeholder="https://" />
+                    </div>
                   </div>
-                  <div class="form-group">
-                    <label for="orgProfileJoinLink" data-i18n="org-joinlink-label">Join / Website Link</label>
-                    <input id="orgProfileJoinLink" type="url" data-i18n-placeholder="org-joinlink-placeholder" placeholder="https://" />
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="orgProfilePhone" data-i18n="org-phone-label">Contact Phone</label>
+                      <input id="orgProfilePhone" type="tel" />
+                    </div>
+                    <div class="form-group">
+                      <label for="orgProfileEmail" data-i18n="org-email-label">Contact Email</label>
+                      <input id="orgProfileEmail" type="email" />
+                    </div>
                   </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="orgProfilePhone" data-i18n="org-phone-label">Contact Phone</label>
-                    <input id="orgProfilePhone" type="tel" />
+                  <div class="form-group full">
+                    <label for="orgProfileDescription" data-i18n="org-description-label">What does your organization do?</label>
+                    <textarea id="orgProfileDescription" data-i18n-placeholder="org-description-placeholder" placeholder="Describe your organization's work in the district."></textarea>
                   </div>
-                  <div class="form-group">
-                    <label for="orgProfileEmail" data-i18n="org-email-label">Contact Email</label>
-                    <input id="orgProfileEmail" type="email" />
-                  </div>
-                </div>
-                <div class="form-group full">
-                  <label for="orgProfileDescription" data-i18n="org-description-label">What does your organization do?</label>
-                  <textarea id="orgProfileDescription" data-i18n-placeholder="org-description-placeholder" placeholder="Describe your organization's work in the district."></textarea>
-                </div>
-                <button class="btn btn-primary" type="submit" data-i18n="org-save-submit">Save Changes</button>
-              </form>
+                  <button class="btn btn-primary" type="submit" data-i18n="org-save-submit">Save Changes</button>
+                </form>
 
-              <div style="margin-top:24px">
-                <h3 class="form-card-title" data-i18n="org-photos-title">Photos (up to 10)</h3>
-                <div id="orgPhotoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:12px"></div>
-                <input id="orgPhotoInput" type="file" accept="image/*" />
+                <div style="margin-top:24px">
+                  <h3 class="form-card-title" data-i18n="org-photos-title">Photos (up to 10)</h3>
+                  <div id="orgPhotoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:12px"></div>
+                  <input id="orgPhotoInput" type="file" accept="image/*" />
+                </div>
+
+                <button class="btn btn-ghost" type="button" style="margin-top:20px" onclick="logoutOrg()" data-i18n="org-logout">Log Out</button>
               </div>
 
-              <button class="btn btn-ghost" type="button" style="margin-top:20px" onclick="logoutOrg()" data-i18n="org-logout">Log Out</button>
+              <!-- ── Missions Tab ────────────────────────────────────── -->
+              <div class="org-tab-panel hidden" id="orgTabMissions">
+                <div style="background:var(--navy-light,#EFF6FF);border:1px solid var(--navy,#1E40AF);border-radius:12px;padding:14px 16px;margin-bottom:20px;font-size:13px;line-height:1.6">
+                  <strong style="color:var(--navy,#1E40AF)">📋 How it works:</strong>
+                  If your organization is <strong>approved</strong>, missions you submit are published instantly. If not yet approved, each mission goes to admin review first.
+                  On mission day, volunteers scan a QR code to verify attendance. You earn <strong>20 base points + 5 per QR-verified volunteer</strong>.
+                </div>
+
+                <!-- Create mission form -->
+                <form id="orgMissionForm" style="margin-bottom:28px">
+                  <h3 class="form-card-title">Float a New Mission</h3>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="orgMissionTitle">Mission Title *</label>
+                      <input id="orgMissionTitle" type="text" maxlength="100" required />
+                    </div>
+                    <div class="form-group">
+                      <label for="orgMissionCategory">Category</label>
+                      <select id="orgMissionCategory"></select>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="orgMissionArea">Area / Village / Ward *</label>
+                      <input id="orgMissionArea" type="text" list="locationSuggestions" maxlength="100" required />
+                    </div>
+                    <div class="form-group">
+                      <label for="orgMissionLocation">Exact Location / Venue *</label>
+                      <input id="orgMissionLocation" type="text" maxlength="150" required />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="orgMissionDate">Mission Date *</label>
+                      <input id="orgMissionDate" type="date" required />
+                    </div>
+                    <div class="form-group">
+                      <label for="orgMissionDuration">Duration *</label>
+                      <input id="orgMissionDuration" type="text" placeholder="e.g. 3 hours" maxlength="40" required />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="orgMissionSlots">Volunteer Slots *</label>
+                      <input id="orgMissionSlots" type="number" min="1" max="5000" value="25" required />
+                    </div>
+                    <div class="form-group">
+                      <label for="orgMissionAge">Minimum Age</label>
+                      <input id="orgMissionAge" type="text" value="16+" maxlength="20" />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="orgMissionDesc">Description *</label>
+                    <textarea id="orgMissionDesc" maxlength="500" required placeholder="Describe the mission objective and what volunteers will do."></textarea>
+                  </div>
+                  <button class="btn btn-primary" type="submit">Submit Mission</button>
+                </form>
+
+                <!-- Past missions list -->
+                <h3 class="form-card-title">Your Missions</h3>
+                <div id="orgMissionsList" style="display:flex;flex-direction:column;gap:10px">
+                  <p style="color:var(--text-muted);font-size:13px">Loading…</p>
+                </div>
+              </div>
+
+              <!-- ── Points & Rank Tab ───────────────────────────────── -->
+              <div class="org-tab-panel hidden" id="orgTabPoints">
+                <div id="orgPointsSummary">
+                  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:20px">
+                    <div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+                      <div style="font-size:28px;font-weight:800;color:var(--navy,#1E40AF)" id="orgStatPoints">—</div>
+                      <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Total Points</div>
+                    </div>
+                    <div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+                      <div style="font-size:28px;font-weight:800;color:var(--forest,#166534)" id="orgStatMissions">—</div>
+                      <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Missions Hosted</div>
+                    </div>
+                    <div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+                      <div style="font-size:28px;font-weight:800;color:var(--saffron,#C2410C)" id="orgStatAttendees">—</div>
+                      <div style="font-size:12px;color:var(--text-muted);margin-top:2px">QR-Verified Volunteers</div>
+                    </div>
+                  </div>
+                  <div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:12px;padding:16px;font-size:13px;color:var(--text-muted)">
+                    🏅 <strong>Rank tiers</strong>: Bronze (0–99 pts) · Silver (100–299 pts) · Gold (300–699 pts) · Platinum (700–1499 pts) · Champion (1500+ pts)<br/>
+                    Top 5 organizations by district impact are featured publicly and recognized at Republic Day.
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -6892,6 +6999,10 @@
       document.getElementById("storyCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें" : "Select Category"}</option>${options}`;
       document.getElementById("pmCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें (वैकल्पिक)" : "Select Category (Optional)"}</option>${options}`;
       document.getElementById("hostMissionCategory").innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें (वैकल्पिक)" : "Select Category (Optional)"}</option>${options}`;
+      const orgMissionCatEl = document.getElementById("orgMissionCategory");
+      if (orgMissionCatEl) {
+        orgMissionCatEl.innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें (वैकल्पिक)" : "Select Category (Optional)"}</option>${options}`;
+      }
       const posterCategoryEl = document.getElementById("posterCategory");
       if (posterCategoryEl) {
         posterCategoryEl.innerHTML = `<option value="">${state.lang === "hi" ? "श्रेणी चुनें (वैकल्पिक)" : "Select Category (Optional)"}</option>${options}`;
@@ -8328,6 +8439,117 @@
       document.getElementById("orgAuthLoggedIn").classList.add("hidden");
       document.getElementById("orgAuthLoggedOut").classList.remove("hidden");
       showToast(state.lang === "hi" ? "लॉग आउट हो गया।" : "Logged out.", "👋");
+    }
+
+    function switchOrgTab(tab) {
+      document.querySelectorAll(".org-tab-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.tab === tab);
+      });
+      document.querySelectorAll(".org-tab-panel").forEach((panel) => {
+        panel.classList.toggle("hidden", panel.id !== "orgTab" + tab.charAt(0).toUpperCase() + tab.slice(1));
+      });
+      if (tab === "missions") loadOrgMissions();
+      if (tab === "points") loadOrgPoints();
+    }
+
+    async function loadOrgMissions() {
+      const listEl = document.getElementById("orgMissionsList");
+      if (!listEl) return;
+      try {
+        const data = await orgApiRequest("/api/organizations/me/missions");
+        const missions = data.missions || [];
+        if (!missions.length) {
+          listEl.innerHTML = `<p style="color:var(--text-muted);font-size:13px">No missions yet. Submit your first one above.</p>`;
+          return;
+        }
+        listEl.innerHTML = missions.map((m) => {
+          const statusBadge = {
+            approved: `<span style="background:#DCFCE7;color:#166534;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">✅ Approved</span>`,
+            pending:  `<span style="background:#FEF3C7;color:#B45309;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">⏳ Pending Review</span>`,
+            rejected: `<span style="background:#FEE2E2;color:#B91C1C;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">❌ Rejected</span>`
+          }[m.approval_status] || "";
+          const mStatus = {
+            upcoming:  `<span style="color:var(--text-muted);font-size:11px">Upcoming</span>`,
+            active:    `<span style="color:#16A34A;font-size:11px">Active</span>`,
+            completed: `<span style="color:#1E40AF;font-size:11px">Completed</span>`
+          }[m.status] || "";
+          return `<div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:10px;padding:14px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+              <div style="font-weight:700;font-size:14px">${escapeHtml(m.title)}</div>
+              <div style="display:flex;gap:6px;align-items:center">${statusBadge}${mStatus}</div>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px">
+              📅 ${escapeHtml(m.date)} &nbsp;|&nbsp; 📍 ${escapeHtml(m.location)}, ${escapeHtml(m.ward)}
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
+              👥 ${m.volunteers || 0} registered / ${m.total} slots &nbsp;|&nbsp; ✅ ${m.actual_turnout || 0} QR-verified
+            </div>
+          </div>`;
+        }).join("");
+      } catch (error) {
+        listEl.innerHTML = `<p style="color:var(--error);font-size:13px">Could not load missions.</p>`;
+      }
+    }
+
+    async function loadOrgPoints() {
+      const org = state.orgAuth && state.orgAuth.org;
+      if (!org) return;
+      try {
+        const data = await orgApiRequest("/api/organizations/me/missions");
+        const missions = data.missions || [];
+        const completed = missions.filter((m) => m.status === "completed" && m.approval_status === "approved");
+        const totalAttendees = completed.reduce((s, m) => s + (m.actual_turnout || 0), 0);
+        const points = completed.length * 20 + totalAttendees * 5;
+        const tier = points >= 1500 ? "🏆 Champion" : points >= 700 ? "💎 Platinum" : points >= 300 ? "🥇 Gold" : points >= 100 ? "🥈 Silver" : "🥉 Bronze";
+        const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+        el("orgStatPoints", points);
+        el("orgStatMissions", completed.length);
+        el("orgStatAttendees", totalAttendees);
+        const summary = document.getElementById("orgPointsSummary");
+        if (summary) {
+          const tierDiv = document.getElementById("orgTierBadge");
+          if (!tierDiv) {
+            const d = document.createElement("div");
+            d.id = "orgTierBadge";
+            d.style.cssText = "text-align:center;font-size:22px;font-weight:800;margin:12px 0;color:var(--navy,#1E40AF)";
+            d.textContent = tier;
+            summary.insertBefore(d, summary.children[1]);
+          } else {
+            tierDiv.textContent = tier;
+          }
+        }
+      } catch (error) {}
+    }
+
+    async function submitOrgMission(event) {
+      event.preventDefault();
+      const btn = event.target.querySelector("[type='submit']");
+      const orig = btn.textContent;
+      btn.disabled = true;
+      try {
+        const result = await orgApiRequest("/api/organizations/me/missions", {
+          method: "POST",
+          body: JSON.stringify({
+            title: document.getElementById("orgMissionTitle").value.trim(),
+            category: document.getElementById("orgMissionCategory").value,
+            ward: document.getElementById("orgMissionArea").value.trim(),
+            location: document.getElementById("orgMissionLocation").value.trim(),
+            date: document.getElementById("orgMissionDate").value,
+            duration: document.getElementById("orgMissionDuration").value.trim(),
+            total: Number(document.getElementById("orgMissionSlots").value),
+            age: document.getElementById("orgMissionAge").value.trim(),
+            desc: document.getElementById("orgMissionDesc").value.trim()
+          })
+        });
+        event.target.reset();
+        showToast(result.autoApproved ? "Mission published to the portal!" : "Mission submitted — pending district review.", result.autoApproved ? "✅" : "⏳");
+        loadOrgMissions();
+      } catch (error) {
+        handleRequestError(error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
     }
 
     function renderLeaders() {
@@ -11433,6 +11655,7 @@
       document.getElementById("orgLoginForm").addEventListener("submit", submitOrgLogin);
       document.getElementById("orgSignupForm").addEventListener("submit", submitOrgSignup);
       document.getElementById("orgProfileForm").addEventListener("submit", submitOrgProfile);
+      document.getElementById("orgMissionForm").addEventListener("submit", submitOrgMission);
       document.getElementById("orgPhotoInput").addEventListener("change", uploadOrgPhoto);
       document.getElementById("commentForm").addEventListener("submit", submitCommentForm);
       document.getElementById("adminLoginForm").addEventListener("submit", submitAdminLogin);

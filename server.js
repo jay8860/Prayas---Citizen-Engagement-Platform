@@ -994,6 +994,9 @@ try {
   db.exec("ALTER TABLE missions ADD COLUMN host_type TEXT NOT NULL DEFAULT 'individual'");
 } catch (error) {}
 try {
+  db.exec("ALTER TABLE missions ADD COLUMN org_id INTEGER REFERENCES organizations(id) ON DELETE SET NULL");
+} catch (error) {}
+try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1249,6 +1252,17 @@ const server = http.createServer(async (req, res) => {
       const org = requireOrg(req);
       const photoId = Number(url.pathname.split("/")[5]);
       return sendJson(res, 200, deleteOwnOrgPhoto(org, photoId));
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/organizations/me/missions") {
+      const org = requireOrg(req);
+      return sendJson(res, 200, listOrgMissions(org));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/organizations/me/missions") {
+      const org = requireOrg(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, createOrgMission(org, body));
     }
 
     // ── Organizational Showcase — admin moderation routes ──────────────────────
@@ -3245,6 +3259,69 @@ function updateOrgProfile(orgPayload, body) {
     WHERE id = ?
   `).run(name, description, joinLink, contactPhone, contactEmail, isoNow(), org.id);
   return getOrgProfile(orgPayload);
+}
+
+function createOrgMission(orgPayload, body) {
+  const org = db.prepare("SELECT * FROM organizations WHERE id = ?").get(orgPayload.oid);
+  if (!org) throw publicError(404, "Organization not found.");
+  if (org.status === "suspended") throw publicError(403, "Your account is suspended.");
+
+  const category = String(body.category || "other").trim() || "other";
+  const ward = String(body.ward || "").trim();
+  const title = String(body.title || "").trim();
+  const desc = String(body.desc || "").trim();
+  const date = String(body.date || "").trim();
+  const location = String(body.location || "").trim();
+  const duration = String(body.duration || "").trim();
+  const total = Number(body.total || 0);
+
+  if (!ward || !title || !desc || !date || !location || !duration || total <= 0) {
+    throw publicError(400, "Title, area, description, date, location, duration and volunteer slots are required.");
+  }
+
+  // Approved orgs bypass the review queue; others wait for admin action.
+  const approvalStatus = org.status === "approved" ? "approved" : "pending";
+  const missionStatus = "upcoming";
+
+  db.prepare(`
+    INSERT INTO missions (
+      category, ward, emoji, bg, title, desc, date, location, volunteers, total, status,
+      source_type, approval_status, host_name, host_phone, host_email, nodal_department,
+      is_demo, coordinator, duration, age, impact, created_at, host_type, org_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 'org', ?, ?, ?, ?, '', 0, ?, ?, ?, ?, ?, 'organization', ?)
+  `).run(
+    category, ward, categoryEmoji(category), categoryGradient(category),
+    title, desc, date, location, total, missionStatus, approvalStatus,
+    org.name, org.contact_phone || "", org.contact_email || "",
+    org.name, duration, String(body.age || "16+"),
+    approvalStatus === "approved" ? "Mission by " + org.name : "Awaiting district review",
+    isoNow(), org.id
+  );
+
+  if (approvalStatus === "pending") {
+    notifyAdmin(
+      `New org mission request: ${title} by ${org.name}`,
+      `<table style="border-collapse:collapse;width:100%;font-size:14px">
+        <tr><td style="padding:6px 10px;color:#666;width:120px">Organization</td><td style="padding:6px 10px"><strong>${org.name}</strong></td></tr>
+        <tr style="background:#f9f9f9"><td style="padding:6px 10px;color:#666">Mission</td><td style="padding:6px 10px">${title}</td></tr>
+        <tr><td style="padding:6px 10px;color:#666">Date</td><td style="padding:6px 10px">${date}</td></tr>
+        <tr style="background:#f9f9f9"><td style="padding:6px 10px;color:#666">Location</td><td style="padding:6px 10px">${location}, ${ward}</td></tr>
+        <tr><td style="padding:6px 10px;color:#666">Slots</td><td style="padding:6px 10px">${total} volunteers</td></tr>
+      </table>
+      <p style="margin-top:16px;color:#666;font-size:13px">This organization is not yet approved. Review in the admin panel → Community Missions.</p>`
+    );
+  }
+
+  return { ok: true, autoApproved: approvalStatus === "approved" };
+}
+
+function listOrgMissions(orgPayload) {
+  const rows = db.prepare(`
+    SELECT id, title, category, ward, location, date, status, approval_status,
+           volunteers, total, created_at, outcome_note, actual_turnout
+    FROM missions WHERE org_id = ? ORDER BY created_at DESC
+  `).all(orgPayload.oid);
+  return { missions: rows };
 }
 
 function addOrgPhoto(orgPayload, body) {
