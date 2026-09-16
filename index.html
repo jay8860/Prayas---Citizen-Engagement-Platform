@@ -255,6 +255,7 @@
     }
 
     .hero-logo-wrap {
+      grid-column: 1 / -1;
       text-align: center;
       margin-bottom: 16px;
     }
@@ -613,7 +614,7 @@
 
     .hero-card:hover { transform: translateY(-3px); }
 
-    .hero-card:first-child {
+    .hero-card:nth-child(2) {
       grid-column: 1 / -1;
       display: flex;
       align-items: center;
@@ -3956,7 +3957,7 @@
               </div>
 
               <div class="form-group full" id="volSkillsGroup">
-                <label data-i18n="vol-skills-label">Your Skills - select at least one *</label>
+                <label data-i18n="vol-skills-label">Your Skills</label>
                 <div class="skills-grid" id="skillsGrid"></div>
                 <input id="volSkillsOther" type="text" style="margin-top:10px" data-i18n-placeholder="vol-skills-other-placeholder" placeholder="Other skills? Type them here, separated by commas" />
               </div>
@@ -5643,7 +5644,7 @@
       "vol-area-placeholder": { en: "Ward, gram panchayat, town, colony or village", hi: "वार्ड, ग्राम पंचायत, कस्बा, कॉलोनी या गांव" },
       "vol-occupation-label": { en: "Profession / Occupation", hi: "पेशा / व्यवसाय" },
       "vol-occupation-placeholder": { en: "Teacher, engineer, student, homemaker, retired officer", hi: "शिक्षक, इंजीनियर, छात्र, गृहिणी, सेवानिवृत्त अधिकारी" },
-      "vol-skills-label": { en: "Your Skills - select at least one *", hi: "आपके कौशल - कम से कम एक चुनें *" },
+      "vol-skills-label": { en: "Your Skills", hi: "आपके कौशल" },
       "vol-skills-other-placeholder": { en: "Other skills? Type them here, separated by commas", hi: "अन्य कौशल? यहाँ लिखें, अल्पविराम से अलग करें" },
       "vol-availability-label": { en: "Availability", hi: "उपलब्धता" },
       "vol-message-label": { en: "Why do you want to contribute?", hi: "आप योगदान क्यों देना चाहते हैं?" },
@@ -9925,13 +9926,7 @@
       const formData = new FormData(form);
       const checkedSkills = formData.getAll("skills");
       const skillsGroupHidden = document.getElementById("volSkillsGroup")?.classList.contains("hidden");
-      if (!skillsGroupHidden && !checkedSkills.length) {
-        showToast(
-          state.lang === "hi" ? "कृपया कम से कम एक कौशल चुनें।" : "Please select at least one skill.",
-          "ℹ️"
-        );
-        return;
-      }
+      // skills are optional — no validation required
       const otherSkillsRaw = String(document.getElementById("volSkillsOther")?.value || "");
       const otherSkills = otherSkillsRaw.split(",").map((item) => item.trim()).filter(Boolean);
       const skills = [...checkedSkills, ...otherSkills];
