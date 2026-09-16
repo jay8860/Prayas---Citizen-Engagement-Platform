@@ -3454,7 +3454,7 @@
       </div>
     </section>
 
-    <section class="section alt" id="district-map">
+    <section class="section alt" id="district-map" hidden>
       <div class="section-inner">
         <div class="section-top">
           <div>
@@ -3628,6 +3628,18 @@
             <!-- Logged-in: profile + photo manager -->
             <div id="orgAuthLoggedIn" class="hidden">
               <div id="orgStatusBanner"></div>
+
+              <div style="background:var(--navy-light,#EFF6FF);border:1px solid var(--navy,#1E40AF);border-radius:12px;padding:16px 18px;margin-bottom:20px">
+                <div style="font-weight:700;color:var(--navy,#1E40AF);margin-bottom:8px;font-size:15px">📋 How Mission Submission Works</div>
+                <ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.7;color:var(--text,inherit)">
+                  <li><strong>Submit a mission proposal</strong> with date, location, and expected volunteer count.</li>
+                  <li>The district admin has <strong>48 hours to review</strong>. If no action is taken, your mission is <strong>automatically published</strong> to the portal.</li>
+                  <li>On mission day, volunteers <strong>scan a QR code</strong> to mark attendance. The QR is valid only within a short window of your event time.</li>
+                  <li>After the mission, your organization earns <strong>impact points</strong>: base points + 5 per QR-verified volunteer. Consistent organizers earn bonus points.</li>
+                  <li>Top organizations by district impact are <strong>recognized publicly</strong> on the portal and at events like Republic Day.</li>
+                </ol>
+              </div>
+
               <form id="orgProfileForm">
                 <h3 class="form-card-title" data-i18n="org-dashboard-title">Your Organization Profile</h3>
                 <div class="form-row">
@@ -4916,6 +4928,19 @@
             <div class="message-actions">
               <button class="btn btn-soft" type="button" onclick="setPortalDataMode('demo')">Demo Data</button>
               <button class="btn btn-primary" type="button" onclick="setPortalDataMode('real')">Real Deploy Version</button>
+            </div>
+          </div>
+
+          <div class="panel-card" style="margin-top:20px">
+            <h3>District Geography Section</h3>
+            <p>Controls whether the geography-wise comparison map is visible on the main portal. Hide it until ward/gram panchayat data is available for your district.</p>
+            <div class="message-card" style="margin-bottom:16px">
+              <div class="message-name">Geography Section Status</div>
+              <div class="message-text" id="districtMapStatusLabel">Loading…</div>
+            </div>
+            <div class="message-actions">
+              <button class="btn btn-soft" type="button" id="hideDistrictMapBtn" onclick="toggleDistrictMap(false)">Hide from Portal</button>
+              <button class="btn btn-primary" type="button" id="showDistrictMapBtn" onclick="toggleDistrictMap(true)">Show on Portal</button>
             </div>
           </div>
         </div>
@@ -6664,6 +6689,7 @@
 
     function applyBootstrapData(payload) {
       state.dataMode = payload.dataMode || "real";
+      state.showDistrictMap = !!payload.showDistrictMap;
       state.districtName = payload.districtName || "Your District";
       state.stateName = payload.stateName || "Your State";
       state.stateAbbr = payload.stateAbbr || "ST";
@@ -8932,6 +8958,19 @@
       document.getElementById("dataModeCopy").textContent = isDemo
         ? "Dummy seeded records are visible for presentation and walkthroughs."
         : "Only real field data is visible. Dummy seeded content is hidden.";
+
+      const mapSection = document.getElementById("district-map");
+      if (mapSection) mapSection.hidden = !state.showDistrictMap;
+      const mapStatusEl = document.getElementById("districtMapStatusLabel");
+      if (mapStatusEl) {
+        mapStatusEl.textContent = state.showDistrictMap
+          ? "Visible on portal — Geography section is shown to visitors."
+          : "Hidden from portal — Geography section is not shown to visitors.";
+      }
+      const showBtn = document.getElementById("showDistrictMapBtn");
+      const hideBtn = document.getElementById("hideDistrictMapBtn");
+      if (showBtn) showBtn.disabled = state.showDistrictMap;
+      if (hideBtn) hideBtn.disabled = !state.showDistrictMap;
     }
 
     function volunteerRowActions(id) {
@@ -10797,6 +10836,20 @@
         });
         await refreshPortalData();
         showToast(mode === "demo" ? "Demo data mode enabled." : "Real deploy mode enabled.", "🧭");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    async function toggleDistrictMap(visible) {
+      try {
+        await apiRequest("/api/admin/section-visibility", {
+          method: "POST",
+          body: JSON.stringify({ section: "district-map", visible })
+        });
+        state.showDistrictMap = visible;
+        renderDataModePanel();
+        showToast(visible ? "Geography section is now visible on the portal." : "Geography section hidden from portal.", "🗺️");
       } catch (error) {
         handleRequestError(error);
       }

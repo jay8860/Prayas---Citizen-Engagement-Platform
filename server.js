@@ -1393,6 +1393,18 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, setPortalDataMode(body));
     }
 
+    if (req.method === "POST" && url.pathname === "/api/admin/section-visibility") {
+      requireSuperAdmin(req);
+      const body = await readJsonBody(req);
+      const section = String(body.section || "").trim();
+      const visible = !!body.visible;
+      if (section === "district-map") {
+        setSetting("show_district_map", visible ? "1" : "0");
+        return sendJson(res, 200, { ok: true, section, visible });
+      }
+      throw publicError(400, "Unknown section.");
+    }
+
     if (req.method === "POST" && url.pathname === "/api/admin/locations") {
       requireSuperAdmin(req);
       const body = await readJsonBody(req);
@@ -2388,6 +2400,7 @@ function buildBootstrapPayload(isAdmin = false) {
 
   return {
     dataMode,
+    showDistrictMap: getSetting("show_district_map", "0") === "1",
     districtName: DISTRICT_NAME,
     stateName: STATE_NAME,
     stateAbbr: STATE_ABBR,
