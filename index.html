@@ -4558,6 +4558,7 @@
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="data" data-i18n="admin-tab-data">Data Mode</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="newsletter" data-i18n="admin-tab-newsletter">Newsletter</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="users" data-i18n="admin-tab-users">Users &amp; Delegation</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="aiqueue">🤖 AI Queue</button>
         </div>
 
         <div class="admin-pane active" id="adminPaneOverview">
@@ -5064,6 +5065,19 @@
             <div class="message-actions">
               <button class="btn btn-soft" type="button" id="hideDistrictMapBtn" onclick="toggleDistrictMap(false)">Hide from Portal</button>
               <button class="btn btn-primary" type="button" id="showDistrictMapBtn" onclick="toggleDistrictMap(true)">Show on Portal</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-pane" id="adminPaneAiqueue">
+          <div class="panel-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <h3 style="margin:0">🤖 AI Moderation Queue</h3>
+              <button class="btn btn-soft" type="button" onclick="loadAiQueue()">↻ Refresh</button>
+            </div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">AI reviews missions, comments, and organization registrations automatically. Items needing human review appear here.</p>
+            <div id="aiQueueContent">
+              <p style="color:var(--text-muted);font-size:13px">Loading…</p>
             </div>
           </div>
         </div>
@@ -11418,7 +11432,8 @@
         missionsetup: "adminPaneMissionSetup",
         data: "adminPaneData",
         newsletter: "adminPaneNewsletter",
-        users: "adminPaneUsers"
+        users: "adminPaneUsers",
+        aiqueue: "adminPaneAiqueue"
       };
       Object.values(map).forEach((id) => { const el = document.getElementById(id); if (el) el.classList.remove("active"); });
       const pane = document.getElementById(map[tab]);
@@ -11427,6 +11442,7 @@
       if (tab === "analytics") loadAdminAnalytics();
       if (tab === "audit") loadAuditLog();
       if (tab === "users") loadAdminUsersList();
+      if (tab === "aiqueue") loadAiQueue();
       if (tab === "poster") renderPosterMissionOptions();
       if (tab === "post") applyCoordinatorPostLock();
       if (tab === "missions") renderAdminMissionsList();
@@ -11447,6 +11463,101 @@
         document.getElementById("brandingBadgeEn").value = state.siteBadgeEn || "";
         document.getElementById("brandingBadgeHi").value = state.siteBadgeHi || "";
         document.getElementById("brandingSaveStatus").textContent = "";
+      }
+    }
+
+    async function loadAiQueue() {
+      const el = document.getElementById("aiQueueContent");
+      if (!el) return;
+      el.innerHTML = `<p style="color:var(--text-muted);font-size:13px">Loading…</p>`;
+      try {
+        const data = await apiRequest("/api/admin/ai-queue");
+        renderAiQueue(data, el);
+      } catch(e) {
+        el.innerHTML = `<p style="color:var(--error,#DC2626);font-size:13px">Could not load queue.</p>`;
+      }
+    }
+
+    function renderAiQueue(data, el) {
+      const { flaggedMissions = [], hiddenComments = [], orgsWithRecommendation = [], attendanceFlags = [] } = data;
+      const total = flaggedMissions.length + hiddenComments.length + orgsWithRecommendation.length + attendanceFlags.length;
+      if (total === 0) {
+        el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted)">✅ Queue is clear — no items need review.</div>`;
+        return;
+      }
+
+      let html = "";
+
+      if (flaggedMissions.length) {
+        html += `<h4 style="margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted)">Flagged Missions (${flaggedMissions.length})</h4>`;
+        html += flaggedMissions.map(m => `
+          <div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-left:4px solid ${m.ai_flag==='rejected'?'#DC2626':'#F59E0B'};border-radius:8px;padding:12px 14px;margin-bottom:10px">
+            <div style="font-weight:700;font-size:14px">${escapeHtml(m.title)}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin:4px 0">📅 ${escapeHtml(m.date)} · 📍 ${escapeHtml(m.ward)} · 👥 ${m.total} slots · ${m.source_type === 'community' ? '🙋 Community' : '🏢 Organization'}</div>
+            <div style="font-size:12px;background:#FEF3C7;color:#92400E;border-radius:6px;padding:6px 10px;margin:6px 0">🤖 ${escapeHtml(m.ai_flag_reason || '')}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+              ${m.approval_status==='pending'?`<button class="btn btn-primary" style="font-size:12px;padding:4px 12px" type="button" onclick="aiQueueAction('mission',${m.id},'approve')">✅ Approve</button>`:''}
+              ${m.approval_status==='pending'?`<button class="btn" style="font-size:12px;padding:4px 12px;background:#DC2626;color:#fff;border-color:#DC2626" type="button" onclick="aiQueueAction('mission',${m.id},'reject')">❌ Reject</button>`:''}
+              <button class="btn btn-soft" style="font-size:12px;padding:4px 12px" type="button" onclick="aiQueueAction('mission',${m.id},'dismiss')">Dismiss Flag</button>
+            </div>
+          </div>`).join("");
+      }
+
+      if (attendanceFlags.length) {
+        html += `<h4 style="margin:16px 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted)">Attendance Flags (${attendanceFlags.length})</h4>`;
+        html += attendanceFlags.map(m => `
+          <div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-left:4px solid #7C3AED;border-radius:8px;padding:12px 14px;margin-bottom:10px">
+            <div style="font-weight:700;font-size:14px">${escapeHtml(m.title)}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin:4px 0">📅 ${escapeHtml(m.date)} · 📍 ${escapeHtml(m.ward)} · Reported: ${m.actual_turnout} / ${m.total} slots</div>
+            <div style="font-size:12px;background:#F5F3FF;color:#5B21B6;border-radius:6px;padding:6px 10px;margin:6px 0">🤖 ${escapeHtml(m.ai_attendance_reason || '')}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+              <button class="btn btn-soft" style="font-size:12px;padding:4px 12px" type="button" onclick="aiQueueAction('attendance',${m.id},'clear')">✓ Looks Fine</button>
+              <button class="btn" style="font-size:12px;padding:4px 12px;background:#7C3AED;color:#fff;border-color:#7C3AED" type="button" onclick="aiQueueAction('attendance',${m.id},'confirm')">⚑ Confirm Suspicious</button>
+            </div>
+          </div>`).join("");
+      }
+
+      if (orgsWithRecommendation.length) {
+        html += `<h4 style="margin:16px 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted)">Organization Review Hints (${orgsWithRecommendation.length})</h4>`;
+        html += orgsWithRecommendation.map(o => {
+          const color = o.ai_recommendation==='approve'?'#166534':o.ai_recommendation==='suspicious'?'#DC2626':'#B45309';
+          const bg = o.ai_recommendation==='approve'?'#DCFCE7':o.ai_recommendation==='suspicious'?'#FEE2E2':'#FEF3C7';
+          return `<div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px">
+            <div style="font-weight:700;font-size:14px">${escapeHtml(o.name)} <span style="font-size:11px;font-weight:400;color:var(--text-muted)">@${escapeHtml(o.username)}</span></div>
+            <div style="font-size:12px;color:var(--text-muted);margin:4px 0">${escapeHtml((o.description||'').slice(0,120))}</div>
+            <div style="font-size:12px;background:${bg};color:${color};border-radius:6px;padding:6px 10px;margin:6px 0">🤖 ${o.ai_recommendation?.toUpperCase()}: ${escapeHtml(o.ai_recommendation_reason||'')}</div>
+            <button class="btn btn-soft" style="font-size:12px;padding:4px 12px;margin-top:6px" type="button" onclick="aiQueueAction('org',${o.id},'dismiss')">Dismiss Hint</button>
+          </div>`;
+        }).join("");
+      }
+
+      if (hiddenComments.length) {
+        html += `<h4 style="margin:16px 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted)">AI-Hidden Comments (${hiddenComments.length})</h4>`;
+        html += hiddenComments.map(c => `
+          <div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">On: <strong>${escapeHtml(c.parent_title)}</strong> · by ${escapeHtml(c.name)}</div>
+            <div style="font-size:13px;margin-bottom:4px">${escapeHtml(c.text)}</div>
+            <div style="font-size:11px;color:#B45309;background:#FEF3C7;padding:4px 8px;border-radius:4px;margin-bottom:8px">🤖 ${escapeHtml(c.ai_flag_reason||'')}</div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-soft" style="font-size:12px;padding:4px 12px" type="button" onclick="aiQueueAction('comment',${c.id},'restore','${c.commentType}')">Restore</button>
+              <button class="btn" style="font-size:12px;padding:4px 12px;background:#DC2626;color:#fff;border-color:#DC2626" type="button" onclick="aiQueueAction('comment',${c.id},'delete','${c.commentType}')">Delete</button>
+            </div>
+          </div>`).join("");
+      }
+
+      el.innerHTML = html;
+    }
+
+    async function aiQueueAction(actionType, id, action, commentType) {
+      try {
+        await apiRequest("/api/admin/ai-queue/action", {
+          method: "POST",
+          body: JSON.stringify({ actionType, id, action, commentType })
+        });
+        showToast("Done.", "✅");
+        loadAiQueue();
+      } catch(e) {
+        handleRequestError(e);
       }
     }
 

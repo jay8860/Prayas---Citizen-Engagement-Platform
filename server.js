@@ -996,6 +996,18 @@ try {
 try {
   db.exec("ALTER TABLE missions ADD COLUMN org_id INTEGER REFERENCES organizations(id) ON DELETE SET NULL");
 } catch (error) {}
+try { db.exec("ALTER TABLE missions ADD COLUMN ai_flag TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE missions ADD COLUMN ai_flag_reason TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE missions ADD COLUMN ai_attendance_flag TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE missions ADD COLUMN ai_attendance_reason TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE story_comments ADD COLUMN ai_hidden INTEGER NOT NULL DEFAULT 0"); } catch(e) {}
+try { db.exec("ALTER TABLE story_comments ADD COLUMN ai_flag_reason TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE mission_discussions ADD COLUMN ai_hidden INTEGER NOT NULL DEFAULT 0"); } catch(e) {}
+try { db.exec("ALTER TABLE mission_discussions ADD COLUMN ai_flag_reason TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE organization_comments ADD COLUMN ai_hidden INTEGER NOT NULL DEFAULT 0"); } catch(e) {}
+try { db.exec("ALTER TABLE organization_comments ADD COLUMN ai_flag_reason TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE organizations ADD COLUMN ai_recommendation TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE organizations ADD COLUMN ai_recommendation_reason TEXT"); } catch(e) {}
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
@@ -1047,6 +1059,185 @@ try {
     )
   `);
 } catch (error) {}
+
+// ── AI Moderation ─────────────────────────────────────────────────────────────
+
+async function callClaude(system, user, maxTokens = 256) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: maxTokens,
+        system,
+        messages: [{ role: "user", content: user }]
+      })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const text = data.content?.[0]?.text || "";
+    const match = text.match(/\{[\s\S]*?\}/);
+    return match ? JSON.parse(match[0]) : null;
+  } catch (e) {
+    console.error("[AI] callClaude error:", e.message);
+    return null;
+  }
+}
+
+function moderateMissionAsync(missionId) {
+  setImmediate(async () => {
+    const mission = db.prepare("SELECT * FROM missions WHERE id = ?").get(missionId);
+    if (!mission) return;
+    const result = await callClaude(
+      `You are a content moderator for JanPrayas, a citizen engagement portal for Dhamtari district, Chhattisgarh, India. Review mission proposals for legitimacy. Respond ONLY with JSON: {"decision":"approve"|"flag"|"reject","reason":"1-2 sentence explanation"}. APPROVE genuine civic activities (plantation, Swachhata, health camp, education, cultural events, sports, awareness drives) with plausible details. FLAG if vague, very incomplete, or needs human review. REJECT only clear spam, promotions for products/services, completely unrelated content, or gibberish.`,
+      `Title: ${mission.title}\nDescription: ${mission.desc}\nCategory: ${mission.category}\nLocation: ${mission.location}, ${mission.ward}\nDate: ${mission.date}\nDuration: ${mission.duration}\nSlots: ${mission.total}\nHost: ${mission.host_name} (${mission.host_type})\nPhone: ${mission.host_phone}\nEmail: ${mission.host_email}`
+    );
+    if (!result) return;
+    const { decision, reason } = result;
+    if (mission.approval_status === "pending") {
+      if (decision === "approve") {
+        db.prepare("UPDATE missions SET approval_status='approved', ai_flag='ok', ai_flag_reason=? WHERE id=?").run(reason, missionId);
+        try { ensureCheckInCode(missionId); } catch(e) {}
+      } else if (decision === "reject") {
+        db.prepare("UPDATE missions SET approval_status='rejected', ai_flag='rejected', ai_flag_reason=? WHERE id=?").run(reason, missionId);
+      } else {
+        db.prepare("UPDATE missions SET ai_flag='flagged', ai_flag_reason=? WHERE id=?").run(reason, missionId);
+      }
+    } else {
+      // Already approved — just tag for info without changing approval
+      db.prepare("UPDATE missions SET ai_flag=?, ai_flag_reason=? WHERE id=?").run(decision === "approve" ? "ok" : "flagged", reason, missionId);
+    }
+  });
+}
+
+function moderateCommentAsync(table, idField, rowId, name, text) {
+  setImmediate(async () => {
+    const result = await callClaude(
+      `You moderate comments on a civic engagement platform in Dhamtari, India. Respond ONLY with JSON: {"decision":"ok"|"hide","reason":"brief reason"}. HIDE only clear spam, promotional links, abusive language, or completely irrelevant content. OK for genuine community feedback, even if critical.`,
+      `Name: ${name}\nComment: ${text}`
+    );
+    if (!result || result.decision !== "hide") return;
+    db.prepare(`UPDATE ${table} SET ai_hidden=1, ai_flag_reason=? WHERE ${idField}=?`).run(result.reason, rowId);
+  });
+}
+
+function recommendOrgAsync(orgId) {
+  setImmediate(async () => {
+    const org = db.prepare("SELECT * FROM organizations WHERE id=?").get(orgId);
+    if (!org) return;
+    const result = await callClaude(
+      `You review NGO/organization registrations for a civic platform in Dhamtari district, Chhattisgarh, India. Respond ONLY with JSON: {"recommendation":"approve"|"review"|"suspicious","reason":"1-2 sentences"}. APPROVE if description coherently describes genuine civic or social work with real-sounding contact details. REVIEW if description is thin but not obviously fake. SUSPICIOUS if no real description, copy-paste boilerplate, or shows spam patterns.`,
+      `Name: ${org.name}\nUsername: ${org.username}\nDescription: ${org.description}\nPhone: ${org.contact_phone}\nEmail: ${org.contact_email}\nWebsite: ${org.join_link}`
+    );
+    if (!result) return;
+    db.prepare("UPDATE organizations SET ai_recommendation=?, ai_recommendation_reason=? WHERE id=?")
+      .run(result.recommendation, result.reason, orgId);
+  });
+}
+
+function flagAttendanceAsync(missionId) {
+  setImmediate(async () => {
+    const mission = db.prepare("SELECT * FROM missions WHERE id=?").get(missionId);
+    if (!mission) return;
+    const photoCount = db.prepare("SELECT COUNT(*) AS n FROM mission_photos WHERE mission_id=?").get(missionId).n;
+    const turnoutRatio = mission.total > 0 ? (mission.actual_turnout / mission.total).toFixed(2) : "unknown";
+    const result = await callClaude(
+      `You are reviewing attendance figures for a completed civic mission in Dhamtari district, Chhattisgarh, India. Evaluate holistically — large turnouts are normal for health camps, gram sabhas, public rallies, and cultural events; smaller ones are expected for plantation drives, cleanups, or skill workshops. Do NOT flag based on absolute numbers alone. Look for genuine inconsistencies: turnout far exceeding registered slots with no explanation, a very large crowd reported for a 1-hour niche workshop, or a claim of 500+ attendees with zero photos uploaded. Respond ONLY with JSON: {"flag":"ok"|"flagged","reason":"1-2 sentences"}`,
+      `Title: ${mission.title}\nDescription: ${mission.desc}\nCategory: ${mission.category}\nLocation: ${mission.location}, ${mission.ward}\nDuration: ${mission.duration}\nRegistered Slots: ${mission.total}\nActual Turnout: ${mission.actual_turnout}\nTurnout/Slots Ratio: ${turnoutRatio}\nPhotos Uploaded: ${photoCount}\nOutcome Note: ${mission.outcome_note || "None"}`
+    );
+    if (!result) return;
+    db.prepare("UPDATE missions SET ai_attendance_flag=?, ai_attendance_reason=? WHERE id=?")
+      .run(result.flag, result.reason, missionId);
+  });
+}
+
+function getAiQueue() {
+  const flaggedMissions = db.prepare(`
+    SELECT id, title, date, location, ward, host_name, host_type, total, approval_status,
+           ai_flag, ai_flag_reason, source_type, created_at
+    FROM missions WHERE ai_flag IN ('flagged','rejected') AND archived_at IS NULL
+    ORDER BY created_at DESC LIMIT 50
+  `).all();
+
+  const hiddenStoryComments = db.prepare(`
+    SELECT sc.id, sc.name, sc.text, sc.ai_flag_reason, sc.created_at, s.title AS parent_title
+    FROM story_comments sc JOIN stories s ON s.id=sc.story_id
+    WHERE sc.ai_hidden=1 ORDER BY sc.created_at DESC LIMIT 30
+  `).all().map(r => ({ ...r, commentType: "story_comment" }));
+
+  const hiddenDiscussions = db.prepare(`
+    SELECT md.id, md.name, md.text, md.ai_flag_reason, md.created_at, m.title AS parent_title
+    FROM mission_discussions md JOIN missions m ON m.id=md.mission_id
+    WHERE md.ai_hidden=1 ORDER BY md.created_at DESC LIMIT 30
+  `).all().map(r => ({ ...r, commentType: "mission_discussion" }));
+
+  const hiddenOrgComments = db.prepare(`
+    SELECT oc.id, oc.name, oc.text, oc.ai_flag_reason, oc.created_at, o.name AS parent_title
+    FROM organization_comments oc JOIN organizations o ON o.id=oc.organization_id
+    WHERE oc.ai_hidden=1 ORDER BY oc.created_at DESC LIMIT 30
+  `).all().map(r => ({ ...r, commentType: "org_comment" }));
+
+  const orgsWithRecommendation = db.prepare(`
+    SELECT id, name, username, description, contact_phone, contact_email, status,
+           ai_recommendation, ai_recommendation_reason, created_at
+    FROM organizations WHERE ai_recommendation IS NOT NULL AND status='pending'
+    ORDER BY created_at DESC LIMIT 20
+  `).all();
+
+  const attendanceFlags = db.prepare(`
+    SELECT id, title, date, location, ward, actual_turnout, total, category,
+           ai_attendance_flag, ai_attendance_reason
+    FROM missions WHERE ai_attendance_flag='flagged'
+    ORDER BY created_at DESC LIMIT 20
+  `).all();
+
+  return { flaggedMissions, hiddenComments: [...hiddenStoryComments, ...hiddenDiscussions, ...hiddenOrgComments], orgsWithRecommendation, attendanceFlags };
+}
+
+function handleAiQueueAction(body, admin) {
+  const { actionType, id, action, commentType } = body;
+  if (actionType === "mission") {
+    if (action === "approve") {
+      db.prepare("UPDATE missions SET approval_status='approved', ai_flag='ok' WHERE id=?").run(id);
+      try { ensureCheckInCode(id); } catch(e) {}
+      writeAuditLog("ai_queue_approve", "mission", id, `Mission approved from AI queue by ${admin.name}`);
+    } else if (action === "reject") {
+      db.prepare("UPDATE missions SET approval_status='rejected', ai_flag='rejected' WHERE id=?").run(id);
+      writeAuditLog("ai_queue_reject", "mission", id, `Mission rejected from AI queue by ${admin.name}`);
+    } else if (action === "dismiss") {
+      db.prepare("UPDATE missions SET ai_flag='ok' WHERE id=?").run(id);
+    }
+  } else if (actionType === "comment") {
+    const tableMap = { story_comment: "story_comments", mission_discussion: "mission_discussions", org_comment: "organization_comments" };
+    const table = tableMap[commentType];
+    if (!table) throw publicError(400, "Unknown comment type.");
+    if (action === "restore") {
+      db.prepare(`UPDATE ${table} SET ai_hidden=0 WHERE id=?`).run(id);
+    } else if (action === "delete") {
+      db.prepare(`DELETE FROM ${table} WHERE id=?`).run(id);
+    }
+    writeAuditLog(`ai_queue_${action}_comment`, "comment", id, `${commentType} #${id} ${action}d from AI queue by ${admin.name}`);
+  } else if (actionType === "org") {
+    if (action === "dismiss") {
+      db.prepare("UPDATE organizations SET ai_recommendation=NULL, ai_recommendation_reason=NULL WHERE id=?").run(id);
+    }
+  } else if (actionType === "attendance") {
+    if (action === "clear") {
+      db.prepare("UPDATE missions SET ai_attendance_flag='ok' WHERE id=?").run(id);
+    } else if (action === "confirm") {
+      db.prepare("UPDATE missions SET ai_attendance_flag='confirmed_suspicious' WHERE id=?").run(id);
+      writeAuditLog("ai_queue_confirm_attendance_flag", "mission", id, `Attendance flag confirmed by ${admin.name}`);
+    }
+  }
+  return { ok: true };
+}
 
 seedDatabase();
 migrateLegacyDemoRecords();
@@ -1440,6 +1631,17 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { ok: true, section, visible });
       }
       throw publicError(400, "Unknown section.");
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/admin/ai-queue") {
+      requireAdmin(req);
+      return sendJson(res, 200, getAiQueue());
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/admin/ai-queue/action") {
+      const admin = requireAdmin(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, handleAiQueueAction(body, admin));
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/locations") {
@@ -2198,11 +2400,11 @@ function buildBootstrapPayload(isAdmin = false) {
   const departments = safeJsonArray(getSetting("department_catalog_json", "[]"));
   const announcementRows = db.prepare("SELECT id, text FROM announcements WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
   const missionRows = db.prepare("SELECT * FROM missions WHERE is_demo = ? AND archived_at IS NULL ORDER BY id DESC").all(demoFlag);
-  const discussionStmt = db.prepare("SELECT id, name, text, time_label FROM mission_discussions WHERE mission_id = ? ORDER BY id DESC");
+  const discussionStmt = db.prepare("SELECT id, name, text, time_label FROM mission_discussions WHERE mission_id = ? AND ai_hidden = 0 ORDER BY id DESC");
   const photoStmt = db.prepare("SELECT id, photo_data, caption, uploaded_by, created_at FROM mission_photos WHERE mission_id = ? ORDER BY id ASC");
   const fundRows = [];
   const storyRows = db.prepare("SELECT * FROM stories WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
-  const storyCommentStmt = db.prepare("SELECT id, name, text, time_label FROM story_comments WHERE story_id = ? ORDER BY id ASC");
+  const storyCommentStmt = db.prepare("SELECT id, name, text, time_label FROM story_comments WHERE story_id = ? AND ai_hidden = 0 ORDER BY id ASC");
   const storyPhotoStmt = db.prepare("SELECT id, photo_data FROM story_photos WHERE story_id = ? ORDER BY id ASC");
   const organizationRows = db.prepare("SELECT * FROM organizations WHERE status = 'approved' ORDER BY id DESC").all();
   const orgPhotoStmt = db.prepare("SELECT id, photo_data, caption FROM organization_photos WHERE organization_id = ? ORDER BY id ASC");
@@ -2987,6 +3189,8 @@ function addStoryComment(storyId, body) {
     INSERT INTO story_comments (story_id, name, text, time_label, created_at)
     VALUES (?, ?, ?, ?, ?)
   `).run(storyId, name, text, "Just now", isoNow());
+  const inserted = db.prepare("SELECT last_insert_rowid() AS id").get();
+  moderateCommentAsync("story_comments", "id", inserted.id, name, text);
   return { ok: true };
 }
 
@@ -3007,6 +3211,8 @@ function addMissionDiscussion(missionId, body) {
     INSERT INTO mission_discussions (mission_id, name, text, time_label, created_at)
     VALUES (?, ?, ?, ?, ?)
   `).run(missionId, name, text, "Just now", isoNow());
+  const inserted = db.prepare("SELECT last_insert_rowid() AS id").get();
+  moderateCommentAsync("mission_discussions", "id", inserted.id, name, text);
   return { ok: true };
 }
 
@@ -3172,6 +3378,9 @@ function createCommunityMission(body) {
     hostType
   );
 
+  const newId = db.prepare("SELECT last_insert_rowid() AS id").get().id;
+  moderateMissionAsync(newId);
+
   return { ok: true };
 }
 
@@ -3231,6 +3440,7 @@ function orgSignup(body) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
   `).run(name, username, hash, salt, description, joinLink, contactPhone, contactEmail, now, now);
   const orgId = Number(result.lastInsertRowid);
+  recommendOrgAsync(orgId);
   const org = db.prepare("SELECT * FROM organizations WHERE id = ?").get(orgId);
 
   notifyAdmin(
@@ -3321,6 +3531,9 @@ function createOrgMission(orgPayload, body) {
     isoNow(), org.id
   );
 
+  const newId = db.prepare("SELECT last_insert_rowid() AS id").get().id;
+  moderateMissionAsync(newId);
+
   if (approvalStatus === "pending") {
     notifyAdmin(
       `New org mission request: ${title} by ${org.name}`,
@@ -3357,7 +3570,7 @@ function getOrgPublicProfile(orgId) {
   `).all(orgId);
   const comments = db.prepare(`
     SELECT id, name, text, is_volunteer, created_at FROM organization_comments
-    WHERE organization_id = ? ORDER BY created_at DESC LIMIT 50
+    WHERE organization_id = ? AND ai_hidden = 0 ORDER BY created_at DESC LIMIT 50
   `).all(orgId);
   const totalAttendees = missions.filter((m) => m.status === "completed").reduce((s, m) => s + (m.actual_turnout || 0), 0);
   const completedCount = missions.filter((m) => m.status === "completed").length;
@@ -3387,6 +3600,8 @@ function addOrgComment(orgId, body) {
     INSERT INTO organization_comments (organization_id, name, text, is_volunteer, created_at)
     VALUES (?, ?, ?, ?, ?)
   `).run(orgId, name, text, isVolunteer ? 1 : 0, isoNow());
+  const inserted = db.prepare("SELECT last_insert_rowid() AS id").get();
+  moderateCommentAsync("organization_comments", "id", inserted.id, name, text);
   return { ok: true, isVolunteer };
 }
 
@@ -3569,6 +3784,7 @@ function updateMissionStatus(missionId, body, admin) {
           completion_requested = 0, completion_requested_by = '', completion_requested_note = ''
       WHERE id = ?
     `).run(status, outcomeNote, actualTurnout, photoUrl, missionId);
+    flagAttendanceAsync(missionId);
   } else {
     db.prepare("UPDATE missions SET status = ? WHERE id = ?").run(status, missionId);
   }
