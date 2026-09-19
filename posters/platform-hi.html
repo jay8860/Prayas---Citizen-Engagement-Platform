@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>जनप्रयास – कैसे काम करता है</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Noto+Sans+Devanagari:wght@400;600;700;900&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Noto Sans Devanagari','Noto Sans',Arial,sans-serif; background:#e8e8e8; display:flex; justify-content:center; align-items:flex-start; min-height:100vh; padding:20px; }
+  .poster { width:794px; min-height:1123px; background:#fff; display:flex; flex-direction:column; box-shadow:0 4px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+
+  .header { background:linear-gradient(135deg,#FF9933 0%,#e07010 100%); color:#fff; text-align:center; padding:28px 40px 44px; position:relative; }
+  .header::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:32px; background:#fff; clip-path:ellipse(55% 100% at 50% 100%); }
+  .flag-strip { font-size:24px; letter-spacing:6px; margin-bottom:10px; }
+  .poster-logo { height:130px; width:auto; display:block; margin:0 auto 8px; filter:drop-shadow(0 4px 12px rgba(0,0,0,0.2)); }
+  .district { font-size:13px; font-weight:600; letter-spacing:1px; opacity:.9; margin-top:4px; }
+
+  .body { flex:1; padding:44px 56px 32px; display:flex; flex-direction:column; gap:0; }
+  .body-title { font-size:26px; font-weight:900; color:#1a237e; text-align:center; margin-bottom:6px; }
+  .body-sub { font-size:14px; color:#555; text-align:center; margin-bottom:30px; line-height:1.6; }
+
+  .steps { display:flex; flex-direction:column; gap:14px; margin-bottom:28px; }
+  .step { display:flex; gap:16px; align-items:flex-start; background:#FFF8F0; border-left:4px solid #FF9933; border-radius:10px; padding:14px 18px; }
+  .step-num { min-width:36px; height:36px; border-radius:50%; background:#1a237e; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:16px; flex-shrink:0; font-family:'Noto Sans',Arial,sans-serif; }
+  .step-icon { font-size:26px; flex-shrink:0; line-height:1; margin-top:4px; }
+  .step-text h4 { font-size:15px; font-weight:700; color:#1a237e; margin-bottom:3px; }
+  .step-text p { font-size:13px; color:#555; line-height:1.6; }
+
+  .incentive-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:24px; }
+  .incentive-card { background:#1a237e; color:#fff; border-radius:12px; padding:16px 14px; text-align:center; }
+  .incentive-card .icon { font-size:30px; margin-bottom:6px; }
+  .incentive-card .label { font-size:12px; font-weight:700; line-height:1.5; }
+
+  .footer { background:#1a237e; color:#fff; text-align:center; padding:16px 40px; font-size:13px; font-weight:600; letter-spacing:1px; }
+  .footer .url { font-size:17px; font-weight:900; letter-spacing:1px; margin-bottom:3px; font-family:'Noto Sans',Arial,sans-serif; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="header">
+    <div class="flag-strip">🇮🇳 &nbsp; 🇮🇳</div>
+    <img src="../assets/janprayas-logo.png" alt="जनप्रयास" class="poster-logo">
+    <div class="district">जिला धमतरी, छत्तीसगढ़ &nbsp;·&nbsp; नागरिक सहभागिता मंच</div>
+  </div>
+
+  <div class="body">
+    <div class="body-title">जनप्रयास कैसे काम करता है</div>
+    <div class="body-sub">एक मिशन से लेकर आधिकारिक सम्मान तक — चार सरल चरण</div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">१</div>
+        <div class="step-icon">📋</div>
+        <div class="step-text">
+          <h4>मिशन बनाया जाता है</h4>
+          <p>शासन, एनजीओ, स्कूल या पंजीकृत नागरिक जनप्रयास पर अभियान पोस्ट करते हैं — वृक्षारोपण, स्वच्छता अभियान, स्वास्थ्य शिविर, जागरूकता रैली और बहुत कुछ।</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">२</div>
+        <div class="step-icon">🙋</div>
+        <div class="step-text">
+          <h4>स्वयंसेवक पंजीकरण करते हैं</h4>
+          <p>धमतरी का कोई भी नागरिक जनप्रयास पर निःशुल्क पंजीकरण कर सकता है। अपनी रुचि और समय के अनुसार मिशन चुनें और एक क्लिक में जुड़ें।</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">३</div>
+        <div class="step-icon">📲</div>
+        <div class="step-text">
+          <h4>उपस्थिति दर्ज करें</h4>
+          <p>अभियान के दिन स्थल पर पहुँचें। आयोजक QR कोड दिखाएगा। अपने फोन से स्कैन करें और लाइव सेल्फी लें — यह आपकी भौतिक उपस्थिति को प्रमाणित करता है।</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">४</div>
+        <div class="step-icon">🏅</div>
+        <div class="step-text">
+          <h4>सम्मान अर्जित करें</h4>
+          <p>आधिकारिक भागीदारी प्रमाण पत्र डाउनलोड करें। अंक जमा करें, बैज अर्जित करें, जिले के लीडरबोर्ड में स्थान पाएं और जनप्रयास सम्मान के लिए योग्य बनें।</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="incentive-row">
+      <div class="incentive-card">
+        <div class="icon">📜</div>
+        <div class="label">आधिकारिक भागीदारी<br>प्रमाण पत्र</div>
+      </div>
+      <div class="incentive-card">
+        <div class="icon">🏆</div>
+        <div class="label">जिला<br>लीडरबोर्ड रैंक</div>
+      </div>
+      <div class="incentive-card">
+        <div class="icon">🌟</div>
+        <div class="label">जनप्रयास सम्मान<br>नागरिक पुरस्कार</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="url">janprayas.dhamtari.gov</div>
+    निःशुल्क पंजीकरण · धमतरी के सभी नागरिकों के लिए खुला
+  </div>
+</div>
+</body>
+</html>
