@@ -2,130 +2,136 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>JanPrayas – Organization Guide</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;900&display=swap');
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Noto Sans',Arial,sans-serif; background:#e8e8e8; display:flex; justify-content:center; align-items:flex-start; min-height:100vh; padding:20px; }
-  .poster { width:794px; min-height:1123px; background:#fff; display:flex; flex-direction:column; box-shadow:0 4px 32px rgba(0,0,0,0.18); overflow:hidden; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Noto Sans',Arial,sans-serif;background:#ddd;display:flex;justify-content:center;padding:20px}
+  .poster{width:794px;min-height:1123px;background:#fff;display:flex;flex-direction:column;box-shadow:0 4px 32px rgba(0,0,0,.2);overflow:hidden}
 
-  .header { background:linear-gradient(135deg,#1e40af 0%,#1e3a8a 100%); color:#fff; text-align:center; padding:28px 40px 44px; position:relative; }
-  .header::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:32px; background:#fff; clip-path:ellipse(55% 100% at 50% 100%); }
-  .flag-strip { font-size:22px; letter-spacing:6px; margin-bottom:10px; }
-  .poster-logo { height:120px; width:auto; display:block; margin:0 auto 8px; filter:drop-shadow(0 4px 12px rgba(0,0,0,0.22)); }
-  .header-label { display:inline-block; background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.45); border-radius:20px; padding:4px 16px; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-top:6px; }
-  .district { font-size:12px; opacity:.85; margin-top:6px; letter-spacing:1px; }
+  .gov-bar{background:#FF9933;height:10px}
+  .gov-bar-white{background:#fff;height:6px}
+  .gov-bar-green{background:#138808;height:10px}
 
-  .body { flex:1; padding:40px 52px 28px; }
-  .body-title { font-size:24px; font-weight:900; color:#1e3a8a; text-align:center; margin-bottom:4px; }
-  .body-sub { font-size:13px; color:#555; text-align:center; margin-bottom:22px; }
+  .header{background:#fff;padding:18px 32px 14px;display:flex;align-items:center;gap:18px;border-bottom:3px solid #1e40af}
+  .header-emblem{width:80px;height:80px;object-fit:contain;flex-shrink:0}
+  .header-center{flex:1;text-align:center}
+  .header-center .gov{font-size:11px;font-weight:700;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:2px}
+  .header-center .dist{font-size:22px;font-weight:900;color:#1e3a8a;line-height:1.1}
+  .header-center .sub{font-size:13px;color:#555;margin-top:2px}
+  .header-logo{width:80px;height:80px;object-fit:contain;flex-shrink:0}
 
-  .steps { display:flex; flex-direction:column; gap:11px; margin-bottom:22px; }
-  .step { display:flex; gap:14px; align-items:flex-start; }
-  .step-left { display:flex; flex-direction:column; align-items:center; flex-shrink:0; }
-  .step-num { width:36px; height:36px; border-radius:50%; background:#1e40af; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:15px; }
-  .step-line { width:2px; flex:1; background:#dbeafe; min-height:14px; margin:3px 0; }
-  .step-body { background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:11px 16px; flex:1; }
-  .step-body h4 { font-size:14px; font-weight:700; color:#1e3a8a; margin-bottom:3px; }
-  .step-body p { font-size:12.5px; color:#374151; line-height:1.55; }
-  .step-body .badge { display:inline-block; background:#16a34a; color:#fff; font-size:10px; font-weight:700; padding:1px 8px; border-radius:10px; margin-left:8px; vertical-align:middle; }
+  .topic-banner{background:linear-gradient(135deg,#1e40af 0%,#1e3a8a 100%);color:#fff;text-align:center;padding:16px 40px 20px;position:relative}
+  .topic-banner::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:24px;background:#eff6ff;clip-path:ellipse(55% 100% at 50% 100%)}
+  .topic-title{font-size:26px;font-weight:900;letter-spacing:2px;text-transform:uppercase}
+  .topic-sub{font-size:13px;opacity:.9;margin-top:4px;font-weight:600}
 
-  .benefits-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
-  .benefit { background:#1e3a8a; color:#fff; border-radius:10px; padding:14px 16px; display:flex; gap:12px; align-items:flex-start; }
-  .benefit .icon { font-size:26px; flex-shrink:0; }
-  .benefit .title { font-size:13px; font-weight:700; margin-bottom:2px; }
-  .benefit .desc { font-size:11.5px; opacity:.85; line-height:1.4; }
+  .body{flex:1;padding:26px 52px 22px;background:#eff6ff}
+  .section-label{font-size:10px;font-weight:700;color:#999;letter-spacing:3px;text-transform:uppercase;text-align:center;margin-bottom:16px}
 
-  .tip-box { background:#eff6ff; border-left:4px solid #1e40af; border-radius:8px; padding:10px 14px; font-size:12px; color:#1e3a8a; margin-bottom:16px; line-height:1.5; }
+  .steps{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+  .step{display:flex;gap:12px;align-items:flex-start}
+  .step-left{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+  .step-num{width:34px;height:34px;border-radius:50%;background:#1e40af;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px}
+  .step-line{width:2px;background:#bfdbfe;min-height:10px;flex:1;margin:2px 0}
+  .step-body{background:#fff;border-radius:10px;padding:10px 14px;flex:1;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .step-body h4{font-size:13.5px;font-weight:700;color:#1e3a8a;margin-bottom:2px}
+  .step-body p{font-size:12px;color:#374151;line-height:1.55}
+  .badge{display:inline-block;background:#16a34a;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
 
-  .footer { background:#1e3a8a; color:#fff; text-align:center; padding:14px 40px; font-size:13px; font-weight:600; }
-  .footer .url { font-size:16px; font-weight:900; letter-spacing:2px; margin-bottom:2px; }
+  .benefits-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .benefit{background:#1e3a8a;color:#fff;border-radius:10px;padding:13px 14px;display:flex;gap:10px;align-items:flex-start}
+  .benefit .icon{font-size:24px;flex-shrink:0}
+  .benefit .title{font-size:13px;font-weight:700;margin-bottom:2px}
+  .benefit .desc{font-size:11px;opacity:.85;line-height:1.4}
+
+  .tip{background:#dbeafe;border-left:4px solid #1e40af;border-radius:8px;padding:9px 13px;font-size:12px;color:#1e3a8a;line-height:1.5}
+
+  .footer{background:#1e3a8a;color:#fff;text-align:center;padding:13px 32px;font-size:13px}
+  .footer .tagline{font-size:14px;font-weight:700;margin-bottom:2px}
+  .footer .sub{font-size:11px;opacity:.8}
 </style>
 </head>
 <body>
 <div class="poster">
+  <div class="gov-bar"></div>
+  <div class="gov-bar-white"></div>
+  <div class="gov-bar-green"></div>
+
   <div class="header">
-    <div class="flag-strip">🇮🇳 &nbsp; 🇮🇳</div>
-    <img src="../assets/janprayas-logo.png" alt="JanPrayas" class="poster-logo">
-    <div class="header-label">Organization Guide</div>
-    <div class="district">Dhamtari District · Citizen Engagement Platform</div>
+    <img class="header-emblem" src="../assets/dhamtari-emblem.png" alt="Dhamtari">
+    <div class="header-center">
+      <div class="gov">Government of Chhattisgarh</div>
+      <div class="dist">District Dhamtari</div>
+      <div class="sub">जनप्रयास — Organization Programme</div>
+    </div>
+    <img class="header-logo" src="../assets/janprayas-logo.png" alt="JanPrayas">
+  </div>
+
+  <div class="topic-banner">
+    <div class="topic-title">Organization Guide</div>
+    <div class="topic-sub">NGOs · Schools · Civic Groups · How to lead change on JanPrayas</div>
   </div>
 
   <div class="body">
-    <div class="body-title">How Your Organization Can Lead Change</div>
-    <div class="body-sub">NGOs · Schools · Civic Groups · Social Enterprises — all welcome</div>
-
+    <div class="section-label">Six Steps to Get Started</div>
     <div class="steps">
       <div class="step">
         <div class="step-left"><div class="step-num">1</div><div class="step-line"></div></div>
         <div class="step-body">
           <h4>🏢 Register Your Organization</h4>
-          <p>Go to <strong>janprayas.dhamtari.gov</strong> → Organizations section → click "Register / Log In" → fill your org name, type, description, and contact details → submit. A username and password will let you log in any time.</p>
+          <p>Open JanPrayas portal → Organizations section → "Register / Log In" → fill org name, type, description and contact. Submit to create your account.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">2</div><div class="step-line"></div></div>
         <div class="step-body">
           <h4>⏳ Await Admin Approval <span class="badge">1–3 days</span></h4>
-          <p>A district administrator reviews your registration. Once approved, your org appears in the public showcase with a verified badge, and your missions will publish instantly without needing per-mission approval.</p>
+          <p>District admin reviews your registration. Approved orgs get a verified badge. Your missions then publish instantly — no per-mission approval needed.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">3</div><div class="step-line"></div></div>
         <div class="step-body">
           <h4>📋 Post a Mission</h4>
-          <p>Log in → go to the Missions tab → fill the mission title, category, date, location, and volunteer slots. Your org name is pre-filled. Citizens across Dhamtari will see and register for it.</p>
+          <p>Log in → Missions tab → fill title, category, date, location, volunteer slots. Your org name auto-fills. Citizens across Dhamtari see and register for it.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">4</div><div class="step-line"></div></div>
         <div class="step-body">
           <h4>📲 QR Check-In at Venue</h4>
-          <p>On the day, display the QR code (visible in your mission card on the admin view) at the venue. Each volunteer scans it and takes a <strong>live selfie</strong> to confirm physical presence — no fake check-ins.</p>
+          <p>Display the QR code (from your mission card) at the venue on the day. Volunteers scan it and take a <strong>live selfie</strong> — attendance is verified, no proxies possible.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">5</div><div class="step-line"></div></div>
         <div class="step-body">
           <h4>📸 Upload Photos &amp; Mark Complete</h4>
-          <p>After the drive, log in → mark the mission "Completed" → add actual turnout count, outcome note, and up to 8 photos. This triggers certificate eligibility for all checked-in volunteers.</p>
+          <p>After the drive → mark "Completed" → add turnout count, outcome note and up to 8 photos. This triggers certificate eligibility for all checked-in volunteers.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">6</div></div>
         <div class="step-body">
-          <h4>🏆 Get Recognised</h4>
-          <p>Your org earns <strong>20 base points</strong> per completed mission + <strong>5 points</strong> per verified volunteer check-in. High-scoring orgs rise on the district leaderboard and are featured in the showcase.</p>
+          <h4>🏆 Earn Points &amp; District Recognition</h4>
+          <p><strong>20 base points</strong> per completed mission + <strong>5 points</strong> per verified volunteer. High-scoring orgs rise on the leaderboard and appear in the district showcase.</p>
         </div>
       </div>
     </div>
 
     <div class="benefits-row">
-      <div class="benefit">
-        <div class="icon">📜</div>
-        <div>
-          <div class="title">Volunteer Certificates</div>
-          <div class="desc">Every volunteer who checked in gets an official participation certificate — downloadable from their Volunteer Passport.</div>
-        </div>
-      </div>
-      <div class="benefit">
-        <div class="icon">🌟</div>
-        <div>
-          <div class="title">Org Recognition</div>
-          <div class="desc">District leaderboard ranking, verified showcase listing, and eligibility for JanPrayas Samman — district civic honour.</div>
-        </div>
-      </div>
+      <div class="benefit"><div class="icon">📜</div><div><div class="title">Volunteer Certificates</div><div class="desc">Every checked-in volunteer can download an official participation certificate from their Volunteer Passport.</div></div></div>
+      <div class="benefit"><div class="icon">🌟</div><div><div class="title">Org Recognition</div><div class="desc">District leaderboard ranking, verified showcase listing, and JanPrayas Samman eligibility for your org.</div></div></div>
     </div>
 
-    <div class="tip-box">
-      💡 <strong>Tip:</strong> Keep your profile complete with a clear description, logo, and photos. Citizens and admins trust active, well-described organizations. Regular missions = more points, higher rank, wider reach.
-    </div>
+    <div class="tip">💡 <strong>Tip:</strong> Keep your profile complete — description, logo and contact details. Citizens and admins trust well-described, active organizations. Consistent missions = more points, wider reach.</div>
   </div>
 
   <div class="footer">
-    <div class="url">janprayas.dhamtari.gov</div>
-    Register your NGO or civic group today — free, open, recognized
+    <div class="tagline">JanPrayas — Citizen Engagement Platform, District Dhamtari</div>
+    <div class="sub">Register your NGO or civic group · Free · Official · Recognized</div>
   </div>
 </div>
 </body>

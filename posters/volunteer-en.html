@@ -2,121 +2,129 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>JanPrayas – Volunteer Guide</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;900&display=swap');
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Noto Sans',Arial,sans-serif; background:#e8e8e8; display:flex; justify-content:center; align-items:flex-start; min-height:100vh; padding:20px; }
-  .poster { width:794px; min-height:1123px; background:#fff; display:flex; flex-direction:column; box-shadow:0 4px 32px rgba(0,0,0,0.18); overflow:hidden; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Noto Sans',Arial,sans-serif;background:#ddd;display:flex;justify-content:center;padding:20px}
+  .poster{width:794px;min-height:1123px;background:#fff;display:flex;flex-direction:column;box-shadow:0 4px 32px rgba(0,0,0,.2);overflow:hidden}
 
-  .header { background:linear-gradient(135deg,#059669 0%,#065f46 100%); color:#fff; text-align:center; padding:28px 40px 44px; position:relative; }
-  .header::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:32px; background:#fff; clip-path:ellipse(55% 100% at 50% 100%); }
-  .flag-strip { font-size:22px; letter-spacing:6px; margin-bottom:10px; }
-  .poster-logo { height:120px; width:auto; display:block; margin:0 auto 8px; filter:drop-shadow(0 4px 12px rgba(0,0,0,0.22)); }
-  .header-label { display:inline-block; background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.5); border-radius:20px; padding:4px 16px; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-top:6px; }
-  .district { font-size:12px; opacity:.85; margin-top:6px; letter-spacing:1px; }
+  .gov-bar{background:#FF9933;height:10px}
+  .gov-bar-white{background:#fff;height:6px}
+  .gov-bar-green{background:#138808;height:10px}
 
-  .body { flex:1; padding:40px 56px 28px; }
-  .body-title { font-size:26px; font-weight:900; color:#065f46; text-align:center; margin-bottom:4px; }
-  .body-sub { font-size:13px; color:#555; text-align:center; margin-bottom:26px; }
+  .header{background:#fff;padding:18px 32px 14px;display:flex;align-items:center;gap:18px;border-bottom:3px solid #059669}
+  .header-emblem{width:80px;height:80px;object-fit:contain;flex-shrink:0}
+  .header-center{flex:1;text-align:center}
+  .header-center .gov{font-size:11px;font-weight:700;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:2px}
+  .header-center .dist{font-size:22px;font-weight:900;color:#065f46;line-height:1.1}
+  .header-center .sub{font-size:13px;color:#555;margin-top:2px}
+  .header-logo{width:80px;height:80px;object-fit:contain;flex-shrink:0}
 
-  .steps { display:flex; flex-direction:column; gap:12px; margin-bottom:24px; }
-  .step { display:flex; gap:14px; align-items:flex-start; }
-  .step-left { display:flex; flex-direction:column; align-items:center; flex-shrink:0; }
-  .step-num { width:36px; height:36px; border-radius:50%; background:#059669; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:15px; }
-  .step-line { width:2px; flex:1; background:#d1fae5; min-height:16px; margin:3px 0; }
-  .step-body { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; flex:1; }
-  .step-body h4 { font-size:14px; font-weight:700; color:#065f46; margin-bottom:3px; display:flex; align-items:center; gap:8px; }
-  .step-body p { font-size:12.5px; color:#374151; line-height:1.55; }
+  .topic-banner{background:linear-gradient(135deg,#059669 0%,#065f46 100%);color:#fff;text-align:center;padding:16px 40px 20px;position:relative}
+  .topic-banner::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:24px;background:#f0fdf4;clip-path:ellipse(55% 100% at 50% 100%)}
+  .topic-title{font-size:26px;font-weight:900;letter-spacing:2px;text-transform:uppercase}
+  .topic-sub{font-size:13px;opacity:.9;margin-top:4px;font-weight:600}
 
-  .rewards { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
-  .reward { background:#065f46; color:#fff; border-radius:10px; padding:14px 10px; text-align:center; }
-  .reward .icon { font-size:28px; margin-bottom:5px; }
-  .reward .title { font-size:11px; font-weight:700; line-height:1.4; }
-  .reward .pts { font-size:18px; font-weight:900; color:#6ee7b7; margin-bottom:2px; }
+  .body{flex:1;padding:26px 52px 22px;background:#f0fdf4}
+  .section-label{font-size:10px;font-weight:700;color:#999;letter-spacing:3px;text-transform:uppercase;text-align:center;margin-bottom:16px}
 
-  .tip-box { background:#ecfdf5; border-left:4px solid #059669; border-radius:8px; padding:10px 14px; font-size:12px; color:#065f46; margin-bottom:20px; line-height:1.5; }
+  .steps{display:flex;flex-direction:column;gap:11px;margin-bottom:20px}
+  .step{display:flex;gap:12px;align-items:flex-start}
+  .step-left{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+  .step-num{width:36px;height:36px;border-radius:50%;background:#059669;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px}
+  .step-line{width:2px;background:#bbf7d0;min-height:12px;flex:1;margin:2px 0}
+  .step-body{background:#fff;border-radius:10px;padding:11px 15px;flex:1;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .step-body h4{font-size:14px;font-weight:700;color:#065f46;margin-bottom:2px}
+  .step-body p{font-size:12.5px;color:#374151;line-height:1.55}
 
-  .footer { background:#065f46; color:#fff; text-align:center; padding:14px 40px; font-size:13px; font-weight:600; }
-  .footer .url { font-size:16px; font-weight:900; letter-spacing:2px; margin-bottom:2px; }
+  .reward-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+  .reward{background:#065f46;color:#fff;border-radius:10px;padding:12px 10px;text-align:center}
+  .reward .pts{font-size:20px;font-weight:900;color:#6ee7b7;margin-bottom:2px}
+  .reward .icon{font-size:26px;margin-bottom:4px}
+  .reward .lbl{font-size:11px;font-weight:700;line-height:1.4}
+
+  .tip{background:#d1fae5;border-left:4px solid #059669;border-radius:8px;padding:9px 13px;font-size:12px;color:#065f46;line-height:1.5}
+
+  .footer{background:#065f46;color:#fff;text-align:center;padding:13px 32px;font-size:13px}
+  .footer .tagline{font-size:14px;font-weight:700;margin-bottom:2px}
+  .footer .sub{font-size:11px;opacity:.8}
 </style>
 </head>
 <body>
 <div class="poster">
+  <div class="gov-bar"></div>
+  <div class="gov-bar-white"></div>
+  <div class="gov-bar-green"></div>
+
   <div class="header">
-    <div class="flag-strip">🇮🇳 &nbsp; 🇮🇳</div>
-    <img src="../assets/janprayas-logo.png" alt="JanPrayas" class="poster-logo">
-    <div class="header-label">Volunteer Guide</div>
-    <div class="district">Dhamtari District · Citizen Engagement Platform</div>
+    <img class="header-emblem" src="../assets/dhamtari-emblem.png" alt="Dhamtari">
+    <div class="header-center">
+      <div class="gov">Government of Chhattisgarh</div>
+      <div class="dist">District Dhamtari</div>
+      <div class="sub">जनप्रयास — Volunteer Programme</div>
+    </div>
+    <img class="header-logo" src="../assets/janprayas-logo.png" alt="JanPrayas">
+  </div>
+
+  <div class="topic-banner">
+    <div class="topic-title">Volunteer Guide</div>
+    <div class="topic-sub">How to register, participate &amp; get your certificate</div>
   </div>
 
   <div class="body">
-    <div class="body-title">How to Become a JanPrayas Volunteer</div>
-    <div class="body-sub">Free to join · Open to every citizen of Dhamtari</div>
-
+    <div class="section-label">Five Simple Steps</div>
     <div class="steps">
       <div class="step">
         <div class="step-left"><div class="step-num">1</div><div class="step-line"></div></div>
         <div class="step-body">
           <h4>🌐 Register on JanPrayas</h4>
-          <p>Visit <strong>janprayas.dhamtari.gov</strong> → scroll to the Volunteer section → fill your full name, mobile number, area / gram panchayat, profession, and skills. Registration is free and takes under 2 minutes.</p>
+          <p>Open the JanPrayas portal → Volunteer section → fill your name, mobile number, area/gram panchayat, profession and skills. Free, takes under 2 minutes.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">2</div><div class="step-line"></div></div>
         <div class="step-body">
           <h4>🔍 Browse Open Missions</h4>
-          <p>See live missions on the home page — tree plantations, cleanliness drives, health camps, education sessions, and more. Filter by location or date to find one near you.</p>
+          <p>See live missions on the home page — tree plantations, cleanliness drives, health camps, education sessions. Filter by location or date.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">3</div><div class="step-line"></div></div>
         <div class="step-body">
           <h4>✋ Register for a Mission</h4>
-          <p>Click "Register" on any open mission card. Enter your name and mobile number. You'll receive a confirmation. You can also float your own community mission from the "Host Mission" section.</p>
+          <p>Click "Register" on any open mission. Enter your name and mobile number. You can also float your own community mission from "Host Mission".</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">4</div><div class="step-line"></div></div>
         <div class="step-body">
-          <h4>📲 Check In at the Venue</h4>
-          <p>On the day, reach the venue on time. The organiser will display a <strong>QR code</strong>. Scan it with your mobile browser → allow camera → take a <strong>live selfie</strong> to confirm you are present. This is your official attendance record.</p>
+          <h4>📲 Check In at Venue with Selfie</h4>
+          <p>Reach the venue on time. The organiser shows a QR code. Scan it → allow camera → take a <strong>live selfie</strong>. This is your official attendance record — no fake check-ins possible.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">5</div></div>
         <div class="step-body">
           <h4>📜 Download Your Certificate</h4>
-          <p>After the mission is marked complete, visit <strong>My Volunteer Passport</strong> (enter your name + mobile) → download your official participation certificate and ID card. Share it, frame it, or add it to your CV.</p>
+          <p>After mission completes → visit "My Volunteer Passport" (enter name + mobile) → download official participation certificate and ID card. Share it, frame it, add it to your CV.</p>
         </div>
       </div>
     </div>
 
-    <div class="rewards">
-      <div class="reward">
-        <div class="pts">+10</div>
-        <div class="icon">⭐</div>
-        <div class="title">Points per<br>Mission</div>
-      </div>
-      <div class="reward">
-        <div class="icon">🏅</div>
-        <div class="title">Badges &amp;<br>Leaderboard Rank</div>
-      </div>
-      <div class="reward">
-        <div class="icon">🌟</div>
-        <div class="title">JanPrayas<br>Samman Award</div>
-      </div>
+    <div class="reward-row">
+      <div class="reward"><div class="pts">+10</div><div class="icon">⭐</div><div class="lbl">Points per Mission</div></div>
+      <div class="reward"><div class="icon">🏅</div><div class="lbl">Badges &amp; Leaderboard Rank</div></div>
+      <div class="reward"><div class="icon">🌟</div><div class="lbl">JanPrayas Samman Award</div></div>
     </div>
 
-    <div class="tip-box">
-      💡 <strong>Tip:</strong> Every verified check-in and mission earns you points. Top volunteers are featured on the district leaderboard and may receive the JanPrayas Samman — Dhamtari's civic honour for sustained contribution.
-    </div>
+    <div class="tip">💡 Every verified check-in earns points. Top volunteers are featured on the district leaderboard and may receive the <strong>JanPrayas Samman</strong> — Dhamtari's civic honour for sustained contribution.</div>
   </div>
 
   <div class="footer">
-    <div class="url">janprayas.dhamtari.gov</div>
-    Register · Browse Missions · Earn Recognition
+    <div class="tagline">JanPrayas — Citizen Engagement Platform, District Dhamtari</div>
+    <div class="sub">Register free · Participate · Earn official recognition</div>
   </div>
 </div>
 </body>

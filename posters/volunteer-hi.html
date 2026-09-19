@@ -2,121 +2,129 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>जनप्रयास – स्वयंसेवक गाइड</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700;900&family=Noto+Sans:wght@700;900&display=swap');
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Noto Sans Devanagari','Noto Sans',Arial,sans-serif; background:#e8e8e8; display:flex; justify-content:center; align-items:flex-start; min-height:100vh; padding:20px; }
-  .poster { width:794px; min-height:1123px; background:#fff; display:flex; flex-direction:column; box-shadow:0 4px 32px rgba(0,0,0,0.18); overflow:hidden; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Noto Sans Devanagari','Noto Sans',Arial,sans-serif;background:#ddd;display:flex;justify-content:center;padding:20px}
+  .poster{width:794px;min-height:1123px;background:#fff;display:flex;flex-direction:column;box-shadow:0 4px 32px rgba(0,0,0,.2);overflow:hidden}
 
-  .header { background:linear-gradient(135deg,#059669 0%,#065f46 100%); color:#fff; text-align:center; padding:28px 40px 44px; position:relative; }
-  .header::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:32px; background:#fff; clip-path:ellipse(55% 100% at 50% 100%); }
-  .flag-strip { font-size:22px; letter-spacing:6px; margin-bottom:10px; }
-  .poster-logo { height:120px; width:auto; display:block; margin:0 auto 8px; filter:drop-shadow(0 4px 12px rgba(0,0,0,0.22)); }
-  .header-label { display:inline-block; background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.5); border-radius:20px; padding:4px 16px; font-size:12px; font-weight:700; letter-spacing:1px; margin-top:6px; }
-  .district { font-size:12px; opacity:.85; margin-top:6px; }
+  .gov-bar{background:#FF9933;height:10px}
+  .gov-bar-white{background:#fff;height:6px}
+  .gov-bar-green{background:#138808;height:10px}
 
-  .body { flex:1; padding:40px 56px 28px; }
-  .body-title { font-size:24px; font-weight:900; color:#065f46; text-align:center; margin-bottom:4px; }
-  .body-sub { font-size:13px; color:#555; text-align:center; margin-bottom:26px; }
+  .header{background:#fff;padding:18px 32px 14px;display:flex;align-items:center;gap:18px;border-bottom:3px solid #059669}
+  .header-emblem{width:80px;height:80px;object-fit:contain;flex-shrink:0}
+  .header-center{flex:1;text-align:center}
+  .header-center .gov{font-size:12px;font-weight:700;color:#555;margin-bottom:2px}
+  .header-center .dist{font-size:22px;font-weight:900;color:#065f46;line-height:1.1}
+  .header-center .sub{font-size:13px;color:#555;margin-top:2px}
+  .header-logo{width:80px;height:80px;object-fit:contain;flex-shrink:0}
 
-  .steps { display:flex; flex-direction:column; gap:12px; margin-bottom:24px; }
-  .step { display:flex; gap:14px; align-items:flex-start; }
-  .step-left { display:flex; flex-direction:column; align-items:center; flex-shrink:0; }
-  .step-num { width:36px; height:36px; border-radius:50%; background:#059669; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:15px; font-family:'Noto Sans',Arial,sans-serif; }
-  .step-line { width:2px; flex:1; background:#d1fae5; min-height:16px; margin:3px 0; }
-  .step-body { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; flex:1; }
-  .step-body h4 { font-size:14px; font-weight:700; color:#065f46; margin-bottom:3px; display:flex; align-items:center; gap:8px; }
-  .step-body p { font-size:12.5px; color:#374151; line-height:1.65; }
+  .topic-banner{background:linear-gradient(135deg,#059669 0%,#065f46 100%);color:#fff;text-align:center;padding:16px 40px 20px;position:relative}
+  .topic-banner::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:24px;background:#f0fdf4;clip-path:ellipse(55% 100% at 50% 100%)}
+  .topic-title{font-size:26px;font-weight:900}
+  .topic-sub{font-size:13px;opacity:.9;margin-top:4px;font-weight:600}
 
-  .rewards { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
-  .reward { background:#065f46; color:#fff; border-radius:10px; padding:14px 10px; text-align:center; }
-  .reward .icon { font-size:28px; margin-bottom:5px; }
-  .reward .title { font-size:11px; font-weight:700; line-height:1.5; }
-  .reward .pts { font-size:18px; font-weight:900; color:#6ee7b7; margin-bottom:2px; font-family:'Noto Sans',Arial,sans-serif; }
+  .body{flex:1;padding:26px 52px 22px;background:#f0fdf4}
+  .section-label{font-size:10px;font-weight:700;color:#999;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-bottom:16px;font-family:'Noto Sans',Arial,sans-serif}
 
-  .tip-box { background:#ecfdf5; border-left:4px solid #059669; border-radius:8px; padding:10px 14px; font-size:12px; color:#065f46; margin-bottom:20px; line-height:1.6; }
+  .steps{display:flex;flex-direction:column;gap:11px;margin-bottom:20px}
+  .step{display:flex;gap:12px;align-items:flex-start}
+  .step-left{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+  .step-num{width:36px;height:36px;border-radius:50%;background:#059669;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;font-family:'Noto Sans',Arial,sans-serif}
+  .step-line{width:2px;background:#bbf7d0;min-height:12px;flex:1;margin:2px 0}
+  .step-body{background:#fff;border-radius:10px;padding:11px 15px;flex:1;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .step-body h4{font-size:14px;font-weight:700;color:#065f46;margin-bottom:2px}
+  .step-body p{font-size:12.5px;color:#374151;line-height:1.65}
 
-  .footer { background:#065f46; color:#fff; text-align:center; padding:14px 40px; font-size:13px; font-weight:600; }
-  .footer .url { font-size:16px; font-weight:900; letter-spacing:1px; margin-bottom:2px; font-family:'Noto Sans',Arial,sans-serif; }
+  .reward-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+  .reward{background:#065f46;color:#fff;border-radius:10px;padding:12px 10px;text-align:center}
+  .reward .pts{font-size:20px;font-weight:900;color:#6ee7b7;margin-bottom:2px;font-family:'Noto Sans',Arial,sans-serif}
+  .reward .icon{font-size:26px;margin-bottom:4px}
+  .reward .lbl{font-size:11px;font-weight:700;line-height:1.5}
+
+  .tip{background:#d1fae5;border-left:4px solid #059669;border-radius:8px;padding:9px 13px;font-size:12px;color:#065f46;line-height:1.6}
+
+  .footer{background:#065f46;color:#fff;text-align:center;padding:13px 32px;font-size:13px}
+  .footer .tagline{font-size:14px;font-weight:700;margin-bottom:2px}
+  .footer .sub{font-size:11px;opacity:.8}
 </style>
 </head>
 <body>
 <div class="poster">
+  <div class="gov-bar"></div>
+  <div class="gov-bar-white"></div>
+  <div class="gov-bar-green"></div>
+
   <div class="header">
-    <div class="flag-strip">🇮🇳 &nbsp; 🇮🇳</div>
-    <img src="../assets/janprayas-logo.png" alt="जनप्रयास" class="poster-logo">
-    <div class="header-label">स्वयंसेवक गाइड</div>
-    <div class="district">जिला धमतरी · नागरिक सहभागिता मंच</div>
+    <img class="header-emblem" src="../assets/dhamtari-emblem.png" alt="धमतरी">
+    <div class="header-center">
+      <div class="gov">छत्तीसगढ़ शासन</div>
+      <div class="dist">जिला धमतरी</div>
+      <div class="sub">जनप्रयास — स्वयंसेवक कार्यक्रम</div>
+    </div>
+    <img class="header-logo" src="../assets/janprayas-logo.png" alt="जनप्रयास">
+  </div>
+
+  <div class="topic-banner">
+    <div class="topic-title">स्वयंसेवक गाइड</div>
+    <div class="topic-sub">पंजीकरण, अभियान और प्रमाण पत्र — पाँच सरल चरण</div>
   </div>
 
   <div class="body">
-    <div class="body-title">जनप्रयास स्वयंसेवक कैसे बनें</div>
-    <div class="body-sub">निःशुल्क · धमतरी के प्रत्येक नागरिक के लिए खुला</div>
-
+    <div class="section-label">पाँच सरल चरण</div>
     <div class="steps">
       <div class="step">
         <div class="step-left"><div class="step-num">१</div><div class="step-line"></div></div>
         <div class="step-body">
           <h4>🌐 जनप्रयास पर पंजीकरण करें</h4>
-          <p><strong>janprayas.dhamtari.gov</strong> खोलें → स्वयंसेवक अनुभाग में जाएं → अपना पूरा नाम, मोबाइल नंबर, क्षेत्र / ग्राम पंचायत, पेशा और कौशल भरें। पंजीकरण निःशुल्क है और 2 मिनट से कम लगता है।</p>
+          <p>जनप्रयास पोर्टल खोलें → स्वयंसेवक अनुभाग → नाम, मोबाइल, क्षेत्र/ग्राम पंचायत, पेशा और कौशल भरें। निःशुल्क, 2 मिनट से कम।</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">२</div><div class="step-line"></div></div>
         <div class="step-body">
           <h4>🔍 अभियान खोजें</h4>
-          <p>होम पेज पर चल रहे अभियान देखें — वृक्षारोपण, स्वच्छता अभियान, स्वास्थ्य शिविर, शिक्षा सत्र और भी बहुत कुछ। स्थान या तारीख के अनुसार फ़िल्टर करें।</p>
+          <p>होम पेज पर चल रहे अभियान देखें — वृक्षारोपण, स्वच्छता, स्वास्थ्य शिविर, शिक्षा सत्र। स्थान या तारीख से फ़िल्टर करें।</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">३</div><div class="step-line"></div></div>
         <div class="step-body">
           <h4>✋ अभियान में पंजीकरण करें</h4>
-          <p>किसी भी खुले अभियान पर "पंजीकरण करें" पर क्लिक करें। अपना नाम और मोबाइल नंबर दर्ज करें। आप "मिशन होस्ट करें" अनुभाग से अपना स्वयं का सामुदायिक अभियान भी प्रस्तुत कर सकते हैं।</p>
+          <p>किसी भी खुले अभियान पर "पंजीकरण करें" क्लिक करें। नाम और मोबाइल नंबर दर्ज करें। "मिशन होस्ट करें" से अपना अभियान भी पोस्ट कर सकते हैं।</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">४</div><div class="step-line"></div></div>
         <div class="step-body">
-          <h4>📲 स्थल पर चेक इन करें</h4>
-          <p>निर्धारित दिन स्थल पर समय पर पहुँचें। आयोजक <strong>QR कोड</strong> दिखाएगा। अपने मोबाइल ब्राउज़र से स्कैन करें → कैमरा अनुमति दें → <strong>लाइव सेल्फी</strong> लें। यह आपकी आधिकारिक उपस्थिति का प्रमाण है।</p>
+          <h4>📲 स्थल पर QR स्कैन और सेल्फी</h4>
+          <p>समय पर स्थल पर पहुँचें। आयोजक QR कोड दिखाएगा। स्कैन करें → कैमरा अनुमति दें → <strong>लाइव सेल्फी</strong> लें। यह आपकी आधिकारिक उपस्थिति का प्रमाण है।</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">५</div></div>
         <div class="step-body">
           <h4>📜 प्रमाण पत्र डाउनलोड करें</h4>
-          <p>अभियान पूर्ण होने के बाद, <strong>मेरा स्वयंसेवक पासपोर्ट</strong> में जाएं (नाम + मोबाइल दर्ज करें) → आधिकारिक भागीदारी प्रमाण पत्र और आईडी कार्ड डाउनलोड करें। इसे सोशल मीडिया पर साझा करें या अपने रिज्यूमे में जोड़ें।</p>
+          <p>अभियान पूर्ण होने के बाद → "मेरा स्वयंसेवक पासपोर्ट" → नाम + मोबाइल दर्ज करें → आधिकारिक भागीदारी प्रमाण पत्र और आईडी कार्ड डाउनलोड करें।</p>
         </div>
       </div>
     </div>
 
-    <div class="rewards">
-      <div class="reward">
-        <div class="pts">+१०</div>
-        <div class="icon">⭐</div>
-        <div class="title">प्रत्येक अभियान<br>पर अंक</div>
-      </div>
-      <div class="reward">
-        <div class="icon">🏅</div>
-        <div class="title">बैज और<br>लीडरबोर्ड रैंक</div>
-      </div>
-      <div class="reward">
-        <div class="icon">🌟</div>
-        <div class="title">जनप्रयास सम्मान<br>नागरिक पुरस्कार</div>
-      </div>
+    <div class="reward-row">
+      <div class="reward"><div class="pts">+१०</div><div class="icon">⭐</div><div class="lbl">प्रत्येक अभियान पर अंक</div></div>
+      <div class="reward"><div class="icon">🏅</div><div class="lbl">बैज और लीडरबोर्ड रैंक</div></div>
+      <div class="reward"><div class="icon">🌟</div><div class="lbl">जनप्रयास सम्मान नागरिक पुरस्कार</div></div>
     </div>
 
-    <div class="tip-box">
-      💡 <strong>सुझाव:</strong> हर सत्यापित चेक इन और अभियान आपको अंक दिलाता है। शीर्ष स्वयंसेवक जिले के लीडरबोर्ड पर दिखते हैं और जनप्रयास सम्मान — धमतरी का नागरिक सम्मान — प्राप्त कर सकते हैं।
-    </div>
+    <div class="tip">💡 हर सत्यापित चेक इन आपको अंक दिलाता है। शीर्ष स्वयंसेवक जिले के लीडरबोर्ड पर दिखते हैं और <strong>जनप्रयास सम्मान</strong> — धमतरी का नागरिक सम्मान — प्राप्त कर सकते हैं।</div>
   </div>
 
   <div class="footer">
-    <div class="url">janprayas.dhamtari.gov</div>
-    पंजीकरण करें · अभियान में भाग लें · सम्मान अर्जित करें
+    <div class="tagline">जनप्रयास — नागरिक सहभागिता मंच, जिला धमतरी</div>
+    <div class="sub">निःशुल्क पंजीकरण · भाग लें · आधिकारिक सम्मान अर्जित करें</div>
   </div>
 </div>
 </body>
