@@ -10019,32 +10019,35 @@
         container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "कोई लंबित नागरिक मिशन अनुरोध नहीं है।" : "No pending community mission requests."}</div></div>`;
         return;
       }
-      container.innerHTML = pending
-        .map((mission) => `
-          <div class="message-card" id="missionReqCard-${mission.id}" style="overflow:hidden">
-            <div style="display:flex;align-items:flex-start;gap:8px">
-              <input type="checkbox" class="mission-req-check" data-id="${mission.id}" style="margin-top:4px;flex-shrink:0;accent-color:var(--saffron)">
-              <div style="flex:1;min-width:0">
-                <div class="message-name" style="overflow-wrap:break-word;word-break:break-word">${escapeHtml(mission.title)}</div>
-                <div class="message-text" style="overflow-wrap:break-word;word-break:break-word">${escapeHtml(mission.hostName)} · ${escapeHtml(mission.hostPhone)} · ${escapeHtml(mission.hostEmail)}</div>
-                <div class="message-text" style="overflow-wrap:break-word;word-break:break-word">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.location)} · ${escapeHtml(mission.date)}</div>
-                <div class="form-group" style="margin-top:10px">
-                  <label style="font-size:13px;color:var(--muted)">${state.lang === "hi" ? "नोडल विभाग (स्वीकृति के लिए अनिवार्य)" : "Nodal Department (required for approval)"}</label>
-                  <select id="requestDept-${mission.id}" style="width:100%;max-width:100%" onchange="toggleDepartmentOtherField('requestDept-${mission.id}', 'requestDeptOtherGroup-${mission.id}', 'requestDeptOther-${mission.id}')">${document.getElementById("pmDepartment").innerHTML}</select>
-                </div>
-                <div class="form-group hidden" id="requestDeptOtherGroup-${mission.id}">
-                  <input id="requestDeptOther-${mission.id}" type="text" style="width:100%" placeholder="${escapeHtml(state.lang === "hi" ? "कस्टम नोडल विभाग लिखें" : "Type custom nodal department")}" />
-                </div>
-                <div class="message-actions" style="flex-wrap:wrap">
-                  <button class="btn btn-primary" type="button" onclick="reviewMissionRequest(${mission.id}, 'approved')">${state.lang === "hi" ? "स्वीकृत करें" : "Approve"}</button>
-                  <button class="btn btn-soft" type="button" onclick="reviewMissionRequest(${mission.id}, 'rejected')">${state.lang === "hi" ? "अस्वीकृत करें" : "Reject"}</button>
-                  <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `)
-        .join("");
+      const deptOptions = document.getElementById("pmDepartment")?.innerHTML || "";
+      container.innerHTML = pending.map((mission) => {
+        const aiNote = mission.aiFlag && mission.aiFlag !== "ok"
+          ? `<div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:6px;padding:6px 10px;font-size:12px;color:#92400E;margin-bottom:8px">🤖 AI: ${escapeHtml(mission.aiFlagReason || mission.aiFlag)}</div>`
+          : "";
+        return `<div class="message-card" id="missionReqCard-${mission.id}">
+  <div style="display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:start">
+    <input type="checkbox" class="mission-req-check" data-id="${mission.id}" style="margin-top:3px;accent-color:var(--saffron)">
+    <div>
+      <div class="message-name" style="white-space:normal;overflow-wrap:anywhere">${escapeHtml(mission.title)}</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:3px;white-space:normal">${escapeHtml(mission.hostName || "—")} · ${escapeHtml(mission.hostPhone || "—")} · ${escapeHtml(mission.hostEmail || "—")}</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px;white-space:normal">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.location)} · ${escapeHtml(mission.date)}</div>
+      ${aiNote}
+      <div class="form-group" style="margin-top:6px;margin-bottom:6px">
+        <label style="font-size:12px;color:var(--muted)">${state.lang === "hi" ? "नोडल विभाग (स्वीकृति के लिए)" : "Nodal Department (required for approval)"}</label>
+        <select id="requestDept-${mission.id}" style="width:100%" onchange="toggleDepartmentOtherField('requestDept-${mission.id}','requestDeptOtherGroup-${mission.id}','requestDeptOther-${mission.id}')">${deptOptions}</select>
+      </div>
+      <div class="form-group hidden" id="requestDeptOtherGroup-${mission.id}">
+        <input id="requestDeptOther-${mission.id}" type="text" style="width:100%" placeholder="${escapeHtml(state.lang === "hi" ? "कस्टम नोडल विभाग लिखें" : "Type custom nodal department")}" />
+      </div>
+      <div class="message-actions">
+        <button class="btn btn-primary" type="button" onclick="reviewMissionRequest(${mission.id},'approved')">${state.lang === "hi" ? "स्वीकृत करें" : "Approve"}</button>
+        <button class="btn btn-soft" type="button" onclick="reviewMissionRequest(${mission.id},'rejected')">${state.lang === "hi" ? "अस्वीकृत करें" : "Reject"}</button>
+        <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
+      </div>
+    </div>
+  </div>
+</div>`;
+      }).join("");
     }
 
     function renderCompletionRequestsPanel() {
