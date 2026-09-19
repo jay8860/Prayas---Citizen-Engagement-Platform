@@ -3578,6 +3578,51 @@
         <div class="showcase-grid" id="orgShowcaseGrid"></div>
         <div style="display:flex;justify-content:center;gap:10px;margin-top:18px" id="orgShowcasePager"></div>
 
+        <!-- How organizations participate — public steps -->
+        <div style="margin:32px 0 8px;background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:16px;padding:24px 28px">
+          <div style="font-weight:700;font-size:16px;margin-bottom:20px;color:var(--navy)">How your organization can join JanPrayas</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0">1</div>
+              <div>
+                <div style="font-weight:600;font-size:14px;margin-bottom:4px">Register</div>
+                <div style="font-size:13px;color:var(--muted);line-height:1.5">Click "Register / Log In" below, fill in your org's name, description, and contact. A district admin reviews and approves within a few days.</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0">2</div>
+              <div>
+                <div style="font-weight:600;font-size:14px;margin-bottom:4px">Post Missions</div>
+                <div style="font-size:13px;color:var(--muted);line-height:1.5">Once approved, log in and post drives, camps, or classes under your org's name. Approved orgs publish instantly — no waiting for admin sign-off each time.</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0">3</div>
+              <div>
+                <div style="font-weight:600;font-size:14px;margin-bottom:4px">Volunteers Check In</div>
+                <div style="font-size:13px;color:var(--muted);line-height:1.5">Citizens register for your mission. On the day, show the QR code at the venue — each volunteer scans it and takes a live selfie to confirm they are physically present.</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0">4</div>
+              <div>
+                <div style="font-weight:600;font-size:14px;margin-bottom:4px">Certificates &amp; Points</div>
+                <div style="font-size:13px;color:var(--muted);line-height:1.5">After marking the mission complete, each volunteer who checked in can download an official participation certificate. Your org earns points and climbs the district leaderboard.</div>
+              </div>
+            </div>
+
+          </div>
+          <div style="margin-top:18px;text-align:center">
+            <button class="btn btn-saffron" type="button" onclick="toggleOrgAuthCard();document.getElementById('orgAuthToggleBtn').scrollIntoView({behavior:'smooth',block:'center'})">
+              Register your organization →
+            </button>
+          </div>
+        </div>
+
         <div class="story-form-wrap">
           <button class="btn btn-saffron story-toggle" type="button" id="orgAuthToggleBtn" onclick="toggleOrgAuthCard()">
             <i class="fa-solid fa-building-flag"></i>
