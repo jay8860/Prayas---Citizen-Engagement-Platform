@@ -4959,17 +4959,22 @@
           <div class="section-top" style="margin-bottom:14px">
             <div>
               <h3 class="form-card-title" style="font-size:20px;margin-bottom:4px">Admin Audit Log</h3>
-              <p class="form-card-subtitle" style="margin-bottom:0">Record of all admin actions — mission approvals, archives, creations.</p>
+              <p class="form-card-subtitle" style="margin-bottom:0">Record of all admin actions — who did what and when.</p>
             </div>
             <div style="display:flex;gap:8px">
               <button class="btn btn-secondary" type="button" onclick="loadAuditLog()">Refresh</button>
               <button class="btn btn-primary" type="button" onclick="exportAuditLog()">Export Excel (CSV)</button>
             </div>
           </div>
+          <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+            <input id="auditLogActorFilter" type="text" placeholder="Filter by admin username…" style="flex:1;min-width:160px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg-input,var(--bg));color:var(--text)">
+            <button class="btn btn-secondary" type="button" onclick="loadAuditLog()">Apply Filter</button>
+          </div>
           <div style="overflow:auto">
             <table class="volunteer-table" id="auditLogTable">
               <thead>
                 <tr>
+                  <th>Admin</th>
                   <th>Action</th>
                   <th>Target</th>
                   <th>Detail</th>
@@ -5424,6 +5429,17 @@
                 <label for="newUserScope" data-i18n="users-scope-label">Assigned Ward / Block <span class="req">*</span></label>
                 <input id="newUserScope" type="text" list="locationSuggestions" maxlength="100" data-i18n-placeholder="pm-area-placeholder" placeholder="Enter ward, gram panchayat, city, town or village" />
               </div>
+              <div class="form-group" id="newUserPermissionsGroup" style="display:none">
+                <label style="margin-bottom:8px;display:block">Additional Permissions</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:8px;cursor:pointer">
+                  <input type="checkbox" id="newUserCanDelete" style="width:16px;height:16px;accent-color:var(--danger)">
+                  <span><strong style="color:var(--danger)">Can delete records</strong> — volunteers, organizations, comments, photos</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+                  <input type="checkbox" id="newUserCanManageSettings" style="width:16px;height:16px;accent-color:var(--saffron)">
+                  <span><strong style="color:var(--navy)">Can manage settings</strong> — branding, certificates, district identity, site config</span>
+                </label>
+              </div>
               <button class="btn btn-primary" type="button" style="width:100%" onclick="submitCreateAdminUser()" data-i18n="users-create-submit">Create Login</button>
             </div>
           </div>
@@ -5474,6 +5490,41 @@
         </div>
         <div id="editVolunteerError" style="color:var(--danger);font-size:13px;margin-bottom:8px"></div>
         <button class="btn btn-primary" type="button" id="saveEditVolunteerBtn" style="width:100%">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="editPermissionsModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Edit Permissions</h2>
+          <p class="modal-subtitle" id="editPermissionsSubtitle">Set what this coordinator can do beyond their ward.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="editPermissionsModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editPermissionsUserId">
+        <div class="form-group">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+            <input type="checkbox" id="editPermCanDelete" style="width:16px;height:16px;accent-color:var(--danger);margin-top:3px;flex-shrink:0">
+            <div>
+              <div style="font-weight:600;color:var(--danger)">Can delete records</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:2px">Allows deleting volunteers, organizations, comments, and photos. Use sparingly.</div>
+            </div>
+          </label>
+        </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+            <input type="checkbox" id="editPermCanManageSettings" style="width:16px;height:16px;accent-color:var(--saffron);margin-top:3px;flex-shrink:0">
+            <div>
+              <div style="font-weight:600">Can manage platform settings</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:2px">Allows changing branding, certificate signatories, district identity, and site configuration.</div>
+            </div>
+          </label>
+        </div>
+        <div id="editPermissionsError" style="color:var(--danger);font-size:13px;margin-bottom:8px"></div>
+        <button class="btn btn-primary" type="button" onclick="savePermissions()" style="width:100%">Save Permissions</button>
       </div>
     </div>
   </div>
@@ -6707,10 +6758,12 @@
           <div class="message-card">
             <div class="message-name">${escapeHtml(u.name)} ${u.active ? "" : `<span style="color:#c0392b;font-size:12px">(${state.lang === "hi" ? "निष्क्रिय" : "inactive"})</span>`}</div>
             <div class="message-text">@${escapeHtml(u.username)} · ${u.role === "super_admin" ? (state.lang === "hi" ? "जिला प्रशासक" : "District Administrator") : `${state.lang === "hi" ? "समन्वयक" : "Coordinator"} — ${escapeHtml(u.scope)}`}</div>
+            ${u.role !== "super_admin" ? `<div class="message-time" style="margin-top:4px">${[u.canDelete ? "🗑 Can delete" : null, u.canManageSettings ? "⚙️ Can manage settings" : null].filter(Boolean).join(" · ") || "Standard access"}</div>` : ""}
             <div class="message-time">${u.lastLoginAt ? `${state.lang === "hi" ? "अंतिम लॉगिन" : "Last login"}: ${formatDate(new Date(u.lastLoginAt), state.lang)}` : (state.lang === "hi" ? "अभी तक लॉगिन नहीं हुआ" : "Never logged in")}</div>
             <div class="message-actions">
               ${u.username === "admin" ? "" : `<button class="btn btn-soft" type="button" onclick="toggleAdminUserAccount(${u.id})">${u.active ? (state.lang === "hi" ? "निष्क्रिय करें" : "Deactivate") : (state.lang === "hi" ? "सक्रिय करें" : "Activate")}</button>`}
               <button class="btn btn-soft" type="button" onclick="promptResetPassword(${u.id}, ${JSON.stringify(u.name)})">${state.lang === "hi" ? "पासवर्ड रीसेट करें" : "Reset Password"}</button>
+              ${u.username !== "admin" && u.role !== "super_admin" ? `<button class="btn btn-soft" type="button" onclick="openPermissionsModal(${u.id}, ${JSON.stringify(u.name)}, ${u.canDelete ? "true" : "false"}, ${u.canManageSettings ? "true" : "false"})" style="padding:5px 10px;font-size:12px">Permissions</button>` : ""}
             </div>
           </div>
         `)
@@ -6720,6 +6773,7 @@
     function toggleNewUserScopeField() {
       const role = document.getElementById("newUserRole").value;
       document.getElementById("newUserScopeGroup").style.display = role === "coordinator" ? "" : "none";
+      document.getElementById("newUserPermissionsGroup").style.display = (role === "coordinator") ? "block" : "none";
     }
 
     async function submitCreateAdminUser() {
@@ -6731,11 +6785,17 @@
       try {
         await apiRequest("/api/admin/users", {
           method: "POST",
-          body: JSON.stringify({ name, username, password, role, scope })
+          body: JSON.stringify({
+            name, username, password, role, scope,
+            canDelete: document.getElementById("newUserCanDelete")?.checked || false,
+            canManageSettings: document.getElementById("newUserCanManageSettings")?.checked || false
+          })
         });
         ["newUserName", "newUserUsername", "newUserPassword", "newUserScope"].forEach((id) => {
           document.getElementById(id).value = "";
         });
+        document.getElementById("newUserCanDelete").checked = false;
+        document.getElementById("newUserCanManageSettings").checked = false;
         await loadAdminUsersList();
         showToast(state.lang === "hi" ? "नया लॉगिन बना दिया गया।" : "New login created.", "✅");
       } catch (error) {
@@ -6767,6 +6827,35 @@
         showToast(state.lang === "hi" ? "पासवर्ड रीसेट हो गया।" : "Password reset.", "🔑");
       } catch (error) {
         handleRequestError(error);
+      }
+    }
+
+    function openPermissionsModal(userId, name, canDelete, canManageSettings) {
+      document.getElementById("editPermissionsUserId").value = userId;
+      document.getElementById("editPermissionsSubtitle").textContent = `Permissions for ${name}`;
+      document.getElementById("editPermCanDelete").checked = canDelete;
+      document.getElementById("editPermCanManageSettings").checked = canManageSettings;
+      document.getElementById("editPermissionsError").textContent = "";
+      openModal("editPermissionsModal");
+    }
+
+    async function savePermissions() {
+      const userId = Number(document.getElementById("editPermissionsUserId").value);
+      const errorEl = document.getElementById("editPermissionsError");
+      errorEl.textContent = "";
+      try {
+        await apiRequest(`/api/admin/users/${userId}/permissions`, {
+          method: "POST",
+          body: JSON.stringify({
+            canDelete: document.getElementById("editPermCanDelete").checked,
+            canManageSettings: document.getElementById("editPermCanManageSettings").checked
+          })
+        });
+        closeModal("editPermissionsModal");
+        showToast("Permissions updated.", "✅");
+        await loadAdminUsersList();
+      } catch (error) {
+        errorEl.textContent = error?.message || "Failed to update permissions.";
       }
     }
 
@@ -13242,17 +13331,20 @@
       const token = getAdminToken();
       if (!token) return;
       try {
-        const data = await apiRequest("/api/admin/audit-log", {
+        const actor = (document.getElementById("auditLogActorFilter")?.value || "").trim();
+        const params = actor ? `?actor=${encodeURIComponent(actor)}` : "";
+        const data = await apiRequest(`/api/admin/audit-log${params}`, {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` }
         });
         const tbody = document.getElementById("auditLogBody");
         if (!data.entries.length) {
-          tbody.innerHTML = `<tr><td colspan="4" style="color:var(--muted);text-align:center">No admin actions recorded yet.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" style="color:var(--muted);text-align:center">${actor ? `No actions found for @${escapeHtml(actor)}.` : "No admin actions recorded yet."}</td></tr>`;
           return;
         }
         tbody.innerHTML = data.entries.map((e) => `
           <tr>
+            <td style="font-size:12px;color:var(--muted)">${e.actor_username ? `<span style="font-weight:600;color:var(--text)">@${escapeHtml(e.actor_username)}</span><br>${escapeHtml(e.actor_name || "")}` : "<span style='color:var(--muted)'>system</span>"}</td>
             <td style="font-size:13px;font-family:monospace">${escapeHtml(e.action)}</td>
             <td style="font-size:13px">${escapeHtml(e.target_type)} ${e.target_id ? `#${e.target_id}` : ""}</td>
             <td style="font-size:13px">${escapeHtml(e.detail)}</td>

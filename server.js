@@ -1013,6 +1013,10 @@ try { db.exec("ALTER TABLE organizations ADD COLUMN ai_recommendation TEXT"); } 
 try { db.exec("ALTER TABLE organizations ADD COLUMN ai_recommendation_reason TEXT"); } catch(e) {}
 try { db.exec("ALTER TABLE missions ADD COLUMN poster_ai_tries INTEGER NOT NULL DEFAULT 0"); } catch(e) {}
 try { db.exec("ALTER TABLE volunteer_profiles ADD COLUMN civic_orgs TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN can_delete INTEGER NOT NULL DEFAULT 0"); } catch(e) {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN can_manage_settings INTEGER NOT NULL DEFAULT 0"); } catch(e) {}
+try { db.exec("ALTER TABLE admin_audit_log ADD COLUMN actor_username TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try { db.exec("ALTER TABLE admin_audit_log ADD COLUMN actor_name TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
@@ -1365,6 +1369,13 @@ const server = http.createServer(async (req, res) => {
       const body = await readJsonBody(req);
       const userId = Number(url.pathname.split("/")[4]);
       return sendJson(res, 200, resetAdminUserPassword(userId, body));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/users\/\d+\/permissions$/.test(url.pathname)) {
+      const actor = requireSuperAdmin(req);
+      const userId = Number(url.pathname.split("/")[4]);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, updateAdminUserPermissions(userId, body, actor));
     }
 
     if (req.method === "POST" && url.pathname === "/api/volunteers") {
@@ -1727,7 +1738,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/certificate-settings") {
-      requireAdmin(req);
+      const admin = requireCanManageSettings(req);
       const body = await readJsonBody(req);
       const fields = {
         cert_org_title_en: String(body.orgTitleEn || "").trim().slice(0, 120) || "District Administration",
@@ -1749,7 +1760,7 @@ const server = http.createServer(async (req, res) => {
         fields.cert_sig2_image = String(body.sig2Image);
       }
       Object.entries(fields).forEach(([k, v]) => setSetting(k, v));
-      writeAuditLog("update_cert_settings", "settings", null, `Certificate signatory settings updated`);
+      writeAuditLog("update_cert_settings", "settings", null, `Certificate signatory settings updated`, admin);
       return sendJson(res, 200, { ok: true });
     }
 
@@ -1767,13 +1778,13 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/branding") {
-      requireSuperAdmin(req);
+      requireCanManageSettings(req);
       const body = await readJsonBody(req);
       return sendJson(res, 200, saveBranding(body));
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/district-settings") {
-      requireAdmin(req);
+      const admin = requireCanManageSettings(req);
       const body = await readJsonBody(req);
       const districtName = String(body.districtName || "").trim().slice(0, 100);
       const stateName    = String(body.stateName    || "").trim().slice(0, 100);
@@ -1781,7 +1792,7 @@ const server = http.createServer(async (req, res) => {
       if (districtName) setSetting("site_district_name", districtName);
       if (stateName)    setSetting("site_state_name",    stateName);
       if (stateAbbr)    setSetting("site_state_abbr",    stateAbbr);
-      writeAuditLog("update_district_settings", "settings", null, `District settings updated: ${districtName}, ${stateName}`);
+      writeAuditLog("update_district_settings", "settings", null, `District settings updated: ${districtName}, ${stateName}`, admin);
       return sendJson(res, 200, { ok: true, districtName: districtName || getSetting("site_district_name", DISTRICT_NAME), stateName: stateName || getSetting("site_state_name", STATE_NAME) });
     }
 
@@ -1850,7 +1861,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && /^\/api\/admin\/volunteers\/\d+\/delete$/.test(url.pathname)) {
-      const admin = requireSuperAdmin(req);
+      const admin = requireCanDelete(req);
       const profileId = Number(url.pathname.split("/")[4]);
       return sendJson(res, 200, deleteVolunteerProfileAdmin(profileId, admin));
     }
@@ -1907,7 +1918,8 @@ const server = http.createServer(async (req, res) => {
     // ── Admin audit log ───────────────────────────────────────────────────────
     if (req.method === "GET" && url.pathname === "/api/admin/audit-log") {
       requireAdmin(req);
-      return sendJson(res, 200, { entries: getAuditLog() });
+      const actorFilter = url.searchParams.get("actor") || "";
+      return sendJson(res, 200, { entries: getAuditLog(actorFilter) });
     }
 
     // ── Community mission status tracking (citizen) ───────────────────────────
@@ -2530,12 +2542,15 @@ function migrateLegacyDemoRecords() {
 }
 
 function createAdminToken(user) {
+  const isSuperAdmin = user.role === "super_admin";
   const payload = {
     uid: user.id,
     name: user.name,
     username: user.username,
     role: user.role,
     scope: user.scope_ward || "",
+    canDelete: isSuperAdmin || Boolean(user.can_delete),
+    canManageSettings: isSuperAdmin || Boolean(user.can_manage_settings),
     exp: Date.now() + TOKEN_TTL_MS
   };
   const encodedPayload = base64Url(JSON.stringify(payload));
@@ -2571,6 +2586,22 @@ function requireSuperAdmin(req) {
   const admin = requireAdmin(req);
   if (admin.role !== "super_admin") {
     throw publicError(403, "Only the district administrator can do this.");
+  }
+  return admin;
+}
+
+function requireCanDelete(req) {
+  const admin = requireAdmin(req);
+  if (admin.role !== "super_admin" && !admin.canDelete) {
+    throw publicError(403, "You do not have permission to delete records. Ask the district admin to enable this for your account.");
+  }
+  return admin;
+}
+
+function requireCanManageSettings(req) {
+  const admin = requireAdmin(req);
+  if (admin.role !== "super_admin" && !admin.canManageSettings) {
+    throw publicError(403, "You do not have permission to change platform settings. Ask the district admin to enable this for your account.");
   }
   return admin;
 }
@@ -2687,6 +2718,7 @@ function seedAdminUsers() {
 }
 
 function sanitizeUserRow(row) {
+  const isSuperAdmin = row.role === "super_admin";
   return {
     id: row.id,
     name: row.name,
@@ -2694,6 +2726,8 @@ function sanitizeUserRow(row) {
     role: row.role,
     scope: row.scope_ward || "",
     active: Boolean(row.active),
+    canDelete: isSuperAdmin || Boolean(row.can_delete),
+    canManageSettings: isSuperAdmin || Boolean(row.can_manage_settings),
     createdAt: row.created_at,
     lastLoginAt: row.last_login_at || null
   };
@@ -2727,12 +2761,15 @@ function createAdminUser(body) {
     throw publicError(409, "That username is already taken.");
   }
   const { hash, salt } = hashPassword(password);
+  const canDelete = role === "super_admin" ? 1 : (body.canDelete ? 1 : 0);
+  const canManageSettings = role === "super_admin" ? 1 : (body.canManageSettings ? 1 : 0);
   db.prepare(`
-    INSERT INTO admin_users (name, username, password_hash, password_salt, role, scope_ward, active, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, 1, ?)
-  `).run(name, username, hash, salt, role, scopeWard, isoNow());
+    INSERT INTO admin_users (name, username, password_hash, password_salt, role, scope_ward, can_delete, can_manage_settings, active, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+  `).run(name, username, hash, salt, role, scopeWard, canDelete, canManageSettings, isoNow());
   const newId = Number(db.prepare("SELECT last_insert_rowid() AS id").get().id);
-  writeAuditLog("create_user", "admin_user", newId, `Login created for ${name} (${username}) — ${role}${scopeWard ? ", " + scopeWard : ""}`);
+  const permFlags = [canDelete ? "can_delete" : null, canManageSettings ? "can_manage_settings" : null].filter(Boolean).join(", ");
+  writeAuditLog("create_user", "admin_user", newId, `Login created for ${name} (${username}) — ${role}${scopeWard ? ", " + scopeWard : ""}${permFlags ? " [" + permFlags + "]" : ""}`, null);
   return { ok: true, id: newId };
 }
 
@@ -2744,7 +2781,7 @@ function toggleAdminUser(userId, admin) {
   }
   const nextActive = row.active ? 0 : 1;
   db.prepare("UPDATE admin_users SET active = ? WHERE id = ?").run(nextActive, userId);
-  writeAuditLog(nextActive ? "activate_user" : "deactivate_user", "admin_user", userId, `${row.name} (${row.username}) ${nextActive ? "activated" : "deactivated"}`);
+  writeAuditLog(nextActive ? "activate_user" : "deactivate_user", "admin_user", userId, `${row.name} (${row.username}) ${nextActive ? "activated" : "deactivated"}`, admin);
   return { ok: true, active: Boolean(nextActive) };
 }
 
@@ -2757,7 +2794,19 @@ function resetAdminUserPassword(userId, body) {
   }
   const { hash, salt } = hashPassword(password);
   db.prepare("UPDATE admin_users SET password_hash = ?, password_salt = ? WHERE id = ?").run(hash, salt, userId);
-  writeAuditLog("reset_password", "admin_user", userId, `Password reset for ${row.name} (${row.username})`);
+  writeAuditLog("reset_password", "admin_user", userId, `Password reset for ${row.name} (${row.username})`, null);
+  return { ok: true };
+}
+
+function updateAdminUserPermissions(userId, body, actor) {
+  const row = db.prepare("SELECT * FROM admin_users WHERE id = ?").get(userId);
+  if (!row) throw publicError(404, "Login not found.");
+  if (row.role === "super_admin") throw publicError(400, "Super admins always have all permissions.");
+  const canDelete = body.canDelete ? 1 : 0;
+  const canManageSettings = body.canManageSettings ? 1 : 0;
+  db.prepare("UPDATE admin_users SET can_delete = ?, can_manage_settings = ? WHERE id = ?").run(canDelete, canManageSettings, userId);
+  const flags = [canDelete ? "can_delete" : null, canManageSettings ? "can_manage_settings" : null].filter(Boolean);
+  writeAuditLog("update_user_permissions", "admin_user", userId, `Permissions updated for ${row.name} (${row.username}): ${flags.length ? flags.join(", ") : "none"}`, actor);
   return { ok: true };
 }
 
@@ -3255,7 +3304,7 @@ function updateTickerSpeed(body, admin) {
 
 function getAuditLogFull() {
   return db.prepare(`
-    SELECT id, action, target_type, target_id, detail, created_at
+    SELECT id, action, target_type, target_id, detail, actor_username, actor_name, created_at
     FROM admin_audit_log
     ORDER BY id DESC
   `).all();
@@ -3263,9 +3312,9 @@ function getAuditLogFull() {
 
 function buildAuditLogCsv() {
   const rows = getAuditLogFull();
-  const header = "ID,Action,TargetType,TargetID,Detail,Time\n";
+  const header = "ID,Action,TargetType,TargetID,Detail,Actor,ActorName,Time\n";
   const lines = rows.map((r) =>
-    [r.id, r.action, r.target_type, r.target_id, r.detail, r.created_at].map(csvEscape).join(",")
+    [r.id, r.action, r.target_type, r.target_id, r.detail, r.actor_username, r.actor_name, r.created_at].map(csvEscape).join(",")
   );
   return header + lines.join("\n");
 }
@@ -4584,21 +4633,31 @@ function categoryGradient(category) {
 
 // ── Admin audit log ───────────────────────────────────────────────────────────
 
-function writeAuditLog(action, targetType, targetId, detail) {
+function writeAuditLog(action, targetType, targetId, detail, actor) {
   try {
+    const actorUsername = (actor && actor.username) ? actor.username : "";
+    const actorName     = (actor && actor.name)     ? actor.name     : "";
     db.prepare(`
-      INSERT INTO admin_audit_log (action, target_type, target_id, detail, created_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(action, targetType || "", targetId || null, detail || "", isoNow());
+      INSERT INTO admin_audit_log (action, target_type, target_id, detail, actor_username, actor_name, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(action, targetType || "", targetId || null, detail || "", actorUsername, actorName, isoNow());
   } catch (e) {
-    // Audit log failures must never crash the main request
     console.error("[AUDIT LOG ERROR]", e.message);
   }
 }
 
-function getAuditLog() {
+function getAuditLog(actorFilter) {
+  if (actorFilter) {
+    return db.prepare(`
+      SELECT id, action, target_type, target_id, detail, actor_username, actor_name, created_at
+      FROM admin_audit_log
+      WHERE actor_username = ?
+      ORDER BY id DESC
+      LIMIT 500
+    `).all(actorFilter);
+  }
   return db.prepare(`
-    SELECT id, action, target_type, target_id, detail, created_at
+    SELECT id, action, target_type, target_id, detail, actor_username, actor_name, created_at
     FROM admin_audit_log
     ORDER BY id DESC
     LIMIT 200
