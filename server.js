@@ -1063,30 +1063,28 @@ try {
 // ── AI Moderation ─────────────────────────────────────────────────────────────
 
 async function callClaude(system, user, maxTokens = 256) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GOOGLE_API_KEY;
   if (!apiKey) return null;
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: maxTokens,
-        system,
-        messages: [{ role: "user", content: user }]
-      })
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: "user", parts: [{ text: user }] }],
+          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.1 }
+        })
+      }
+    );
     if (!res.ok) return null;
     const data = await res.json();
-    const text = data.content?.[0]?.text || "";
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
     const match = text.match(/\{[\s\S]*?\}/);
     return match ? JSON.parse(match[0]) : null;
   } catch (e) {
-    console.error("[AI] callClaude error:", e.message);
+    console.error("[AI] callGemini error:", e.message);
     return null;
   }
 }
