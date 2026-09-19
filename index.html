@@ -10024,7 +10024,7 @@
           <div class="message-card" id="missionReqCard-${mission.id}" style="overflow:hidden">
             <div style="display:flex;align-items:flex-start;gap:8px">
               <input type="checkbox" class="mission-req-check" data-id="${mission.id}" style="margin-top:4px;flex-shrink:0;accent-color:var(--saffron)">
-              <div style="flex:1;min-width:0;overflow:hidden">
+              <div style="flex:1;min-width:0">
                 <div class="message-name" style="overflow-wrap:break-word;word-break:break-word">${escapeHtml(mission.title)}</div>
                 <div class="message-text" style="overflow-wrap:break-word;word-break:break-word">${escapeHtml(mission.hostName)} · ${escapeHtml(mission.hostPhone)} · ${escapeHtml(mission.hostEmail)}</div>
                 <div class="message-text" style="overflow-wrap:break-word;word-break:break-word">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.location)} · ${escapeHtml(mission.date)}</div>

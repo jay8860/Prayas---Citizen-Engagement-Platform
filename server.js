@@ -4822,14 +4822,16 @@ function checkInVolunteer(body) {
   const mission = db.prepare("SELECT id, title, status FROM missions WHERE check_in_code = ? AND archived_at IS NULL").get(code);
   if (!mission) throw publicError(404, "Invalid check-in code. Please verify with your mission coordinator.");
 
-  const profile = db.prepare("SELECT id FROM volunteer_profiles WHERE normalized_phone = ? LIMIT 1").get(normalizedPhone);
-  if (!profile) throw publicError(404, "Volunteer not found. Please register first.");
-
+  // Join across ALL profiles with this phone — avoids the wrong-profile bug when
+  // the same phone has multiple profile rows (different name spellings).
   const participation = db.prepare(`
-    SELECT id, attended_at FROM volunteer_participations
-    WHERE volunteer_profile_id = ? AND mission_id = ?
+    SELECT vp.id, vp.attended_at
+    FROM volunteer_participations vp
+    JOIN volunteer_profiles p ON p.id = vp.volunteer_profile_id
+    WHERE p.normalized_phone = ? AND vp.mission_id = ?
+    ORDER BY vp.id DESC
     LIMIT 1
-  `).get(profile.id, mission.id);
+  `).get(normalizedPhone, mission.id);
 
   if (!participation) throw publicError(409, "You are not registered for this mission. Please register first.");
   if (participation.attended_at) return { ok: true, alreadyCheckedIn: true, missionTitle: mission.title };
