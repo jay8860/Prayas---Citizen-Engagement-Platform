@@ -5026,6 +5026,70 @@
             <button class="btn btn-primary" type="button" id="saveBrandingBtn" data-i18n="admin-branding-save">Save Branding</button>
             <div id="brandingSaveStatus" style="margin-top:10px;font-size:13px;color:var(--muted)"></div>
           </div>
+
+          <div class="panel-card" style="margin-top:20px">
+            <h3>Certificate Settings</h3>
+            <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Configure the organization title shown on certificates and upload official signatory signatures. These update automatically on all future certificate downloads — no re-download needed.</p>
+
+            <div class="form-group">
+              <label>Organization Title on Certificate (English)</label>
+              <input id="certOrgTitleEn" type="text" maxlength="120" placeholder="District Administration" value="District Administration" />
+            </div>
+            <div class="form-group">
+              <label>Organization Title on Certificate (Hindi)</label>
+              <input id="certOrgTitleHi" type="text" maxlength="120" placeholder="जिला प्रशासन" value="जिला प्रशासन" />
+            </div>
+
+            <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+            <div style="font-size:13px;font-weight:700;color:var(--navy,#1E40AF);margin-bottom:10px">Signatory 1 — Collector / District Head</div>
+            <div class="form-group">
+              <label>Name</label>
+              <input id="certSig1Name" type="text" maxlength="100" placeholder="Full name e.g. Abhinash Mishra" />
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <div class="form-group" style="flex:1;min-width:200px">
+                <label>Title (English)</label>
+                <input id="certSig1TitleEn" type="text" maxlength="150" placeholder="Collector, District Dhamtari" />
+              </div>
+              <div class="form-group" style="flex:1;min-width:200px">
+                <label>Title (Hindi)</label>
+                <input id="certSig1TitleHi" type="text" maxlength="150" placeholder="कलेक्टर, जिला धमतरी" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Signature Image (PNG/JPG, max 400KB)</label>
+              <input id="certSig1File" type="file" accept="image/png,image/jpeg" />
+              <div id="certSig1Preview" style="margin-top:8px"></div>
+            </div>
+
+            <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+            <div style="font-size:13px;font-weight:700;color:var(--navy,#1E40AF);margin-bottom:10px">Signatory 2 — CEO Zila Panchayat / Second Authority</div>
+            <div class="form-group">
+              <label>Name</label>
+              <input id="certSig2Name" type="text" maxlength="100" placeholder="Full name e.g. Jayant Nahata" />
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <div class="form-group" style="flex:1;min-width:200px">
+                <label>Title (English)</label>
+                <input id="certSig2TitleEn" type="text" maxlength="150" placeholder="CEO, Zila Panchayat Dhamtari" />
+              </div>
+              <div class="form-group" style="flex:1;min-width:200px">
+                <label>Title (Hindi)</label>
+                <input id="certSig2TitleHi" type="text" maxlength="150" placeholder="सीईओ, जिला पंचायत धमतरी" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Signature Image (PNG/JPG, max 400KB)</label>
+              <input id="certSig2File" type="file" accept="image/png,image/jpeg" />
+              <div id="certSig2Preview" style="margin-top:8px"></div>
+            </div>
+
+            <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:10px 12px;font-size:12px;color:#1E40AF;margin:12px 0">
+              ℹ️ Upload a clean signature image (white background, black ink). The system will display it on certificates using "multiply" blend mode so white areas appear transparent on the cream certificate background.
+            </div>
+            <button class="btn btn-primary" type="button" id="saveCertSettingsBtn" onclick="saveCertificateSettings()">Save Certificate Settings</button>
+            <div id="certSettingsSaveStatus" style="margin-top:10px;font-size:13px;color:var(--muted)"></div>
+          </div>
         </div>
 
         <div class="admin-pane" id="adminPaneLocations">
@@ -11314,11 +11378,12 @@
       // (draw=true) can drop them straight in with drawImage(). Both resolve
       // to null (rather than rejecting) if the asset can't load, in which
       // case the layout below simply omits that logo.
+      const cs = state.certSettings || {};
       const [districtLogo, janprayasLogo, sigCollector, sigCEO] = await Promise.all([
         loadImage("assets/dhamtari-emblem.png"),
         loadImage("assets/janprayas-logo.png"),
-        loadImage("assets/sig-collector.png"),
-        loadImage("assets/sig-ceo.png")
+        cs.hasSig1 ? loadImage("/api/cert-assets/sig1") : loadImage("assets/sig-collector.png"),
+        cs.hasSig2 ? loadImage("/api/cert-assets/sig2") : loadImage("assets/sig-ceo.png")
       ]);
 
       // Renders the whole certificate onto `ctx` (sized W x H) and always
@@ -11404,7 +11469,9 @@
           ctx.font = "700 18px Inter";
           ctx.fillText(hi ? "छत्तीसगढ़ सरकार" : "GOVERNMENT OF CHHATTISGARH", W / 2, 108);
           ctx.font = "700 30px Georgia";
-          ctx.fillText(hi ? `जिला पंचायत ${state.districtName}` : `Zila Panchayat ${state.districtName}`, W / 2, 148);
+          const certOrgEn = (cs.orgTitleEn || "District Administration") + " " + (state.districtName || "");
+          const certOrgHi = (cs.orgTitleHi || "जिला प्रशासन") + " " + (state.districtName || "");
+          ctx.fillText(hi ? certOrgHi : certOrgEn, W / 2, 148);
           ctx.font = "700 26px Georgia";
           ctx.fillText(hi ? "जनप्रयास नागरिक सहभागिता मंच" : "JanPrayas Citizen Engagement Platform", W / 2, 186);
 
@@ -11526,18 +11593,12 @@
             ctx.fillText(titleText, centerX, yBase + 44);
           };
 
-          drawSig(
-            sigCollector,
-            120, 380, 250, "Abhinash Mishra",
-            hi ? `कलेक्टर, ${state.districtName}` : `Collector, ${state.districtName}`,
-            sigY + 52
-          );
-          drawSig(
-            sigCEO,
-            740, 1000, 870, "Jayant Nahata",
-            hi ? `सीईओ, जिला पंचायत ${state.districtName}` : `CEO, Zila Panchayat ${state.districtName}`,
-            sigY + 52
-          );
+          const sig1Name  = cs.sig1Name     || "Collector";
+          const sig1Title = hi ? (cs.sig1TitleHi || `कलेक्टर, ${state.districtName}`) : (cs.sig1TitleEn || `Collector, ${state.districtName}`);
+          const sig2Name  = cs.sig2Name     || "CEO, Zila Panchayat";
+          const sig2Title = hi ? (cs.sig2TitleHi || `सीईओ, जिला पंचायत ${state.districtName}`) : (cs.sig2TitleEn || `CEO, Zila Panchayat ${state.districtName}`);
+          drawSig(sigCollector, 120, 380, 250, sig1Name, sig1Title, sigY + 52);
+          drawSig(sigCEO, 740, 1000, 870, sig2Name, sig2Title, sigY + 52);
 
           // Issued date centered below signatures
           ctx.textAlign = "center";
@@ -12024,6 +12085,8 @@
         document.getElementById("brandingBadgeEn").value = state.siteBadgeEn || "";
         document.getElementById("brandingBadgeHi").value = state.siteBadgeHi || "";
         document.getElementById("brandingSaveStatus").textContent = "";
+        prefillCertSettings();
+        document.getElementById("certSettingsSaveStatus").textContent = "";
       }
     }
 
@@ -12273,6 +12336,93 @@
         status.style.color = "var(--danger)";
         status.textContent = error?.message || (state.lang === "hi" ? "सहेजने में विफल।" : "Failed to save.");
       }
+    }
+
+    async function saveCertificateSettings() {
+      const status = document.getElementById("certSettingsSaveStatus");
+      const token = getAdminToken();
+      if (!token) return;
+      status.style.color = "var(--muted)";
+      status.textContent = state.lang === "hi" ? "सहेज रहा है…" : "Saving…";
+
+      function readFileAsDataURL(fileInput) {
+        return new Promise((resolve) => {
+          const file = fileInput?.files?.[0];
+          if (!file) { resolve(null); return; }
+          if (file.size > 500 * 1024) {
+            throw new Error("Signature image must be under 500 KB.");
+          }
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      try {
+        const [sig1Data, sig2Data] = await Promise.all([
+          readFileAsDataURL(document.getElementById("certSig1File")),
+          readFileAsDataURL(document.getElementById("certSig2File")),
+        ]);
+
+        const payload = {
+          orgTitleEn:  document.getElementById("certOrgTitleEn").value.trim(),
+          orgTitleHi:  document.getElementById("certOrgTitleHi").value.trim(),
+          sig1Name:    document.getElementById("certSig1Name").value.trim(),
+          sig1TitleEn: document.getElementById("certSig1TitleEn").value.trim(),
+          sig1TitleHi: document.getElementById("certSig1TitleHi").value.trim(),
+          sig2Name:    document.getElementById("certSig2Name").value.trim(),
+          sig2TitleEn: document.getElementById("certSig2TitleEn").value.trim(),
+          sig2TitleHi: document.getElementById("certSig2TitleHi").value.trim(),
+        };
+        if (sig1Data) payload.sig1Image = sig1Data;
+        if (sig2Data) payload.sig2Image = sig2Data;
+
+        const data = await apiRequest("/api/admin/certificate-settings", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify(payload),
+        });
+
+        // Update local state
+        state.certSettings = {
+          orgTitleEn:  payload.orgTitleEn  || state.certSettings?.orgTitleEn  || "",
+          orgTitleHi:  payload.orgTitleHi  || state.certSettings?.orgTitleHi  || "",
+          sig1Name:    payload.sig1Name    || state.certSettings?.sig1Name    || "",
+          sig1TitleEn: payload.sig1TitleEn || state.certSettings?.sig1TitleEn || "",
+          sig1TitleHi: payload.sig1TitleHi || state.certSettings?.sig1TitleHi || "",
+          sig2Name:    payload.sig2Name    || state.certSettings?.sig2Name    || "",
+          sig2TitleEn: payload.sig2TitleEn || state.certSettings?.sig2TitleEn || "",
+          sig2TitleHi: payload.sig2TitleHi || state.certSettings?.sig2TitleHi || "",
+          hasSig1:     sig1Data ? true : (state.certSettings?.hasSig1 || false),
+          hasSig2:     sig2Data ? true : (state.certSettings?.hasSig2 || false),
+        };
+
+        // Clear file inputs after save
+        document.getElementById("certSig1File").value = "";
+        document.getElementById("certSig2File").value = "";
+
+        status.style.color = "var(--green)";
+        status.textContent = state.lang === "hi"
+          ? "सर्टिफिकेट सेटिंग्स सहेजी गईं।"
+          : "Certificate settings saved.";
+      } catch (error) {
+        status.style.color = "var(--danger)";
+        status.textContent = error?.message || (state.lang === "hi" ? "सहेजने में विफल।" : "Failed to save.");
+      }
+    }
+
+    function prefillCertSettings() {
+      const cs = state.certSettings || {};
+      const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+      setVal("certOrgTitleEn",  cs.orgTitleEn);
+      setVal("certOrgTitleHi",  cs.orgTitleHi);
+      setVal("certSig1Name",    cs.sig1Name);
+      setVal("certSig1TitleEn", cs.sig1TitleEn);
+      setVal("certSig1TitleHi", cs.sig1TitleHi);
+      setVal("certSig2Name",    cs.sig2Name);
+      setVal("certSig2TitleEn", cs.sig2TitleEn);
+      setVal("certSig2TitleHi", cs.sig2TitleHi);
     }
 
     function applyMissionTemplate(templateKey) {

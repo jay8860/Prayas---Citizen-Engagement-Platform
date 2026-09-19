@@ -1725,6 +1725,46 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, updateLocationStructure(body, admin));
     }
 
+    if (req.method === "POST" && url.pathname === "/api/admin/certificate-settings") {
+      requireAdmin(req);
+      const body = await readJsonBody(req);
+      const fields = {
+        cert_org_title_en: String(body.orgTitleEn || "").trim().slice(0, 120) || "District Administration",
+        cert_org_title_hi: String(body.orgTitleHi || "").trim().slice(0, 120) || "जिला प्रशासन",
+        cert_sig1_name:    String(body.sig1Name || "").trim().slice(0, 100),
+        cert_sig1_title_en: String(body.sig1TitleEn || "").trim().slice(0, 150),
+        cert_sig1_title_hi: String(body.sig1TitleHi || "").trim().slice(0, 150),
+        cert_sig2_name:    String(body.sig2Name || "").trim().slice(0, 100),
+        cert_sig2_title_en: String(body.sig2TitleEn || "").trim().slice(0, 150),
+        cert_sig2_title_hi: String(body.sig2TitleHi || "").trim().slice(0, 150),
+      };
+      if (body.sig1Image && String(body.sig1Image).startsWith("data:image/")) {
+        // Limit to ~400KB base64 for a signature image
+        if (body.sig1Image.length > 550000) throw publicError(400, "Signature 1 image too large. Max ~400KB.");
+        fields.cert_sig1_image = String(body.sig1Image);
+      }
+      if (body.sig2Image && String(body.sig2Image).startsWith("data:image/")) {
+        if (body.sig2Image.length > 550000) throw publicError(400, "Signature 2 image too large. Max ~400KB.");
+        fields.cert_sig2_image = String(body.sig2Image);
+      }
+      Object.entries(fields).forEach(([k, v]) => setSetting(k, v));
+      writeAuditLog("update_cert_settings", "settings", null, `Certificate signatory settings updated`);
+      return sendJson(res, 200, { ok: true });
+    }
+
+    // ── Certificate asset endpoints (public — served to canvas during cert download) ──
+    if (req.method === "GET" && /^\/api\/cert-assets\/sig[12]$/.test(url.pathname)) {
+      const sigKey = url.pathname.endsWith("1") ? "cert_sig1_image" : "cert_sig2_image";
+      const dataUrl = getSetting(sigKey, "");
+      if (!dataUrl) { res.writeHead(204); res.end(); return; }
+      const match = dataUrl.match(/^data:(image\/[a-z]+);base64,(.+)$/);
+      if (!match) { res.writeHead(404); res.end(); return; }
+      const buf = Buffer.from(match[2], "base64");
+      res.writeHead(200, { "Content-Type": match[1], "Cache-Control": "private, max-age=300", "Content-Length": String(buf.length) });
+      res.end(buf);
+      return;
+    }
+
     if (req.method === "POST" && url.pathname === "/api/admin/branding") {
       requireSuperAdmin(req);
       const body = await readJsonBody(req);
@@ -2891,6 +2931,18 @@ function buildBootstrapPayload(isAdmin = false) {
     stateAbbr: STATE_ABBR,
     siteBadgeEn: getSetting("site_badge_en", ""),
     siteBadgeHi: getSetting("site_badge_hi", ""),
+    certSettings: {
+      orgTitleEn: getSetting("cert_org_title_en", "District Administration"),
+      orgTitleHi: getSetting("cert_org_title_hi", "जिला प्रशासन"),
+      sig1Name:     getSetting("cert_sig1_name", ""),
+      sig1TitleEn:  getSetting("cert_sig1_title_en", ""),
+      sig1TitleHi:  getSetting("cert_sig1_title_hi", ""),
+      sig2Name:     getSetting("cert_sig2_name", ""),
+      sig2TitleEn:  getSetting("cert_sig2_title_en", ""),
+      sig2TitleHi:  getSetting("cert_sig2_title_hi", ""),
+      hasSig1:      Boolean(getSetting("cert_sig1_image", "")),
+      hasSig2:      Boolean(getSetting("cert_sig2_image", "")),
+    },
     locations,
     locationStructure: safeJsonObject(getSetting("location_structure_json", ""), { blocks: [], municipalBodies: [] }),
     departments,
