@@ -5013,8 +5013,29 @@
 
         <div class="admin-pane" id="adminPaneBranding">
           <div class="panel-card" style="max-width:640px">
-            <h3 data-i18n="admin-branding-title">District Branding</h3>
-            <p data-i18n="admin-branding-subtitle">Customise the badge line shown at the top of the hero section so this deployment reads correctly for your district. This does not change the "JanPrayas" platform name.</p>
+            <h3>District & State Identity</h3>
+            <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Set the district and state name for this deployment. These appear on certificates, posters, mission join pages, and throughout the portal.</p>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="districtNameInput">District Name</label>
+                <input id="districtNameInput" type="text" maxlength="100" placeholder="e.g. Dhamtari" />
+              </div>
+              <div class="form-group">
+                <label for="stateNameInput">State Name</label>
+                <input id="stateNameInput" type="text" maxlength="100" placeholder="e.g. Chhattisgarh" />
+              </div>
+            </div>
+            <div class="form-group" style="max-width:160px">
+              <label for="stateAbbrInput">State Abbreviation (2-3 letters)</label>
+              <input id="stateAbbrInput" type="text" maxlength="10" placeholder="e.g. CG" style="text-transform:uppercase" />
+            </div>
+            <button class="btn btn-primary" type="button" onclick="saveDistrictSettings()">Save District Settings</button>
+            <div id="districtSettingsStatus" style="margin-top:10px;font-size:13px;color:var(--muted)"></div>
+          </div>
+
+          <div class="panel-card" style="max-width:640px;margin-top:20px">
+            <h3 data-i18n="admin-branding-title">Hero Badge Text</h3>
+            <p data-i18n="admin-branding-subtitle">Customise the badge line shown at the top of the hero section. This does not change the "JanPrayas" platform name.</p>
             <div class="form-group">
               <label for="brandingBadgeEn" data-i18n="admin-branding-en-label">Badge Text (English)</label>
               <input id="brandingBadgeEn" type="text" maxlength="80" placeholder="District Administration Initiative" />
@@ -10022,29 +10043,27 @@
       const deptOptions = document.getElementById("pmDepartment")?.innerHTML || "";
       container.innerHTML = pending.map((mission) => {
         const aiNote = mission.aiFlag && mission.aiFlag !== "ok"
-          ? `<div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:6px;padding:6px 10px;font-size:12px;color:#92400E;margin-bottom:8px">🤖 AI: ${escapeHtml(mission.aiFlagReason || mission.aiFlag)}</div>`
+          ? `<p style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:6px;padding:6px 10px;font-size:12px;color:#92400E;margin:6px 0">🤖 AI: ${escapeHtml(mission.aiFlagReason || mission.aiFlag)}</p>`
           : "";
-        return `<div class="message-card" id="missionReqCard-${mission.id}">
-  <div style="display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:start">
-    <input type="checkbox" class="mission-req-check" data-id="${mission.id}" style="margin-top:3px;accent-color:var(--saffron)">
-    <div>
-      <div class="message-name" style="white-space:normal;overflow-wrap:anywhere">${escapeHtml(mission.title)}</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:3px;white-space:normal">${escapeHtml(mission.hostName || "—")} · ${escapeHtml(mission.hostPhone || "—")} · ${escapeHtml(mission.hostEmail || "—")}</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:8px;white-space:normal">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.location)} · ${escapeHtml(mission.date)}</div>
-      ${aiNote}
-      <div class="form-group" style="margin-top:6px;margin-bottom:6px">
-        <label style="font-size:12px;color:var(--muted)">${state.lang === "hi" ? "नोडल विभाग (स्वीकृति के लिए)" : "Nodal Department (required for approval)"}</label>
-        <select id="requestDept-${mission.id}" style="width:100%" onchange="toggleDepartmentOtherField('requestDept-${mission.id}','requestDeptOtherGroup-${mission.id}','requestDeptOther-${mission.id}')">${deptOptions}</select>
-      </div>
-      <div class="form-group hidden" id="requestDeptOtherGroup-${mission.id}">
-        <input id="requestDeptOther-${mission.id}" type="text" style="width:100%" placeholder="${escapeHtml(state.lang === "hi" ? "कस्टम नोडल विभाग लिखें" : "Type custom nodal department")}" />
-      </div>
-      <div class="message-actions">
-        <button class="btn btn-primary" type="button" onclick="reviewMissionRequest(${mission.id},'approved')">${state.lang === "hi" ? "स्वीकृत करें" : "Approve"}</button>
-        <button class="btn btn-soft" type="button" onclick="reviewMissionRequest(${mission.id},'rejected')">${state.lang === "hi" ? "अस्वीकृत करें" : "Reject"}</button>
-        <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
-      </div>
-    </div>
+        return `<div class="message-card" id="missionReqCard-${mission.id}" style="padding:14px">
+  <p style="margin-bottom:8px">
+    <input type="checkbox" class="mission-req-check" data-id="${mission.id}" style="accent-color:var(--saffron);margin-right:8px;vertical-align:middle">
+    <strong style="font-size:14px;color:var(--navy);vertical-align:middle">${escapeHtml(mission.title)}</strong>
+  </p>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:3px">${escapeHtml(mission.hostName || "—")} &nbsp;·&nbsp; ${escapeHtml(mission.hostPhone || "—")} &nbsp;·&nbsp; ${escapeHtml(mission.hostEmail || "—")}</p>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:8px">📍 ${escapeHtml(wardLabel(missionArea(mission)))} &nbsp;·&nbsp; ${escapeHtml(mission.location)} &nbsp;·&nbsp; 📅 ${escapeHtml(mission.date)}</p>
+  ${aiNote}
+  <div style="margin-bottom:8px">
+    <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">${state.lang === "hi" ? "नोडल विभाग (स्वीकृति के लिए)" : "Nodal Department (required for approval)"}</label>
+    <select id="requestDept-${mission.id}" style="width:100%;max-width:100%" onchange="toggleDepartmentOtherField('requestDept-${mission.id}','requestDeptOtherGroup-${mission.id}','requestDeptOther-${mission.id}')">${deptOptions}</select>
+  </div>
+  <div class="hidden" id="requestDeptOtherGroup-${mission.id}" style="margin-bottom:8px">
+    <input id="requestDeptOther-${mission.id}" type="text" style="width:100%" placeholder="${state.lang === "hi" ? "कस्टम नोडल विभाग लिखें" : "Type custom nodal department"}" />
+  </div>
+  <div class="message-actions">
+    <button class="btn btn-primary" type="button" onclick="reviewMissionRequest(${mission.id},'approved')">${state.lang === "hi" ? "स्वीकृत करें" : "Approve"}</button>
+    <button class="btn btn-soft" type="button" onclick="reviewMissionRequest(${mission.id},'rejected')">${state.lang === "hi" ? "अस्वीकृत करें" : "Reject"}</button>
+    <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
   </div>
 </div>`;
       }).join("");
@@ -11398,7 +11417,7 @@
       // volunteer's own record ID, never random, so re-downloading the same
       // certificate always produces the same number.
       const certificateId = `JANPRAYAS-${state.stateAbbr || "ST"}-${String(leader.id).padStart(4, "0")}`;
-      const verifyUrl = `${window.location.origin}${window.location.pathname}?verify=${leader.id}`;
+      const verifyUrl = `${window.location.origin}/verify/${leader.id}`;
       const shownActivities = completedActivities.slice(0, 4);
       const moreCount = completedActivities.length - shownActivities.length;
       const bodyText = hi
@@ -12113,8 +12132,13 @@
         }
       }
       if (tab === "branding") {
-        document.getElementById("brandingBadgeEn").value = state.siteBadgeEn || "";
-        document.getElementById("brandingBadgeHi").value = state.siteBadgeHi || "";
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ""; };
+        setVal("districtNameInput", state.districtName);
+        setVal("stateNameInput", state.stateName);
+        setVal("stateAbbrInput", state.stateAbbr);
+        document.getElementById("districtSettingsStatus").textContent = "";
+        setVal("brandingBadgeEn", state.siteBadgeEn);
+        setVal("brandingBadgeHi", state.siteBadgeHi);
         document.getElementById("brandingSaveStatus").textContent = "";
         prefillCertSettings();
         document.getElementById("certSettingsSaveStatus").textContent = "";
@@ -12343,6 +12367,32 @@
         showToast(state.lang === "hi" ? "फोटो हटा दी गई।" : "Photo deleted.", "🗑️");
       } catch (error) {
         handleRequestError(error);
+      }
+    }
+
+    async function saveDistrictSettings() {
+      const status = document.getElementById("districtSettingsStatus");
+      const token = getAdminToken();
+      if (!token) return;
+      const districtName = document.getElementById("districtNameInput").value.trim();
+      const stateName    = document.getElementById("stateNameInput").value.trim();
+      const stateAbbr    = document.getElementById("stateAbbrInput").value.trim().toUpperCase();
+      if (!districtName) { status.style.color = "var(--danger)"; status.textContent = "District name is required."; return; }
+      try {
+        const data = await apiRequest("/api/admin/district-settings", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ districtName, stateName, stateAbbr })
+        });
+        state.districtName = data.districtName;
+        state.stateName    = data.stateName;
+        if (stateAbbr) state.stateAbbr = stateAbbr;
+        applyTranslations();
+        status.style.color = "var(--green)";
+        status.textContent = "District settings saved. Certificates and posters will now use the new name.";
+      } catch (error) {
+        status.style.color = "var(--danger)";
+        status.textContent = error?.message || "Failed to save.";
       }
     }
 
@@ -12821,10 +12871,10 @@
       renderAll();
       try {
         await refreshPortalData();
-        handleMissionDeepLink();
       } catch (error) {
         console.warn("Unable to load live portal data:", error);
       }
+      handleMissionDeepLink();
     }
 
     init();
@@ -13446,7 +13496,7 @@
       const memberSince = leader.memberSince
         ? new Date(leader.memberSince).toLocaleDateString(hi ? "hi-IN" : "en-IN", { month: "short", year: "numeric" })
         : "";
-      const verifyUrl = `${window.location.origin}${window.location.pathname}?verify=${leader.id}`;
+      const verifyUrl = `${window.location.origin}/verify/${leader.id}`;
 
       // Official-style logos for the header row — see downloadCertificate()
       // for the same loader; both resolve to null (not a rejection) if the

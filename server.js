@@ -1771,6 +1771,19 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, saveBranding(body));
     }
 
+    if (req.method === "POST" && url.pathname === "/api/admin/district-settings") {
+      requireAdmin(req);
+      const body = await readJsonBody(req);
+      const districtName = String(body.districtName || "").trim().slice(0, 100);
+      const stateName    = String(body.stateName    || "").trim().slice(0, 100);
+      const stateAbbr    = String(body.stateAbbr    || "").trim().slice(0, 10).toUpperCase();
+      if (districtName) setSetting("site_district_name", districtName);
+      if (stateName)    setSetting("site_state_name",    stateName);
+      if (stateAbbr)    setSetting("site_state_abbr",    stateAbbr);
+      writeAuditLog("update_district_settings", "settings", null, `District settings updated: ${districtName}, ${stateName}`);
+      return sendJson(res, 200, { ok: true, districtName: districtName || getSetting("site_district_name", DISTRICT_NAME), stateName: stateName || getSetting("site_state_name", STATE_NAME) });
+    }
+
     if (req.method === "POST" && url.pathname === "/api/admin/departments") {
       requireAdmin(req);
       const body = await readJsonBody(req);
@@ -2130,6 +2143,82 @@ async function handleJoin(e) {
 </body></html>`;
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache", ...securityHeaders() });
       res.end(joinPage);
+      return;
+    }
+
+    // ── Certificate verification standalone page ──────────────────────────────
+    if (req.method === "GET" && /^\/verify\/\d+$/.test(url.pathname)) {
+      const profileId = Number(url.pathname.split("/")[2]);
+      const profile = getPublicVolunteerVerification(profileId);
+      const districtName = getSetting("site_district_name", DISTRICT_NAME);
+      const verifyPage = `<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Certificate Verification — JanPrayas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Libre+Baskerville:wght@700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Inter,sans-serif;background:#F0F4F8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{background:#fff;border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,0.12);max-width:480px;width:100%;overflow:hidden}
+.header{background:linear-gradient(135deg,#1B3A6B,#1E40AF);padding:28px 28px 20px;text-align:center}
+.header img{height:56px;margin-bottom:12px}
+.header h1{color:#fff;font-family:'Libre Baskerville',serif;font-size:20px;margin-bottom:4px}
+.header p{color:rgba(255,255,255,0.75);font-size:13px}
+.body{padding:28px}
+.status-ok{background:#DCFCE7;border:1.5px solid #16A34A;border-radius:12px;padding:16px 18px;margin-bottom:20px}
+.status-fail{background:#FEE2E2;border:1.5px solid #DC2626;border-radius:12px;padding:16px 18px;margin-bottom:20px}
+.status-icon{font-size:28px;margin-bottom:8px}
+.status-label{font-size:13px;font-weight:700;color:#166534;letter-spacing:.5px;text-transform:uppercase}
+.status-label.fail{color:#B91C1C}
+.vol-name{font-family:'Libre Baskerville',serif;font-size:28px;color:#1B3A6B;margin:10px 0 4px}
+.vol-area{font-size:14px;color:#6B7280;margin-bottom:12px}
+.rank-pill{display:inline-block;background:#1B3A6B;color:#fff;font-size:12px;font-weight:700;border-radius:20px;padding:4px 14px;letter-spacing:.5px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}
+.stat{background:#F8FAFC;border-radius:10px;padding:12px 8px;text-align:center}
+.stat-val{font-size:22px;font-weight:800;color:#1B3A6B}
+.stat-lbl{font-size:11px;color:#6B7280;margin-top:2px}
+.since{font-size:12px;color:#9CA3AF;margin-top:12px}
+.footer{padding:16px 28px;border-top:1px solid #E5E7EB;background:#F8FAFC;text-align:center;font-size:12px;color:#9CA3AF}
+.footer a{color:#1E40AF;text-decoration:none;font-weight:600}
+</style></head><body>
+<div class="card">
+  <div class="header">
+    <img src="/assets/janprayas-logo.png" alt="JanPrayas">
+    <h1>Certificate Verification</h1>
+    <p>JanPrayas Citizen Engagement Platform · ${escapeHtml(districtName)}</p>
+  </div>
+  <div class="body">
+    ${profile.valid ? `
+    <div class="status-ok">
+      <div class="status-icon">✅</div>
+      <div class="status-label">Authentic — Verified JanPrayas Volunteer</div>
+    </div>
+    <div class="vol-name">${escapeHtml(profile.name)}</div>
+    <div class="vol-area">${escapeHtml(profile.area || "—")}</div>
+    <div class="rank-pill">${escapeHtml(profile.civicRankEn || "Volunteer")}</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-val">${profile.points}</div><div class="stat-lbl">Points</div></div>
+      <div class="stat"><div class="stat-val">${profile.missions}</div><div class="stat-lbl">Missions</div></div>
+      <div class="stat"><div class="stat-val">${profile.completedCount}</div><div class="stat-lbl">Completed</div></div>
+    </div>
+    ${profile.memberSince ? `<div class="since">Volunteer since ${new Date(profile.memberSince).toLocaleDateString("en-IN", { month: "long", year: "numeric" })}</div>` : ""}
+    <div style="margin-top:14px;font-size:12px;color:#6B7280;line-height:1.6">This information is fetched live from official JanPrayas records and confirms the authenticity of this volunteer credential.</div>
+    ` : `
+    <div class="status-fail">
+      <div class="status-icon">❌</div>
+      <div class="status-label fail">Not Verified</div>
+      <div style="font-size:13px;color:#B91C1C;margin-top:6px">This certificate or ID does not match any record in the JanPrayas system. It may be forged or invalid.</div>
+    </div>
+    `}
+  </div>
+  <div class="footer">
+    <a href="/">← Return to JanPrayas Portal</a><br>
+    <span style="margin-top:4px;display:block">${escapeHtml(districtName)} District · janprayas.dhamtari.gov.in</span>
+  </div>
+</div>
+</body></html>`;
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", ...securityHeaders() });
+      res.end(verifyPage);
       return;
     }
 
@@ -2926,9 +3015,9 @@ function buildBootstrapPayload(isAdmin = false) {
   return {
     dataMode,
     showDistrictMap: getSetting("show_district_map", "0") === "1",
-    districtName: DISTRICT_NAME,
-    stateName: STATE_NAME,
-    stateAbbr: STATE_ABBR,
+    districtName: getSetting("site_district_name", DISTRICT_NAME),
+    stateName:    getSetting("site_state_name",    STATE_NAME),
+    stateAbbr:    getSetting("site_state_abbr",    STATE_ABBR),
     siteBadgeEn: getSetting("site_badge_en", ""),
     siteBadgeHi: getSetting("site_badge_hi", ""),
     certSettings: {
