@@ -3795,10 +3795,34 @@
 
               <!-- ── Missions Tab ────────────────────────────────────── -->
               <div class="org-tab-panel hidden" id="orgTabMissions">
-                <div style="background:var(--navy-light,#EFF6FF);border:1px solid var(--navy,#1E40AF);border-radius:12px;padding:14px 16px;margin-bottom:20px;font-size:13px;line-height:1.6">
-                  <strong style="color:var(--navy,#1E40AF)">📋 How it works:</strong>
-                  If your organization is <strong>approved</strong>, missions you submit are published instantly. If not yet approved, each mission goes to admin review first.
-                  On mission day, volunteers scan a QR code to verify attendance. You earn <strong>20 base points + 5 per QR-verified volunteer</strong>.
+                <!-- How the QR check-in & certificate system works -->
+                <div style="border:1.5px solid var(--navy,#1E40AF);border-radius:12px;margin-bottom:20px;overflow:hidden">
+                  <div style="background:var(--navy,#1E40AF);padding:10px 16px">
+                    <span style="color:#fff;font-weight:700;font-size:14px">📋 How Volunteer Check-in &amp; Certificates Work</span>
+                  </div>
+                  <div style="padding:14px 16px;font-size:13px;line-height:1.7;background:var(--navy-light,#EFF6FF)">
+                    <p style="margin:0 0 12px">Volunteers earn a <strong>participation certificate</strong> only when <em>both</em> of the following conditions are met:</p>
+                    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+                      <div style="display:flex;gap:12px;align-items:flex-start">
+                        <span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--navy,#1E40AF);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center">1</span>
+                        <div>
+                          <strong>Volunteer must be registered on JanPrayas.</strong><br>
+                          <span style="color:var(--muted)">They must have signed up at this portal using their mobile number before your event. Unregistered walk-ins cannot check in or receive certificates.</span>
+                        </div>
+                      </div>
+                      <div style="display:flex;gap:12px;align-items:flex-start">
+                        <span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--saffron,#F97316);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center">2</span>
+                        <div>
+                          <strong>Volunteer must scan the QR code at the venue on the day of the mission.</strong><br>
+                          <span style="color:var(--muted)">Display your mission's QR check-in poster at the event venue. Each volunteer opens JanPrayas on their phone, scans the QR code, and takes a live selfie to confirm physical presence. This selfie is stored as proof of attendance.</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="background:#fff;border:1px solid #c7d2fe;border-radius:8px;padding:10px 12px;font-size:12px;color:#3730a3">
+                      <strong>💡 Tip for your event:</strong> Print and display the <em>Check-in Poster</em> (available below for each approved mission) at a clearly visible spot at your venue. Ask volunteers to scan it as they arrive. After the event, mark the mission as <strong>Completed</strong> — certificates are then automatically generated for every volunteer who checked in.
+                    </div>
+                    <p style="margin:10px 0 0;font-size:12px;color:var(--muted)">Your organization earns <strong>20 base points</strong> per mission + <strong>5 points per QR-verified volunteer</strong>. Consistent monthly activity earns bonus points.</p>
+                  </div>
                 </div>
 
                 <!-- Create mission form -->
@@ -10033,12 +10057,20 @@
             <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.date)}</div>
             <div class="message-time">${escapeHtml(statusLabel(mission.status))}</div>
             ${mission.checkInCode ? `
-            <div style="margin:8px 0;padding:8px;background:var(--surface-alt,#f5f5f5);border-radius:8px;display:flex;align-items:center;gap:12px">
-              <div id="qr-${mission.id}" style="flex-shrink:0"></div>
-              <div>
-                <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Check-in Code</div>
-                <div style="font-size:22px;font-weight:700;letter-spacing:4px">${escapeHtml(mission.checkInCode)}</div>
-                <div style="font-size:11px;color:var(--muted)">Display at venue for volunteer check-in</div>
+            <div style="margin:10px 0;border:1.5px solid #6366f1;border-radius:10px;overflow:hidden">
+              <div style="background:#6366f1;padding:6px 12px;display:flex;align-items:center;gap:6px">
+                <span style="color:#fff;font-size:12px;font-weight:700">📲 QR Check-in Code — Show this at your venue</span>
+              </div>
+              <div style="padding:10px 12px;background:#f5f3ff;display:flex;align-items:center;gap:14px">
+                <div id="qr-${mission.id}" style="flex-shrink:0"></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:24px;font-weight:800;letter-spacing:5px;color:#1e1b4b">${escapeHtml(mission.checkInCode)}</div>
+                  <div style="font-size:12px;color:#4338ca;margin-top:2px;font-weight:600">Print the poster below and display it at the venue entrance.</div>
+                  <div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5">
+                    Volunteers scan this QR code on mission day to verify attendance and become eligible for their participation certificate.
+                    <br><strong>Reminder:</strong> Only registered JanPrayas volunteers can check in.
+                  </div>
+                </div>
               </div>
             </div>
             <button class="btn btn-soft" type="button" onclick="downloadCheckinPoster(${mission.id})" style="margin-bottom:8px">📄 ${state.lang === "hi" ? "चेक-इन पोस्टर डाउनलोड करें" : "Download Check-in Poster"}</button>` : ""}
