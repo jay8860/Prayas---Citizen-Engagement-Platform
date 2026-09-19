@@ -5430,15 +5430,36 @@
                 <input id="newUserScope" type="text" list="locationSuggestions" maxlength="100" data-i18n-placeholder="pm-area-placeholder" placeholder="Enter ward, gram panchayat, city, town or village" />
               </div>
               <div class="form-group" id="newUserPermissionsGroup">
-                <label style="margin-bottom:8px;display:block">Additional Permissions</label>
-                <label style="display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:8px;cursor:pointer">
-                  <input type="checkbox" id="newUserCanDelete" style="width:16px;height:16px;accent-color:var(--danger)">
-                  <span><strong style="color:var(--danger)">Can delete records</strong> — volunteers, organizations, comments, photos</span>
-                </label>
-                <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
-                  <input type="checkbox" id="newUserCanManageSettings" style="width:16px;height:16px;accent-color:var(--saffron)">
-                  <span><strong style="color:var(--navy)">Can manage settings</strong> — branding, certificates, district identity, site config</span>
-                </label>
+                <label style="margin-bottom:8px;display:block;font-weight:600">Coordinator Permissions</label>
+                <div style="background:var(--surface-alt,#f8f9fa);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                  <p style="margin:0 0 4px;font-size:12px;color:var(--muted)">Enabled by default — uncheck to restrict this coordinator:</p>
+                  <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+                    <input type="checkbox" id="newUserCanApproveMissions" checked style="width:15px;height:15px;accent-color:var(--primary)">
+                    <span><strong>Approve / reject mission requests</strong></span>
+                  </label>
+                  <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+                    <input type="checkbox" id="newUserCanManageOrgs" checked style="width:15px;height:15px;accent-color:var(--primary)">
+                    <span><strong>Manage organizations</strong> — review, edit org profiles</span>
+                  </label>
+                  <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+                    <input type="checkbox" id="newUserCanPostAnnouncements" checked style="width:15px;height:15px;accent-color:var(--primary)">
+                    <span><strong>Post announcements</strong> — publish news &amp; updates</span>
+                  </label>
+                  <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+                    <input type="checkbox" id="newUserCanExportData" checked style="width:15px;height:15px;accent-color:var(--primary)">
+                    <span><strong>Export data</strong> — download CSV reports</span>
+                  </label>
+                  <hr style="margin:4px 0;border:none;border-top:1px solid var(--border)">
+                  <p style="margin:0 0 4px;font-size:12px;color:var(--muted)">Restricted by default — check to grant elevated access:</p>
+                  <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+                    <input type="checkbox" id="newUserCanDelete" style="width:15px;height:15px;accent-color:var(--danger)">
+                    <span><strong style="color:var(--danger)">Can delete records</strong> — volunteers, organizations, comments, photos</span>
+                  </label>
+                  <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+                    <input type="checkbox" id="newUserCanManageSettings" style="width:15px;height:15px;accent-color:var(--saffron)">
+                    <span><strong>Can manage platform settings</strong> — branding, certificates, district config</span>
+                  </label>
+                </div>
               </div>
               <button class="btn btn-primary" type="button" style="width:100%" onclick="submitCreateAdminUser()" data-i18n="users-create-submit">Create Login</button>
             </div>
@@ -5505,25 +5526,64 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="editPermissionsUserId">
-        <div class="form-group">
+        <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Standard access — uncheck to restrict:</p>
+        <div class="form-group" style="margin-bottom:8px">
           <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
-            <input type="checkbox" id="editPermCanDelete" style="width:16px;height:16px;accent-color:var(--danger);margin-top:3px;flex-shrink:0">
+            <input type="checkbox" id="editPermCanApproveMissions" style="width:15px;height:15px;accent-color:var(--primary);margin-top:3px;flex-shrink:0">
+            <div>
+              <div style="font-weight:600">Approve / reject mission requests</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:1px">Organization mission approvals and AI queue actions.</div>
+            </div>
+          </label>
+        </div>
+        <div class="form-group" style="margin-bottom:8px">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+            <input type="checkbox" id="editPermCanManageOrgs" style="width:15px;height:15px;accent-color:var(--primary);margin-top:3px;flex-shrink:0">
+            <div>
+              <div style="font-weight:600">Manage organizations</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:1px">Review and edit organization profiles on the portal.</div>
+            </div>
+          </label>
+        </div>
+        <div class="form-group" style="margin-bottom:8px">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+            <input type="checkbox" id="editPermCanPostAnnouncements" style="width:15px;height:15px;accent-color:var(--primary);margin-top:3px;flex-shrink:0">
+            <div>
+              <div style="font-weight:600">Post announcements</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:1px">Publish and edit public news and announcements.</div>
+            </div>
+          </label>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+            <input type="checkbox" id="editPermCanExportData" style="width:15px;height:15px;accent-color:var(--primary);margin-top:3px;flex-shrink:0">
+            <div>
+              <div style="font-weight:600">Export data</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:1px">Download CSV reports — volunteers, missions, audit log.</div>
+            </div>
+          </label>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--border);margin:0 0 12px">
+        <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Elevated access — check to grant:</p>
+        <div class="form-group" style="margin-bottom:8px">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+            <input type="checkbox" id="editPermCanDelete" style="width:15px;height:15px;accent-color:var(--danger);margin-top:3px;flex-shrink:0">
             <div>
               <div style="font-weight:600;color:var(--danger)">Can delete records</div>
-              <div style="font-size:13px;color:var(--muted);margin-top:2px">Allows deleting volunteers, organizations, comments, and photos. Use sparingly.</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:1px">Volunteers, organizations, comments, and photos. Use sparingly.</div>
             </div>
           </label>
         </div>
         <div class="form-group">
           <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
-            <input type="checkbox" id="editPermCanManageSettings" style="width:16px;height:16px;accent-color:var(--saffron);margin-top:3px;flex-shrink:0">
+            <input type="checkbox" id="editPermCanManageSettings" style="width:15px;height:15px;accent-color:var(--saffron);margin-top:3px;flex-shrink:0">
             <div>
               <div style="font-weight:600">Can manage platform settings</div>
-              <div style="font-size:13px;color:var(--muted);margin-top:2px">Allows changing branding, certificate signatories, district identity, and site configuration.</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:1px">Branding, certificate signatories, district identity, site configuration.</div>
             </div>
           </label>
         </div>
-        <div id="editPermissionsError" style="color:var(--danger);font-size:13px;margin-bottom:8px"></div>
+        <div id="editPermissionsError" style="color:var(--danger);font-size:13px;margin:8px 0"></div>
         <button class="btn btn-primary" type="button" onclick="savePermissions()" style="width:100%">Save Permissions</button>
       </div>
     </div>
@@ -6758,12 +6818,23 @@
           <div class="message-card">
             <div class="message-name">${escapeHtml(u.name)} ${u.active ? "" : `<span style="color:#c0392b;font-size:12px">(${state.lang === "hi" ? "निष्क्रिय" : "inactive"})</span>`}</div>
             <div class="message-text">@${escapeHtml(u.username)} · ${u.role === "super_admin" ? (state.lang === "hi" ? "जिला प्रशासक" : "District Administrator") : `${state.lang === "hi" ? "समन्वयक" : "Coordinator"} — ${escapeHtml(u.scope)}`}</div>
-            ${u.role !== "super_admin" ? `<div class="message-time" style="margin-top:4px">${[u.canDelete ? "🗑 Can delete" : null, u.canManageSettings ? "⚙️ Can manage settings" : null].filter(Boolean).join(" · ") || "Standard access"}</div>` : ""}
+            ${u.role !== "super_admin" ? (() => {
+                const badges = [
+                  u.canApproveMissions ? null : "🚫 No mission approval",
+                  u.canManageOrgs ? null : "🚫 No org management",
+                  u.canPostAnnouncements ? null : "🚫 No announcements",
+                  u.canExportData ? null : "🚫 No data export",
+                  u.canDelete ? "🗑 Can delete" : null,
+                  u.canManageSettings ? "⚙️ Can manage settings" : null
+                ].filter(Boolean);
+                return `<div class="message-time" style="margin-top:4px;line-height:1.6">${badges.length ? badges.join(" · ") : "✅ Standard access"}</div>`;
+              })() : ""}
             <div class="message-time">${u.lastLoginAt ? `${state.lang === "hi" ? "अंतिम लॉगिन" : "Last login"}: ${formatDate(new Date(u.lastLoginAt), state.lang)}` : (state.lang === "hi" ? "अभी तक लॉगिन नहीं हुआ" : "Never logged in")}</div>
             <div class="message-actions">
               ${u.username === "admin" ? "" : `<button class="btn btn-soft" type="button" onclick="toggleAdminUserAccount(${u.id})">${u.active ? (state.lang === "hi" ? "निष्क्रिय करें" : "Deactivate") : (state.lang === "hi" ? "सक्रिय करें" : "Activate")}</button>`}
               <button class="btn btn-soft" type="button" onclick="promptResetPassword(${u.id}, ${JSON.stringify(u.name)})">${state.lang === "hi" ? "पासवर्ड रीसेट करें" : "Reset Password"}</button>
-              ${u.username !== "admin" && u.role !== "super_admin" ? `<button class="btn btn-soft" type="button" onclick="openPermissionsModal(${u.id}, ${JSON.stringify(u.name)}, ${u.canDelete ? "true" : "false"}, ${u.canManageSettings ? "true" : "false"})" style="padding:5px 10px;font-size:12px">Permissions</button>` : ""}
+              ${u.username !== "admin" && u.role !== "super_admin" ? `<button class="btn btn-soft" type="button" onclick="openPermissionsModal(${u.id}, ${JSON.stringify(u.name)}, ${JSON.stringify(u)})" style="padding:5px 10px;font-size:12px">Permissions</button>` : ""}
+              ${u.username !== "admin" ? `<button class="btn btn-soft" type="button" onclick="confirmDeleteAdminUser(${u.id}, ${JSON.stringify(u.name)})" style="padding:5px 10px;font-size:12px;color:var(--danger)">Delete Login</button>` : ""}
             </div>
           </div>
         `)
@@ -6788,14 +6859,18 @@
           body: JSON.stringify({
             name, username, password, role, scope,
             canDelete: document.getElementById("newUserCanDelete")?.checked || false,
-            canManageSettings: document.getElementById("newUserCanManageSettings")?.checked || false
+            canManageSettings: document.getElementById("newUserCanManageSettings")?.checked || false,
+            canApproveMissions: document.getElementById("newUserCanApproveMissions")?.checked !== false,
+            canManageOrgs: document.getElementById("newUserCanManageOrgs")?.checked !== false,
+            canPostAnnouncements: document.getElementById("newUserCanPostAnnouncements")?.checked !== false,
+            canExportData: document.getElementById("newUserCanExportData")?.checked !== false
           })
         });
         ["newUserName", "newUserUsername", "newUserPassword", "newUserScope"].forEach((id) => {
           document.getElementById(id).value = "";
         });
-        document.getElementById("newUserCanDelete").checked = false;
-        document.getElementById("newUserCanManageSettings").checked = false;
+        ["newUserCanDelete", "newUserCanManageSettings"].forEach(id => { document.getElementById(id).checked = false; });
+        ["newUserCanApproveMissions", "newUserCanManageOrgs", "newUserCanPostAnnouncements", "newUserCanExportData"].forEach(id => { document.getElementById(id).checked = true; });
         await loadAdminUsersList();
         showToast(state.lang === "hi" ? "नया लॉगिन बना दिया गया।" : "New login created.", "✅");
       } catch (error) {
@@ -6830,11 +6905,15 @@
       }
     }
 
-    function openPermissionsModal(userId, name, canDelete, canManageSettings) {
+    function openPermissionsModal(userId, name, u) {
       document.getElementById("editPermissionsUserId").value = userId;
       document.getElementById("editPermissionsSubtitle").textContent = `Permissions for ${name}`;
-      document.getElementById("editPermCanDelete").checked = canDelete;
-      document.getElementById("editPermCanManageSettings").checked = canManageSettings;
+      document.getElementById("editPermCanDelete").checked = u.canDelete || false;
+      document.getElementById("editPermCanManageSettings").checked = u.canManageSettings || false;
+      document.getElementById("editPermCanApproveMissions").checked = u.canApproveMissions !== false;
+      document.getElementById("editPermCanManageOrgs").checked = u.canManageOrgs !== false;
+      document.getElementById("editPermCanPostAnnouncements").checked = u.canPostAnnouncements !== false;
+      document.getElementById("editPermCanExportData").checked = u.canExportData !== false;
       document.getElementById("editPermissionsError").textContent = "";
       openModal("editPermissionsModal");
     }
@@ -6848,7 +6927,11 @@
           method: "POST",
           body: JSON.stringify({
             canDelete: document.getElementById("editPermCanDelete").checked,
-            canManageSettings: document.getElementById("editPermCanManageSettings").checked
+            canManageSettings: document.getElementById("editPermCanManageSettings").checked,
+            canApproveMissions: document.getElementById("editPermCanApproveMissions").checked,
+            canManageOrgs: document.getElementById("editPermCanManageOrgs").checked,
+            canPostAnnouncements: document.getElementById("editPermCanPostAnnouncements").checked,
+            canExportData: document.getElementById("editPermCanExportData").checked
           })
         });
         closeModal("editPermissionsModal");
@@ -6857,6 +6940,27 @@
       } catch (error) {
         errorEl.textContent = error?.message || "Failed to update permissions.";
       }
+    }
+
+    function confirmDeleteAdminUser(userId, name) {
+      const hi = state.lang === "hi";
+      openConfirmModal({
+        icon: "🗑️",
+        title: hi ? "लॉगिन हटाएं?" : `Delete login for ${name}?`,
+        message: hi
+          ? "यह लॉगिन स्थायी रूप से हटा दिया जाएगा। यह क्रिया पूर्ववत नहीं की जा सकती।"
+          : "This login will be permanently deleted. This cannot be undone.",
+        confirmLabel: hi ? "हटाएं" : "Delete Login",
+        onConfirm: async () => {
+          try {
+            await apiRequest(`/api/admin/users/${userId}/delete`, { method: "POST" });
+            showToast(hi ? "लॉगिन हटाया गया।" : "Login deleted.", "🗑️");
+            await loadAdminUsersList();
+          } catch (error) {
+            handleRequestError(error);
+          }
+        }
+      });
     }
 
     // ── Poster Maker ──────────────────────────────────────────────────────────
@@ -8765,16 +8869,24 @@
       document.getElementById("showcaseGrid")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
-    async function adminDeleteStoryPrompt(storyId) {
-      if (!confirm(state.lang === "hi" ? "क्या आप वाकई इस कहानी को हटाना चाहते हैं?" : "Delete this story? This cannot be undone.")) return;
-      try {
-        await apiRequest(`/api/admin/stories/${storyId}/delete`, { method: "POST" });
-        showToast(state.lang === "hi" ? "कहानी हटा दी गई।" : "Story deleted.", "🗑️");
-        await refreshPortalData();
-        renderStories();
-      } catch (error) {
-        handleRequestError(error);
-      }
+    function adminDeleteStoryPrompt(storyId) {
+      const hi = state.lang === "hi";
+      openConfirmModal({
+        icon: "📰",
+        title: hi ? "कहानी हटाएं?" : "Delete this story?",
+        message: hi ? "यह कहानी स्थायी रूप से हटा दी जाएगी।" : "This story will be permanently deleted. This cannot be undone.",
+        confirmLabel: hi ? "हटाएं" : "Delete Story",
+        onConfirm: async () => {
+          try {
+            await apiRequest(`/api/admin/stories/${storyId}/delete`, { method: "POST" });
+            showToast(hi ? "कहानी हटा दी गई।" : "Story deleted.", "🗑️");
+            await refreshPortalData();
+            renderStories();
+          } catch (error) {
+            handleRequestError(error);
+          }
+        }
+      });
     }
 
     // ── Organizational Showcase ───────────────────────────────────────────────
@@ -8843,16 +8955,26 @@
       document.getElementById("orgShowcaseGrid")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
-    async function adminDeleteOrgPrompt(organizationId) {
-      if (!confirm(state.lang === "hi" ? "क्या आप वाकई इस संगठन को हटाना चाहते हैं?" : "Delete this organization and all its photos? This cannot be undone.")) return;
-      try {
-        await apiRequest(`/api/admin/organizations/${organizationId}/delete`, { method: "POST" });
-        showToast(state.lang === "hi" ? "संगठन हटा दिया गया।" : "Organization deleted.", "🗑️");
-        await refreshPortalData();
-        renderOrganizations();
-      } catch (error) {
-        handleRequestError(error);
-      }
+    function adminDeleteOrgPrompt(organizationId) {
+      const hi = state.lang === "hi";
+      openConfirmModal({
+        icon: "🏛️",
+        title: hi ? "संगठन हटाएं?" : "Delete this organization?",
+        message: hi
+          ? "संगठन और उसकी सभी फोटो स्थायी रूप से हटा दी जाएंगी। यह पूर्ववत नहीं किया जा सकता।"
+          : "This organization and all its photos will be permanently deleted. This cannot be undone.",
+        confirmLabel: hi ? "हटाएं" : "Delete Organization",
+        onConfirm: async () => {
+          try {
+            await apiRequest(`/api/admin/organizations/${organizationId}/delete`, { method: "POST" });
+            showToast(hi ? "संगठन हटा दिया गया।" : "Organization deleted.", "🗑️");
+            await refreshPortalData();
+            renderOrganizations();
+          } catch (error) {
+            handleRequestError(error);
+          }
+        }
+      });
     }
 
     function toggleOrgAuthCard() {
@@ -9071,17 +9193,25 @@
 
     async function uploadOrgPhoto(event) { stageOrgPhoto(event); }
 
-    async function deleteOrgPhotoPrompt(photoId) {
-      if (!confirm(state.lang === "hi" ? "क्या आप यह फोटो हटाना चाहते हैं?" : "Remove this photo?")) return;
-      try {
-        const payload = await orgApiRequest(`/api/organizations/me/photos/${photoId}/delete`, { method: "POST" });
-        state.orgAuth.org = payload.org;
-        state.orgAuth.photos = payload.photos || [];
-        renderOrgDashboard();
-        await refreshPortalData();
-      } catch (error) {
-        handleRequestError(error);
-      }
+    function deleteOrgPhotoPrompt(photoId) {
+      const hi = state.lang === "hi";
+      openConfirmModal({
+        icon: "📸",
+        title: hi ? "फोटो हटाएं?" : "Remove this photo?",
+        message: hi ? "यह फोटो स्थायी रूप से हटा दी जाएगी।" : "This photo will be permanently removed.",
+        confirmLabel: hi ? "हटाएं" : "Remove Photo",
+        onConfirm: async () => {
+          try {
+            const payload = await orgApiRequest(`/api/organizations/me/photos/${photoId}/delete`, { method: "POST" });
+            state.orgAuth.org = payload.org;
+            state.orgAuth.photos = payload.photos || [];
+            renderOrgDashboard();
+            await refreshPortalData();
+          } catch (error) {
+            handleRequestError(error);
+          }
+        }
+      });
     }
 
     function logoutOrg() {

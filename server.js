@@ -1017,6 +1017,10 @@ try { db.exec("ALTER TABLE admin_users ADD COLUMN can_delete INTEGER NOT NULL DE
 try { db.exec("ALTER TABLE admin_users ADD COLUMN can_manage_settings INTEGER NOT NULL DEFAULT 0"); } catch(e) {}
 try { db.exec("ALTER TABLE admin_audit_log ADD COLUMN actor_username TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try { db.exec("ALTER TABLE admin_audit_log ADD COLUMN actor_name TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN can_approve_missions INTEGER NOT NULL DEFAULT 1"); } catch(e) {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN can_manage_orgs INTEGER NOT NULL DEFAULT 1"); } catch(e) {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN can_post_announcements INTEGER NOT NULL DEFAULT 1"); } catch(e) {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN can_export_data INTEGER NOT NULL DEFAULT 1"); } catch(e) {}
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
@@ -1378,6 +1382,12 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, updateAdminUserPermissions(userId, body, actor));
     }
 
+    if (req.method === "POST" && /^\/api\/admin\/users\/\d+\/delete$/.test(url.pathname)) {
+      const actor = requireSuperAdmin(req);
+      const userId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, deleteAdminUser(userId, actor));
+    }
+
     if (req.method === "POST" && url.pathname === "/api/volunteers") {
       const body = await readJsonBody(req);
       const result = registerVolunteer(body);
@@ -1556,14 +1566,14 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && /^\/api\/admin\/organizations\/\d+\/review$/.test(url.pathname)) {
-      const admin = requireAdmin(req);
+      const admin = requireCanApproveMissions(req);
       const body = await readJsonBody(req);
       const organizationId = Number(url.pathname.split("/")[4]);
       return sendJson(res, 200, adminReviewOrganization(organizationId, body, admin));
     }
 
     if (req.method === "POST" && /^\/api\/admin\/organizations\/\d+\/update$/.test(url.pathname)) {
-      const admin = requireAdmin(req);
+      const admin = requireCanManageOrgs(req);
       const body = await readJsonBody(req);
       const organizationId = Number(url.pathname.split("/")[4]);
       return sendJson(res, 200, adminUpdateOrganization(organizationId, body, admin));
@@ -1640,13 +1650,13 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/announcements") {
-      requireAdmin(req);
+      requireCanPostAnnouncements(req);
       const body = await readJsonBody(req);
       return sendJson(res, 200, createAnnouncement(body));
     }
 
     if (req.method === "POST" && /^\/api\/admin\/announcements\/\d+\/update$/.test(url.pathname)) {
-      requireAdmin(req);
+      requireCanPostAnnouncements(req);
       const body = await readJsonBody(req);
       const announcementId = Number(url.pathname.split("/")[4]);
       return sendJson(res, 200, updateAnnouncement(announcementId, body));
@@ -1709,7 +1719,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/ai-queue/action") {
-      const admin = requireAdmin(req);
+      const admin = requireCanApproveMissions(req);
       const body = await readJsonBody(req);
       return sendJson(res, 200, handleAiQueueAction(body, admin));
     }
@@ -1895,23 +1905,23 @@ const server = http.createServer(async (req, res) => {
 
     // ── Data exports ──────────────────────────────────────────────────────────
     if (req.method === "GET" && url.pathname === "/api/admin/export/missions.csv") {
-      requireAdmin(req);
+      requireCanExportData(req);
       return sendCsv(res, exportMissionsCsv());
     }
     if (req.method === "GET" && url.pathname === "/api/admin/export/stories.csv") {
-      requireAdmin(req);
+      requireCanExportData(req);
       return sendCsv(res, exportStoriesCsv());
     }
     if (req.method === "GET" && url.pathname === "/api/admin/export/subscribers.csv") {
-      requireAdmin(req);
+      requireCanExportData(req);
       return sendCsv(res, exportSubscribersCsv());
     }
     if (req.method === "GET" && url.pathname === "/api/admin/export/location-report.csv") {
-      requireAdmin(req);
+      requireCanExportData(req);
       return sendCsv(res, buildLocationReportCsv());
     }
     if (req.method === "GET" && url.pathname === "/api/admin/export/audit-log.csv") {
-      requireAdmin(req);
+      requireCanExportData(req);
       return sendCsv(res, buildAuditLogCsv());
     }
 
@@ -2551,6 +2561,10 @@ function createAdminToken(user) {
     scope: user.scope_ward || "",
     canDelete: isSuperAdmin || Boolean(user.can_delete),
     canManageSettings: isSuperAdmin || Boolean(user.can_manage_settings),
+    canApproveMissions: isSuperAdmin || Boolean(user.can_approve_missions),
+    canManageOrgs: isSuperAdmin || Boolean(user.can_manage_orgs),
+    canPostAnnouncements: isSuperAdmin || Boolean(user.can_post_announcements),
+    canExportData: isSuperAdmin || Boolean(user.can_export_data),
     exp: Date.now() + TOKEN_TTL_MS
   };
   const encodedPayload = base64Url(JSON.stringify(payload));
@@ -2602,6 +2616,38 @@ function requireCanManageSettings(req) {
   const admin = requireAdmin(req);
   if (admin.role !== "super_admin" && !admin.canManageSettings) {
     throw publicError(403, "You do not have permission to change platform settings. Ask the district admin to enable this for your account.");
+  }
+  return admin;
+}
+
+function requireCanApproveMissions(req) {
+  const admin = requireAdmin(req);
+  if (admin.role !== "super_admin" && !admin.canApproveMissions) {
+    throw publicError(403, "You do not have permission to approve or reject mission requests.");
+  }
+  return admin;
+}
+
+function requireCanManageOrgs(req) {
+  const admin = requireAdmin(req);
+  if (admin.role !== "super_admin" && !admin.canManageOrgs) {
+    throw publicError(403, "You do not have permission to manage organizations.");
+  }
+  return admin;
+}
+
+function requireCanPostAnnouncements(req) {
+  const admin = requireAdmin(req);
+  if (admin.role !== "super_admin" && !admin.canPostAnnouncements) {
+    throw publicError(403, "You do not have permission to post announcements.");
+  }
+  return admin;
+}
+
+function requireCanExportData(req) {
+  const admin = requireAdmin(req);
+  if (admin.role !== "super_admin" && !admin.canExportData) {
+    throw publicError(403, "You do not have permission to export data.");
   }
   return admin;
 }
@@ -2728,6 +2774,10 @@ function sanitizeUserRow(row) {
     active: Boolean(row.active),
     canDelete: isSuperAdmin || Boolean(row.can_delete),
     canManageSettings: isSuperAdmin || Boolean(row.can_manage_settings),
+    canApproveMissions: isSuperAdmin || Boolean(row.can_approve_missions),
+    canManageOrgs: isSuperAdmin || Boolean(row.can_manage_orgs),
+    canPostAnnouncements: isSuperAdmin || Boolean(row.can_post_announcements),
+    canExportData: isSuperAdmin || Boolean(row.can_export_data),
     createdAt: row.created_at,
     lastLoginAt: row.last_login_at || null
   };
@@ -2763,12 +2813,20 @@ function createAdminUser(body) {
   const { hash, salt } = hashPassword(password);
   const canDelete = role === "super_admin" ? 1 : (body.canDelete ? 1 : 0);
   const canManageSettings = role === "super_admin" ? 1 : (body.canManageSettings ? 1 : 0);
+  const canApproveMissions = role === "super_admin" ? 1 : (body.canApproveMissions !== false ? 1 : 0);
+  const canManageOrgs = role === "super_admin" ? 1 : (body.canManageOrgs !== false ? 1 : 0);
+  const canPostAnnouncements = role === "super_admin" ? 1 : (body.canPostAnnouncements !== false ? 1 : 0);
+  const canExportData = role === "super_admin" ? 1 : (body.canExportData !== false ? 1 : 0);
   db.prepare(`
-    INSERT INTO admin_users (name, username, password_hash, password_salt, role, scope_ward, can_delete, can_manage_settings, active, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
-  `).run(name, username, hash, salt, role, scopeWard, canDelete, canManageSettings, isoNow());
+    INSERT INTO admin_users (name, username, password_hash, password_salt, role, scope_ward, can_delete, can_manage_settings, can_approve_missions, can_manage_orgs, can_post_announcements, can_export_data, active, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+  `).run(name, username, hash, salt, role, scopeWard, canDelete, canManageSettings, canApproveMissions, canManageOrgs, canPostAnnouncements, canExportData, isoNow());
   const newId = Number(db.prepare("SELECT last_insert_rowid() AS id").get().id);
-  const permFlags = [canDelete ? "can_delete" : null, canManageSettings ? "can_manage_settings" : null].filter(Boolean).join(", ");
+  const permFlags = [
+    canDelete ? "can_delete" : null, canManageSettings ? "can_manage_settings" : null,
+    canApproveMissions ? null : "no_approve_missions", canManageOrgs ? null : "no_manage_orgs",
+    canPostAnnouncements ? null : "no_post_announcements", canExportData ? null : "no_export_data"
+  ].filter(Boolean).join(", ");
   writeAuditLog("create_user", "admin_user", newId, `Login created for ${name} (${username}) — ${role}${scopeWard ? ", " + scopeWard : ""}${permFlags ? " [" + permFlags + "]" : ""}`, null);
   return { ok: true, id: newId };
 }
@@ -2804,9 +2862,23 @@ function updateAdminUserPermissions(userId, body, actor) {
   if (row.role === "super_admin") throw publicError(400, "Super admins always have all permissions.");
   const canDelete = body.canDelete ? 1 : 0;
   const canManageSettings = body.canManageSettings ? 1 : 0;
-  db.prepare("UPDATE admin_users SET can_delete = ?, can_manage_settings = ? WHERE id = ?").run(canDelete, canManageSettings, userId);
-  const flags = [canDelete ? "can_delete" : null, canManageSettings ? "can_manage_settings" : null].filter(Boolean);
-  writeAuditLog("update_user_permissions", "admin_user", userId, `Permissions updated for ${row.name} (${row.username}): ${flags.length ? flags.join(", ") : "none"}`, actor);
+  const canApproveMissions = body.canApproveMissions ? 1 : 0;
+  const canManageOrgs = body.canManageOrgs ? 1 : 0;
+  const canPostAnnouncements = body.canPostAnnouncements ? 1 : 0;
+  const canExportData = body.canExportData ? 1 : 0;
+  db.prepare(`UPDATE admin_users SET can_delete=?, can_manage_settings=?, can_approve_missions=?, can_manage_orgs=?, can_post_announcements=?, can_export_data=? WHERE id=?`)
+    .run(canDelete, canManageSettings, canApproveMissions, canManageOrgs, canPostAnnouncements, canExportData, userId);
+  writeAuditLog("update_user_permissions", "admin_user", userId, `Permissions updated for ${row.name} (${row.username})`, actor);
+  return { ok: true };
+}
+
+function deleteAdminUser(userId, actor) {
+  const row = db.prepare("SELECT * FROM admin_users WHERE id = ?").get(userId);
+  if (!row) throw publicError(404, "Login not found.");
+  if (row.username === "admin") throw publicError(400, "The primary admin login cannot be deleted.");
+  if (actor && actor.uid === userId) throw publicError(400, "You cannot delete your own login.");
+  db.prepare("DELETE FROM admin_users WHERE id = ?").run(userId);
+  writeAuditLog("delete_user", "admin_user", userId, `Login permanently deleted: ${row.name} (${row.username})`, actor);
   return { ok: true };
 }
 
