@@ -6777,7 +6777,7 @@
       });
     }
 
-    function generateEventPoster() {
+    async function generateEventPoster() {
       const lang = document.getElementById("posterLang").value || "en";
       const title = document.getElementById("posterTitle").value.trim();
       const date = document.getElementById("posterDate").value.trim();
@@ -6785,7 +6785,7 @@
       const venue = document.getElementById("posterVenue").value.trim();
       const ward = document.getElementById("posterWard").value.trim();
       const contact = document.getElementById("posterContact").value.trim();
-      const cta = document.getElementById("posterCta").value.trim();
+      const ctaInput = document.getElementById("posterCta").value.trim();
       const category = document.getElementById("posterCategory").value || "other";
 
       if (!title || !date || !venue) {
@@ -6796,165 +6796,298 @@
         return;
       }
 
+      // Category-specific vibrant color schemes
+      const THEMES = {
+        sanitation:  { a: "#0D7377", b: "#14A085", accent: "#4DD9AC", light: "#E6FBF4" },
+        environment: { a: "#14532D", b: "#166534", accent: "#4ADE80", light: "#F0FDF4" },
+        awareness:   { a: "#1E40AF", b: "#1D4ED8", accent: "#60A5FA", light: "#EFF6FF" },
+        arts:        { a: "#6B21A8", b: "#7E22CE", accent: "#E879F9", light: "#FAF5FF" },
+        education:   { a: "#1E3A8A", b: "#1E40AF", accent: "#93C5FD", light: "#EFF6FF" },
+        health:      { a: "#991B1B", b: "#B91C1C", accent: "#FCA5A5", light: "#FEF2F2" },
+        sports:      { a: "#0F766E", b: "#0D9488", accent: "#5EEAD4", light: "#F0FDFA" },
+        welfare:     { a: "#5B21B6", b: "#7C3AED", accent: "#C4B5FD", light: "#F5F3FF" },
+        heritage:    { a: "#78350F", b: "#92400E", accent: "#FCD34D", light: "#FFFBEB" },
+        digital:     { a: "#1E3A8A", b: "#1D4ED8", accent: "#7DD3FC", light: "#EFF6FF" },
+        youth:       { a: "#9D174D", b: "#BE185D", accent: "#F9A8D4", light: "#FDF2F8" },
+        governance:  { a: "#1E293B", b: "#334155", accent: "#94A3B8", light: "#F8FAFC" },
+        other:       { a: "#C2410C", b: "#EA580C", accent: "#FED7AA", light: "#FFF7ED" }
+      };
+      const theme = THEMES[category] || THEMES.other;
+
+      const btn = document.querySelector("[onclick='generateEventPoster()']");
+      if (btn) { btn.disabled = true; btn.textContent = lang === "hi" ? "⏳ AI से टेक्स्ट बना रहे हैं…" : "⏳ Generating AI copy…"; }
+
+      // Fetch AI-generated poster text from server
+      let aiText = null;
+      try {
+        const resp = await fetch("/api/generate-poster-text", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify({ title, category, date, venue, lang })
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          aiText = data.text || null;
+        }
+      } catch { /* AI text is a nice-to-have */ }
+
+      if (btn) { btn.disabled = false; btn.setAttribute("data-i18n", "poster-generate"); applyTranslations(); }
+
+      const tagline    = aiText?.tagline    || (lang === "hi" ? "आपकी भागीदारी बदलाव लाती है!" : "Your participation drives real change!");
+      const aiDesc     = aiText?.description || "";
+      const ctaFinal   = ctaInput || aiText?.cta || (lang === "hi" ? "आज ही जुड़ें — जनप्रयास" : "Join today — JanPrayas");
+
+      // Load both logos in parallel before drawing
+      const [emblemImg, jpImg] = await Promise.all([
+        loadImage("assets/dhamtari-emblem.png"),
+        loadImage("assets/janprayas-logo.png")
+      ]);
+
       const canvas = document.getElementById("posterCanvas");
-      const ctx = canvas.getContext("2d");
+      const ctx    = canvas.getContext("2d");
       const W = canvas.width, H = canvas.height;
 
-      // Background
-      ctx.fillStyle = "#FBF7EE";
+      // ─── Full-bleed gradient background ──────────────────────────────────────
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+      bgGrad.addColorStop(0, theme.a);
+      bgGrad.addColorStop(0.55, theme.b);
+      bgGrad.addColorStop(1, theme.a);
+      ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, W, H);
 
-      // Tricolor strip
-      ctx.fillStyle = "#FF9933"; ctx.fillRect(0, 0, W, 14);
-      ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 14, W, 8);
-      ctx.fillStyle = "#138808"; ctx.fillRect(0, 22, W, 14);
+      // Subtle geometric pattern (dot grid) for texture
+      ctx.fillStyle = "rgba(255,255,255,0.04)";
+      for (let x = 40; x < W; x += 60) {
+        for (let y = 40; y < H; y += 60) {
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
 
-      // Formal outer border, matching the static bilingual posters' framed look
-      ctx.strokeStyle = "#C8A96A";
-      ctx.lineWidth = 6;
-      ctx.strokeRect(20, 46, W - 40, H - 66);
-      ctx.strokeStyle = "#1B3A6B";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(30, 56, W - 60, H - 86);
+      // Large faint circle watermark — decorative
+      ctx.save();
+      ctx.globalAlpha = 0.06;
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 60;
+      ctx.beginPath();
+      ctx.arc(W / 2, H * 0.48, 420, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
 
-      // Navy header band
-      const headerH = 300;
-      const grad = ctx.createLinearGradient(0, 36, 0, headerH);
-      grad.addColorStop(0, "#0D3B6E");
-      grad.addColorStop(1, "#1B3A6B");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 36, W, headerH - 36);
+      // ─── Tricolor strip at very top ───────────────────────────────────────────
+      ctx.fillStyle = "#FF9933"; ctx.fillRect(0, 0, W, 16);
+      ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 16, W, 10);
+      ctx.fillStyle = "#138808"; ctx.fillRect(0, 26, W, 16);
 
+      // ─── Header: logos + district name ───────────────────────────────────────
+      const logoSize  = 96;
+      const logoY     = 54;
+      const logoCircR = logoSize / 2 + 8;
+
+      // White circles behind logos
+      const drawLogoCircle = (cx, cy) => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.shadowColor = "rgba(0,0,0,0.25)";
+        ctx.shadowBlur = 12;
+        ctx.arc(cx, cy, logoCircR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      };
+      const lEmblemCX = 90, lEmblemCY = logoY + logoSize / 2;
+      const rLogoCX   = W - 90, rLogoCY = logoY + logoSize / 2;
+      drawLogoCircle(lEmblemCX, lEmblemCY);
+      drawLogoCircle(rLogoCX, rLogoCY);
+      if (emblemImg) ctx.drawImage(emblemImg, lEmblemCX - logoSize / 2, logoY, logoSize, logoSize);
+      if (jpImg)     ctx.drawImage(jpImg,     rLogoCX  - logoSize / 2, logoY, logoSize, logoSize);
+
+      // District name between logos
       ctx.textAlign = "center";
-      ctx.fillStyle = "#FFC36B";
-      ctx.font = "700 26px Inter";
+      ctx.fillStyle = "rgba(255,255,255,0.90)";
+      ctx.font = "600 21px Inter";
       ctx.fillText(
-        lang === "hi" ? `${state.districtName} जिला प्रशासन` : `${state.districtName} District Administration`,
-        W / 2, 96
+        lang === "hi" ? "छत्तीसगढ़ शासन" : "Government of Chhattisgarh",
+        W / 2, 82
       );
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = "700 22px Inter";
-      ctx.fillText(lang === "hi" ? "जनप्रयास नागरिक सहभागिता मंच प्रस्तुत करता है" : "JanPrayas Citizen Engagement Platform Presents", W / 2, 134);
+      ctx.font = "700 32px Inter";
+      ctx.fillText(
+        lang === "hi" ? `जिला धमतरी` : `District Dhamtari`,
+        W / 2, 122
+      );
+      ctx.fillStyle = "rgba(255,255,255,0.80)";
+      ctx.font = "500 18px Inter";
+      ctx.fillText(
+        lang === "hi" ? "जनप्रयास नागरिक सहभागिता मंच" : "JanPrayas Citizen Engagement Platform",
+        W / 2, 152
+      );
 
-      ctx.font = "800 78px Georgia";
-      ctx.fillText(categoryEmoji(category), W / 2, 230);
-
-      // District emblem (left) and JanPrayas logo (right), flanking the header —
-      // drawn last among the header elements so they sit on top of the band.
-      const drawLogo = (src, x, y, size) => {
-        try {
-          const img = new Image();
-          img.onload = () => {
-            ctx.save();
-            ctx.beginPath();
-            ctx.fillStyle = "#FFFFFF";
-            ctx.arc(x + size / 2, y + size / 2, size / 2 + 4, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.drawImage(img, x, y, size, size);
-            ctx.restore();
-          };
-          img.src = src;
-        } catch (error) {
-          // Logo is decorative; never block poster generation on it.
-        }
-      };
-      drawLogo("assets/dhamtari-emblem.png", 44, 56, 72);
-      drawLogo("assets/janprayas-logo.png", W - 116, 56, 72);
-
-      // Title block
-      ctx.fillStyle = "#1B3A6B";
-      ctx.font = "800 58px Georgia";
-      const titleEndY = wrapCanvasText(ctx, title, W / 2, headerH + 90, W - 140, 66, 3);
-
-      // Details card
-      const cardY = titleEndY + 40;
-      const cardH = H - cardY - 260;
+      // ─── Category emoji — large, centered ────────────────────────────────────
+      const emojiY = 230;
+      ctx.font = "110px sans-serif";
+      ctx.textAlign = "center";
       ctx.fillStyle = "#FFFFFF";
-      ctx.strokeStyle = "#C8A96A";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(70, cardY, W - 140, Math.max(cardH, 260), 18);
-      ctx.fill();
-      ctx.stroke();
+      ctx.fillText(categoryEmoji(category), W / 2, emojiY);
 
+      // Glowing halo under emoji
+      ctx.save();
+      ctx.globalAlpha = 0.15;
+      ctx.fillStyle = theme.accent;
+      ctx.beginPath();
+      ctx.arc(W / 2, emojiY - 36, 80, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // ─── Tagline pill ─────────────────────────────────────────────────────────
+      const tagW = Math.min(900, W - 100);
+      const tagX = (W - tagW) / 2;
+      ctx.save();
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
+      ctx.beginPath();
+      ctx.roundRect(tagX, 268, tagW, 54, 27);
+      ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = theme.accent;
+      ctx.font = "600 22px Inter";
+      ctx.textAlign = "center";
+      // truncate tagline if it's very long
+      const taglineTrimmed = tagline.length > 80 ? tagline.slice(0, 78) + "…" : tagline;
+      ctx.fillText(taglineTrimmed, W / 2, 302);
+
+      // ─── Event title ──────────────────────────────────────────────────────────
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "800 62px Georgia";
+      ctx.textAlign = "center";
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.35)";
+      ctx.shadowBlur = 10;
+      const titleEndY = wrapCanvasText(ctx, title, W / 2, 420, W - 140, 74, 3);
+      ctx.restore();
+
+      // ─── AI description (if available) ───────────────────────────────────────
+      let descEndY = titleEndY + 20;
+      if (aiDesc) {
+        ctx.fillStyle = "rgba(255,255,255,0.82)";
+        ctx.font = "400 22px Inter";
+        descEndY = wrapCanvasText(ctx, aiDesc, W / 2, titleEndY + 50, W - 180, 30, 3);
+      }
+
+      // ─── Details card ─────────────────────────────────────────────────────────
+      const cardY  = descEndY + 36;
       const rows = [
         ["📅", lang === "hi" ? "तिथि" : "Date", date],
-        ...(time ? [["🕒", lang === "hi" ? "समय" : "Time", time]] : []),
+        ...(time  ? [["🕒", lang === "hi" ? "समय"        : "Time",        time]]    : []),
         ["📍", lang === "hi" ? "स्थान" : "Venue", venue],
-        ...(ward ? [["🏘️", lang === "hi" ? "वार्ड / ब्लॉक" : "Ward / Block", ward]] : []),
-        ...(contact ? [["📞", lang === "hi" ? "संपर्क" : "Contact", contact]] : [])
+        ...(ward    ? [["🏘️", lang === "hi" ? "वार्ड / ब्लॉक" : "Ward / Block", ward]]  : []),
+        ...(contact ? [["📞", lang === "hi" ? "संपर्क"      : "Contact",     contact]] : [])
       ];
+      const rowH  = 72;
+      const cardH = rows.length * rowH + 40;
 
-      let rowY = cardY + 66;
+      // White semi-transparent card
+      ctx.save();
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.shadowColor = "rgba(0,0,0,0.2)";
+      ctx.shadowBlur = 20;
+      ctx.beginPath();
+      ctx.roundRect(56, cardY, W - 112, cardH, 24);
+      ctx.fill();
+      ctx.restore();
+
+      // Gold top accent bar on card
+      ctx.fillStyle = theme.accent;
+      ctx.beginPath();
+      ctx.roundRect(56, cardY, W - 112, 6, [24, 24, 0, 0]);
+      ctx.fill();
+
+      let rowY = cardY + 36;
       ctx.textAlign = "left";
-      rows.forEach(([icon, label, value]) => {
-        ctx.font = "36px sans-serif";
-        ctx.fillText(icon, 108, rowY);
-        ctx.fillStyle = "#6B7280";
-        ctx.font = "600 22px Inter";
-        ctx.fillText(label.toUpperCase(), 168, rowY - 12);
+      rows.forEach(([icon, label, value], idx) => {
+        if (idx > 0) {
+          ctx.strokeStyle = "rgba(0,0,0,0.06)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(100, rowY - 8);
+          ctx.lineTo(W - 100, rowY - 8);
+          ctx.stroke();
+        }
+        ctx.font = "32px sans-serif";
         ctx.fillStyle = "#1F2937";
-        ctx.font = "700 30px Inter";
-        wrapCanvasText(ctx, value, 168, rowY + 20, W - 380, 34, 2);
-        rowY += 84;
+        ctx.fillText(icon, 94, rowY + 24);
+        ctx.fillStyle = "#6B7280";
+        ctx.font = "600 18px Inter";
+        ctx.fillText(label.toUpperCase(), 148, rowY + 10);
+        ctx.fillStyle = "#111827";
+        ctx.font = "700 26px Inter";
+        wrapCanvasText(ctx, value, 148, rowY + 38, W - 280, 30, 2);
+        rowY += rowH;
       });
 
-      // CTA ribbon
-      if (cta) {
-        ctx.fillStyle = "#FF9933";
-        ctx.beginPath();
-        ctx.roundRect(70, cardY + Math.max(cardH, 260) + 24, W - 140, 76, 14);
-        ctx.fill();
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = "700 30px Inter";
-        ctx.textAlign = "center";
-        wrapCanvasText(ctx, cta, W / 2, cardY + Math.max(cardH, 260) + 72, W - 220, 34, 1);
-      }
-
-      // Footer
-      ctx.fillStyle = "#1B3A6B";
-      ctx.fillRect(0, H - 90, W, 90);
+      // ─── CTA ribbon ───────────────────────────────────────────────────────────
+      const ctaY = cardY + cardH + 28;
+      const ctaGrad = ctx.createLinearGradient(60, 0, W - 60, 0);
+      ctaGrad.addColorStop(0, "#FF9933");
+      ctaGrad.addColorStop(1, "#E07B2A");
+      ctx.fillStyle = ctaGrad;
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.2)";
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(56, ctaY, W - 112, 74, 16);
+      ctx.fill();
+      ctx.restore();
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = "700 22px Inter";
-      ctx.textAlign = "left";
-      ctx.fillText(
-        (state.districtName || "District") + " · " + (state.stateName || "State"),
-        60, H - 46
-      );
-      ctx.textAlign = "right";
-      ctx.font = "16px Inter";
-      ctx.fillStyle = "rgba(255,255,255,0.75)";
-      ctx.fillText(
-        lang === "hi" ? "अधिक जानकारी और पंजीकरण के लिए पोर्टल देखें" : "See the portal for details and registration",
-        W - 60, H - 46
-      );
+      ctx.font = "700 28px Inter";
+      ctx.textAlign = "center";
+      wrapCanvasText(ctx, ctaFinal, W / 2, ctaY + 46, W - 200, 32, 1);
 
-      // QR code linking to the volunteer registration section — this poster
-      // recruits new volunteers, so it must never point at a mission
-      // check-in link (that's what the admin check-in poster is for).
+      // ─── QR code ──────────────────────────────────────────────────────────────
       const qrTarget = `${window.location.origin}${window.location.pathname}#volunteer`;
-      const qrHost = document.createElement("div");
-      qrHost.style.position = "fixed";
-      qrHost.style.left = "-9999px";
+      const qrHost   = document.createElement("div");
+      qrHost.style.cssText = "position:fixed;left:-9999px";
       document.body.appendChild(qrHost);
+      const qrSize = 180;
       try {
-        new QRCode(qrHost, { text: qrTarget, width: 200, height: 200, colorDark: "#1B3A6B", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
-      } catch (error) {
-        // QR generation is a nice-to-have; never block the poster download on it.
-      }
+        new QRCode(qrHost, { text: qrTarget, width: qrSize, height: qrSize, colorDark: theme.a, colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+      } catch { /* QR is decorative */ }
+
+      // ─── Footer bar ───────────────────────────────────────────────────────────
+      const footerY = ctaY + 100;
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillRect(0, footerY, W, H - footerY);
+
       setTimeout(() => {
         const qrCanvas = qrHost.querySelector("canvas");
-        const qrImg = qrHost.querySelector("img");
-        const qrSize = 168;
-        const qrX = W - qrSize - 70;
-        const qrY = H - 90 - qrSize - 24;
+        const qrImg    = qrHost.querySelector("img");
+        const qrX = W - qrSize - 60;
+        const qrY2 = footerY + (H - footerY - qrSize) / 2;
         ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
-        if (qrCanvas) {
-          ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-        } else if (qrImg) {
-          ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-        }
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.3)";
+        ctx.shadowBlur = 10;
+        ctx.fillRect(qrX - 8, qrY2 - 8, qrSize + 16, qrSize + 16);
+        ctx.restore();
+        if (qrCanvas) ctx.drawImage(qrCanvas, qrX, qrY2, qrSize, qrSize);
+        else if (qrImg) ctx.drawImage(qrImg, qrX, qrY2, qrSize, qrSize);
+
+        const textX = 70;
+        const midFooterY = footerY + (H - footerY) / 2;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "700 24px Inter";
+        ctx.textAlign = "left";
+        ctx.fillText(
+          lang === "hi" ? `जिला धमतरी · ${state.stateName || "छत्तीसगढ़"}` : `District Dhamtari · ${state.stateName || "Chhattisgarh"}`,
+          textX, midFooterY - 14
+        );
+        ctx.font = "400 18px Inter";
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.fillText(
+          lang === "hi" ? "पंजीकरण व जानकारी के लिए QR स्कैन करें →" : "Scan QR to register & learn more →",
+          textX, midFooterY + 18
+        );
+
         document.body.removeChild(qrHost);
 
         const link = document.createElement("a");
@@ -6962,7 +7095,7 @@
         link.download = `${title.replace(/\s+/g, "_").slice(0, 60)}_poster.png`;
         link.click();
         showToast(lang === "hi" ? "पोस्टर डाउनलोड हो गया।" : "Poster downloaded.", "🖼️");
-      }, 120);
+      }, 180);
     }
 
     function loadState() {
@@ -10909,9 +11042,11 @@
       // (draw=true) can drop them straight in with drawImage(). Both resolve
       // to null (rather than rejecting) if the asset can't load, in which
       // case the layout below simply omits that logo.
-      const [districtLogo, janprayasLogo] = await Promise.all([
+      const [districtLogo, janprayasLogo, sigCollector, sigCEO] = await Promise.all([
         loadImage("assets/dhamtari-emblem.png"),
-        loadImage("assets/janprayas-logo.png")
+        loadImage("assets/janprayas-logo.png"),
+        loadImage("assets/sig-collector.png"),
+        loadImage("assets/sig-ceo.png")
       ]);
 
       // Renders the whole certificate onto `ctx` (sized W x H) and always
@@ -11093,33 +11228,58 @@
           ctx.lineTo(910, sigY - 26);
           ctx.stroke();
 
-          ctx.strokeStyle = "#1B3A6B";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(170, sigY + 52);
-          ctx.lineTo(370, sigY + 52);
-          ctx.moveTo(750, sigY + 52);
-          ctx.lineTo(950, sigY + 52);
-          ctx.stroke();
+          // Two signature blocks: Collector (left) and CEO Zila Panchayat (right)
+          // with their official signature images above the lines.
+          const drawSig = (img, lineX1, lineX2, centerX, nameText, titleText, yBase) => {
+            // Signature image (mix-blend makes white pixels invisible on cream bg)
+            if (img) {
+              const sigImgH = 56, sigImgW = Math.round(img.width * (56 / img.height));
+              ctx.save();
+              ctx.globalCompositeOperation = "multiply";
+              ctx.drawImage(img, centerX - sigImgW / 2, yBase - 6 - sigImgH, sigImgW, sigImgH);
+              ctx.restore();
+            }
+            ctx.strokeStyle = "#1B3A6B";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(lineX1, yBase);
+            ctx.lineTo(lineX2, yBase);
+            ctx.stroke();
+            ctx.fillStyle = "#1B3A6B";
+            ctx.font = "700 15px Inter";
+            ctx.textAlign = "center";
+            ctx.fillText(nameText, centerX, yBase + 24);
+            ctx.fillStyle = "#6B7280";
+            ctx.font = "13px Inter";
+            ctx.fillText(titleText, centerX, yBase + 44);
+          };
 
-          // Left = date of issue, right = authorised signatory — the
-          // conventional two-column sign-off on a formal certificate.
-          ctx.fillStyle = "#1B3A6B";
-          ctx.font = "700 16px Inter";
-          ctx.fillText(hi ? formatDate(new Date(), "hi") : formatDate(new Date(), "en"), 270, sigY + 78);
-          ctx.fillText(hi ? "अधिकृत हस्ताक्षरकर्ता" : "Authorised Signatory", 850, sigY + 78);
+          drawSig(
+            sigCollector,
+            120, 380, 250, "Abhinash Mishra",
+            hi ? `कलेक्टर, ${state.districtName}` : `Collector, ${state.districtName}`,
+            sigY + 52
+          );
+          drawSig(
+            sigCEO,
+            740, 1000, 870, "Jayant Nahata",
+            hi ? `सीईओ, जिला पंचायत ${state.districtName}` : `CEO, Zila Panchayat ${state.districtName}`,
+            sigY + 52
+          );
 
+          // Issued date centered below signatures
+          ctx.textAlign = "center";
           ctx.fillStyle = "#6B7280";
-          ctx.font = "14px Inter";
-          ctx.fillText(hi ? "जारी करने की तिथि" : "Date of Issue", 270, sigY + 102);
-          const ceoLine = hi ? `सीईओ, जिला पंचायत ${state.districtName}` : `CEO, Zila Panchayat ${state.districtName}`;
-          fitSingleLineFontSize(ctx, ceoLine, 220, "Inter", 14, 10, "400");
-          ctx.fillText(ceoLine, 850, sigY + 102);
+          ctx.font = "13px Inter";
+          ctx.fillText(
+            hi ? `जारी किया: ${formatDate(new Date(), "hi")}` : `Issued: ${formatDate(new Date(), "en")}`,
+            W / 2, sigY + 52
+          );
         }
 
         // Verification footer sits a fixed gap AFTER the signature block —
         // never anchored to the canvas edge — so it can never collide with it.
-        const footerY = sigY + 140;
+        const footerY = sigY + 168;
         if (draw) {
           ctx.strokeStyle = "#E5D9BE";
           ctx.lineWidth = 1;

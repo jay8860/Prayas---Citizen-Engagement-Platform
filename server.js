@@ -1092,6 +1092,47 @@ async function callClaude(system, user, maxTokens = 256) {
   }
 }
 
+async function callGeminiRaw(system, user, maxTokens = 300) {
+  const apiKey = process.env.GOOGLE_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: "user", parts: [{ text: user }] }],
+          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.75 }
+        })
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
+  } catch (e) {
+    console.error("[AI] callGeminiRaw error:", e.message);
+    return null;
+  }
+}
+
+async function generatePosterText(title, category, date, venue, lang) {
+  const isHi = lang === "hi";
+  const sys = isHi
+    ? `आप जिला धमतरी, छत्तीसगढ़ के JanPrayas नागरिक जुड़ाव मंच के लिए एक रचनात्मक कॉपीराइटर हैं। आपका काम है सरकारी / नागरिक कार्यक्रम के लिए एक आकर्षक पोस्टर टेक्स्ट लिखना। सिर्फ JSON लौटाएं, कोई अतिरिक्त टेक्स्ट नहीं।`
+    : `You are a creative copywriter for JanPrayas, the citizen engagement platform of District Dhamtari, Chhattisgarh, India. Write compelling, motivating poster text for civic events. Return ONLY valid JSON, nothing else.`;
+  const prompt = isHi
+    ? `कार्यक्रम: ${title}\nश्रेणी: ${category}\nतिथि: ${date}\nस्थान: ${venue}\n\nJSON लौटाएं: {"tagline":"एक पंक्ति में प्रेरणादायक नारा (15 शब्द से कम)","description":"2 वाक्यों में इस कार्यक्रम का उद्देश्य और नागरिकों से अपील","cta":"भाग लेने के लिए एक शक्तिशाली आह्वान (10 शब्द से कम)"}`
+    : `Event: ${title}\nCategory: ${category}\nDate: ${date}\nVenue: ${venue}\n\nReturn JSON: {"tagline":"One inspiring slogan under 12 words","description":"2 sentences on the event purpose and why citizens should join","cta":"A powerful call-to-action under 8 words"}`;
+  const raw = await callGeminiRaw(sys, prompt, 250);
+  if (!raw) return null;
+  try {
+    const match = raw.match(/\{[\s\S]*?\}/);
+    return match ? JSON.parse(match[0]) : null;
+  } catch { return null; }
+}
+
 function moderateMissionAsync(missionId) {
   setImmediate(async () => {
     const mission = db.prepare("SELECT * FROM missions WHERE id = ?").get(missionId);
@@ -1846,6 +1887,19 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && /^\/api\/missions\/\d+\/feedback$/.test(url.pathname)) {
       const missionId = Number(url.pathname.split("/")[3]);
       return sendJson(res, 200, { feedback: getMissionFeedback(missionId) });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/generate-poster-text") {
+      requireAdmin(req);
+      const body = await readJsonBody(req);
+      const result = await generatePosterText(
+        String(body.title || ""),
+        String(body.category || "other"),
+        String(body.date || ""),
+        String(body.venue || ""),
+        String(body.lang || "en")
+      );
+      return sendJson(res, 200, { ok: true, text: result });
     }
 
     if (url.pathname === "/" || url.pathname === "/index.html") {
