@@ -970,6 +970,9 @@ try {
   db.exec("ALTER TABLE volunteer_participations ADD COLUMN attended_at TEXT");
 } catch (error) {}
 try {
+  db.exec("ALTER TABLE volunteer_participations ADD COLUMN selfie_photo TEXT");
+} catch (error) {}
+try {
   db.exec("ALTER TABLE missions ADD COLUMN completion_requested INTEGER NOT NULL DEFAULT 0");
 } catch (error) {}
 try {
@@ -4477,6 +4480,13 @@ function checkInVolunteer(body) {
   const code = String(body.code || "").trim().toUpperCase();
   const phone = String(body.phone || "").trim();
   if (!code || !phone) throw publicError(400, "Check-in code and volunteer phone are required.");
+
+  const selfiePhoto = String(body.selfiePhoto || "").trim();
+  if (!selfiePhoto || !selfiePhoto.startsWith("data:image/")) {
+    throw publicError(400, "A selfie photo is required to verify your presence at the venue.");
+  }
+  if (selfiePhoto.length > 500_000) throw publicError(400, "Selfie photo is too large. Please retake.");
+
   const normalizedPhone = normalizeVolunteerPhone(phone);
 
   const mission = db.prepare("SELECT id, title, status FROM missions WHERE check_in_code = ? AND archived_at IS NULL").get(code);
@@ -4494,7 +4504,8 @@ function checkInVolunteer(body) {
   if (!participation) throw publicError(409, "You are not registered for this mission. Please register first.");
   if (participation.attended_at) return { ok: true, alreadyCheckedIn: true, missionTitle: mission.title };
 
-  db.prepare("UPDATE volunteer_participations SET attended_at = ? WHERE id = ?").run(isoNow(), participation.id);
+  db.prepare("UPDATE volunteer_participations SET attended_at = ?, selfie_photo = ? WHERE id = ?")
+    .run(isoNow(), selfiePhoto, participation.id);
   return { ok: true, checkedIn: true, missionTitle: mission.title };
 }
 

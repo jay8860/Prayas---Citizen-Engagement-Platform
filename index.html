@@ -3652,6 +3652,48 @@
             <div id="orgAuthLoggedIn" class="hidden">
               <div id="orgStatusBanner"></div>
 
+              <!-- Getting Started guide (collapsible) -->
+              <details id="orgGettingStarted" style="margin-bottom:18px;border:1px solid var(--border);border-radius:12px;overflow:hidden">
+                <summary style="padding:14px 18px;font-weight:700;font-size:14px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;background:var(--saffron-light,#FEF3C7);color:var(--saffron-dark,#92400E)">
+                  <span style="font-size:18px">📖</span> Getting Started — How the platform works
+                  <span style="margin-left:auto;font-size:11px;opacity:0.7">click to expand</span>
+                </summary>
+                <div style="padding:18px;display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.6">
+
+                  <div style="display:flex;gap:12px;align-items:flex-start">
+                    <div style="min-width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">1</div>
+                    <div><strong>Register &amp; get approved</strong><br>Submit your organization's profile. A district admin reviews it — you'll receive approval status here. Approved orgs get a green badge and their missions are auto-published without waiting for admin review.</div>
+                  </div>
+
+                  <div style="display:flex;gap:12px;align-items:flex-start">
+                    <div style="min-width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">2</div>
+                    <div><strong>Post a Mission</strong><br>Go to the <strong>Missions tab</strong> → fill in the title, category, date, location, and volunteer slots. Your org name is pre-filled automatically. Approved orgs: missions appear on the public board instantly. Pending orgs: admin reviews first.</div>
+                  </div>
+
+                  <div style="display:flex;gap:12px;align-items:flex-start">
+                    <div style="min-width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">3</div>
+                    <div><strong>Volunteers register &amp; show up</strong><br>Citizens browse missions and register. On the day, the QR check-in code appears on the mission card (visible to you in the admin view after coordinator logs in). Volunteers scan it at the venue — they must take a live selfie to verify physical presence.</div>
+                  </div>
+
+                  <div style="display:flex;gap:12px;align-items:flex-start">
+                    <div style="min-width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">4</div>
+                    <div><strong>Mark the mission completed</strong><br>After the drive, mark the mission complete and add the actual turnout count + a short outcome note. You can upload up to 8 photos. This triggers certificate eligibility for volunteers who checked in.</div>
+                  </div>
+
+                  <div style="display:flex;gap:12px;align-items:flex-start">
+                    <div style="min-width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">5</div>
+                    <div><strong>Certificates &amp; Points</strong><br>
+                      <em>Volunteers:</em> Each volunteer who checked in can download a participation certificate from their Volunteer Passport.<br>
+                      <em>Your org:</em> Earns <strong>20 base points</strong> per mission + <strong>5 points per verified check-in</strong>. Consistent monthly activity earns bonus points. View your rank on the <strong>Points &amp; Rank tab</strong>. High-scoring orgs appear in the district showcase.
+                    </div>
+                  </div>
+
+                  <div style="background:var(--green-light,#D1FAE5);border-radius:8px;padding:10px 14px;color:var(--green,#065F46);font-size:12px">
+                    💡 <strong>Tip:</strong> Keep your org profile complete (description, logo, contact) — volunteers trust and choose active, verified organizations with clear information.
+                  </div>
+                </div>
+              </details>
+
               <!-- Tab nav -->
               <div style="display:flex;gap:6px;margin-bottom:20px;border-bottom:2px solid var(--border);padding-bottom:0">
                 <button class="org-tab-btn active" type="button" data-tab="profile" onclick="switchOrgTab('profile')">👤 Profile</button>
@@ -4007,6 +4049,26 @@
 
     <section class="section alt" id="volunteer">
       <div class="section-inner">
+
+        <!-- Quick-access row for returning volunteers -->
+        <div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:32px">
+          <div style="font-weight:700;font-size:15px;margin-bottom:14px;color:var(--navy)">Already a volunteer? Quick access →</div>
+          <div style="display:flex;flex-wrap:wrap;gap:12px">
+            <button type="button" class="btn btn-soft" onclick="openModal('myPassportModal')" style="flex:1;min-width:160px;text-align:center">
+              🎖️ My Passport &amp; Certificate
+            </button>
+            <button type="button" class="btn btn-soft" onclick="openModal('trackMissionModal')" style="flex:1;min-width:160px;text-align:center">
+              📋 Track My Request
+            </button>
+            <button type="button" class="btn btn-soft" onclick="openModal('checkInModal')" style="flex:1;min-width:160px;text-align:center">
+              ✅ Check In at Venue
+            </button>
+            <button type="button" class="btn btn-soft" onclick="document.getElementById('leaderboard').scrollIntoView({behavior:'smooth'})" style="flex:1;min-width:160px;text-align:center">
+              🏆 View Leaderboard
+            </button>
+          </div>
+        </div>
+
         <div class="volunteer-split">
           <div>
             <div class="section-badge"><i class="fa-solid fa-hands-helping"></i> <span data-i18n="volunteer-badge">Join the Movement</span></div>
@@ -4406,22 +4468,40 @@
       <div class="modal-header">
         <div>
           <h2 class="modal-title">Mission Check-In</h2>
-          <p class="modal-subtitle">Enter the 6-character code shown at the venue to mark your attendance.</p>
+          <p class="modal-subtitle" id="checkInSubtitle">Step 1 of 2 — Enter your details</p>
         </div>
-        <button class="modal-close" type="button" data-close-modal="checkInModal">✕</button>
+        <button class="modal-close" type="button" onclick="closeCheckInModal()">✕</button>
       </div>
       <div class="modal-body">
-        <form id="checkInForm" onsubmit="submitCheckIn(event)">
+        <!-- Step 1: code + phone -->
+        <div id="checkInStep1">
           <div class="form-group">
             <label class="form-label">Check-In Code</label>
-            <input type="text" id="checkInCode" class="form-control" placeholder="e.g. A3F2B1" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-size:22px;text-align:center" required>
+            <input type="text" id="checkInCode" class="form-control" placeholder="e.g. A3F2B1" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-size:22px;text-align:center">
           </div>
           <div class="form-group">
             <label class="form-label">Your Mobile Number</label>
-            <input type="tel" id="checkInPhone" class="form-control" placeholder="10-digit mobile number" maxlength="10" required>
+            <input type="tel" id="checkInPhone" class="form-control" placeholder="10-digit mobile number" maxlength="10">
           </div>
-          <button class="btn btn-primary" type="submit" style="width:100%">Check In</button>
-        </form>
+          <button class="btn btn-primary" type="button" onclick="checkInGoToSelfie()" style="width:100%">Next — Take Selfie →</button>
+        </div>
+
+        <!-- Step 2: selfie capture -->
+        <div id="checkInStep2" style="display:none;text-align:center">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Take a live selfie to confirm you are present at the venue. This photo is stored for attendance verification.</p>
+          <video id="checkInCamera" autoplay playsinline muted style="width:100%;max-height:240px;border-radius:12px;background:#000;object-fit:cover"></video>
+          <canvas id="checkInCanvas" style="display:none"></canvas>
+          <div id="checkInSelfiePreview" style="display:none;margin-top:10px">
+            <img id="checkInSelfieImg" style="width:100%;border-radius:12px;max-height:240px;object-fit:cover" alt="Your selfie">
+            <p style="font-size:12px;color:var(--muted);margin-top:6px">Selfie captured ✅ — looks good? Submit below, or retake.</p>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px;justify-content:center">
+            <button class="btn btn-soft" type="button" onclick="checkInRetake()">↩ Back</button>
+            <button class="btn btn-secondary" type="button" id="checkInCaptureBtn" onclick="checkInCaptureSelfie()">📷 Capture</button>
+            <button class="btn btn-primary" type="button" id="checkInSubmitBtn" onclick="submitCheckIn()" style="display:none">✅ Submit Check-In</button>
+          </div>
+          <div id="checkInError" style="color:var(--danger,#DC2626);font-size:13px;margin-top:10px"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -12505,26 +12585,101 @@
       } catch (e) { handleRequestError(e); }
     }
 
-    // ── QR code check-in ──────────────────────────────────────────────────────
+    // ── QR code check-in (two-step with mandatory selfie) ─────────────────────
 
-    async function submitCheckIn(event) {
-      event.preventDefault();
+    let _checkInSelfieData = null;
+    let _checkInStream = null;
+
+    function closeCheckInModal() {
+      _stopCheckInCamera();
+      _checkInSelfieData = null;
+      document.getElementById("checkInStep1").style.display = "";
+      document.getElementById("checkInStep2").style.display = "none";
+      document.getElementById("checkInSelfiePreview").style.display = "none";
+      document.getElementById("checkInCaptureBtn").style.display = "";
+      document.getElementById("checkInSubmitBtn").style.display = "none";
+      document.getElementById("checkInSubtitle").textContent = "Step 1 of 2 — Enter your details";
+      document.getElementById("checkInError").textContent = "";
+      closeModal("checkInModal");
+    }
+
+    function _stopCheckInCamera() {
+      if (_checkInStream) {
+        _checkInStream.getTracks().forEach((t) => t.stop());
+        _checkInStream = null;
+      }
+    }
+
+    async function checkInGoToSelfie() {
       const code = (document.getElementById("checkInCode").value || "").trim().toUpperCase();
       const phone = (document.getElementById("checkInPhone").value || "").trim();
+      if (!code || code.length < 4) { alert("Please enter the check-in code."); return; }
+      if (!phone || phone.length < 10) { alert("Please enter your 10-digit mobile number."); return; }
+
+      document.getElementById("checkInStep1").style.display = "none";
+      document.getElementById("checkInStep2").style.display = "";
+      document.getElementById("checkInSubtitle").textContent = "Step 2 of 2 — Take a selfie at the venue";
+      document.getElementById("checkInSelfiePreview").style.display = "none";
+      document.getElementById("checkInCaptureBtn").style.display = "";
+      document.getElementById("checkInSubmitBtn").style.display = "none";
+      _checkInSelfieData = null;
+
+      try {
+        _checkInStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        document.getElementById("checkInCamera").srcObject = _checkInStream;
+        document.getElementById("checkInCamera").style.display = "";
+      } catch (e) {
+        document.getElementById("checkInCamera").style.display = "none";
+        document.getElementById("checkInError").textContent = "Camera not available. Please allow camera access and try again.";
+      }
+    }
+
+    function checkInCaptureSelfie() {
+      const video = document.getElementById("checkInCamera");
+      const canvas = document.getElementById("checkInCanvas");
+      canvas.width = 320;
+      canvas.height = Math.round(video.videoHeight * (320 / video.videoWidth)) || 240;
+      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+      _checkInSelfieData = canvas.toDataURL("image/jpeg", 0.65);
+      document.getElementById("checkInSelfieImg").src = _checkInSelfieData;
+      document.getElementById("checkInSelfiePreview").style.display = "";
+      document.getElementById("checkInCamera").style.display = "none";
+      document.getElementById("checkInCaptureBtn").style.display = "none";
+      document.getElementById("checkInSubmitBtn").style.display = "";
+      _stopCheckInCamera();
+    }
+
+    function checkInRetake() {
+      _checkInSelfieData = null;
+      _stopCheckInCamera();
+      document.getElementById("checkInStep1").style.display = "";
+      document.getElementById("checkInStep2").style.display = "none";
+      document.getElementById("checkInSubtitle").textContent = "Step 1 of 2 — Enter your details";
+    }
+
+    async function submitCheckIn() {
+      const code = (document.getElementById("checkInCode").value || "").trim().toUpperCase();
+      const phone = (document.getElementById("checkInPhone").value || "").trim();
+      const errEl = document.getElementById("checkInError");
+      errEl.textContent = "";
+
+      if (!_checkInSelfieData) { errEl.textContent = "Please capture your selfie first."; return; }
+
       try {
         const data = await apiRequest("/api/checkin", {
           method: "POST",
-          body: JSON.stringify({ code, phone })
+          body: JSON.stringify({ code, phone, selfiePhoto: _checkInSelfieData })
         });
         if (data.alreadyCheckedIn) {
           showToast(`Already checked in for: ${data.missionTitle}`, "✅");
         } else {
           showToast(`Attendance confirmed for: ${data.missionTitle}!`, "✅");
         }
-        try { window.localStorage.setItem("janprayasLastCheckinPhone", phone); } catch (error) {}
-        closeModal("checkInModal");
-        document.getElementById("checkInForm").reset();
-      } catch (e) { handleRequestError(e); }
+        try { window.localStorage.setItem("janprayasLastCheckinPhone", phone); } catch (err) {}
+        closeCheckInModal();
+      } catch (e) {
+        errEl.textContent = e?.message || "Something went wrong. Please try again.";
+      }
     }
 
     function renderQrCodes() {
