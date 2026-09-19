@@ -6813,31 +6813,32 @@
         container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "अभी तक कोई लॉगिन नहीं है।" : "No logins yet."}</div></div>`;
         return;
       }
+      _adminUsersById = {};
+      users.forEach(u => { _adminUsersById[u.id] = u; });
       container.innerHTML = users
-        .map((u) => `
+        .map((u) => {
+          const badgeList = u.role !== "super_admin" ? [
+            u.canApproveMissions ? null : "🚫 No mission approval",
+            u.canManageOrgs ? null : "🚫 No org management",
+            u.canPostAnnouncements ? null : "🚫 No announcements",
+            u.canExportData ? null : "🚫 No data export",
+            u.canDelete ? "🗑 Can delete" : null,
+            u.canManageSettings ? "⚙️ Can manage settings" : null
+          ].filter(Boolean) : [];
+          return `
           <div class="message-card">
             <div class="message-name">${escapeHtml(u.name)} ${u.active ? "" : `<span style="color:#c0392b;font-size:12px">(${state.lang === "hi" ? "निष्क्रिय" : "inactive"})</span>`}</div>
             <div class="message-text">@${escapeHtml(u.username)} · ${u.role === "super_admin" ? (state.lang === "hi" ? "जिला प्रशासक" : "District Administrator") : `${state.lang === "hi" ? "समन्वयक" : "Coordinator"} — ${escapeHtml(u.scope)}`}</div>
-            ${u.role !== "super_admin" ? (() => {
-                const badges = [
-                  u.canApproveMissions ? null : "🚫 No mission approval",
-                  u.canManageOrgs ? null : "🚫 No org management",
-                  u.canPostAnnouncements ? null : "🚫 No announcements",
-                  u.canExportData ? null : "🚫 No data export",
-                  u.canDelete ? "🗑 Can delete" : null,
-                  u.canManageSettings ? "⚙️ Can manage settings" : null
-                ].filter(Boolean);
-                return `<div class="message-time" style="margin-top:4px;line-height:1.6">${badges.length ? badges.join(" · ") : "✅ Standard access"}</div>`;
-              })() : ""}
+            ${u.role !== "super_admin" ? `<div class="message-time" style="margin-top:4px;line-height:1.6">${badgeList.length ? badgeList.join(" · ") : "✅ Standard access"}</div>` : ""}
             <div class="message-time">${u.lastLoginAt ? `${state.lang === "hi" ? "अंतिम लॉगिन" : "Last login"}: ${formatDate(new Date(u.lastLoginAt), state.lang)}` : (state.lang === "hi" ? "अभी तक लॉगिन नहीं हुआ" : "Never logged in")}</div>
             <div class="message-actions">
               ${u.username === "admin" ? "" : `<button class="btn btn-soft" type="button" onclick="toggleAdminUserAccount(${u.id})">${u.active ? (state.lang === "hi" ? "निष्क्रिय करें" : "Deactivate") : (state.lang === "hi" ? "सक्रिय करें" : "Activate")}</button>`}
-              <button class="btn btn-soft" type="button" onclick="promptResetPassword(${u.id}, ${JSON.stringify(u.name)})">${state.lang === "hi" ? "पासवर्ड रीसेट करें" : "Reset Password"}</button>
-              ${u.username !== "admin" && u.role !== "super_admin" ? `<button class="btn btn-soft" type="button" onclick="openPermissionsModal(${u.id}, ${JSON.stringify(u.name)}, ${JSON.stringify(u)})" style="padding:5px 10px;font-size:12px">Permissions</button>` : ""}
-              ${u.username !== "admin" ? `<button class="btn btn-soft" type="button" onclick="confirmDeleteAdminUser(${u.id}, ${JSON.stringify(u.name)})" style="padding:5px 10px;font-size:12px;color:var(--danger)">Delete Login</button>` : ""}
+              <button class="btn btn-soft" type="button" onclick="promptResetPassword(${u.id})">${state.lang === "hi" ? "पासवर्ड रीसेट करें" : "Reset Password"}</button>
+              ${u.username !== "admin" && u.role !== "super_admin" ? `<button class="btn btn-soft" type="button" onclick="openPermissionsModal(${u.id})" style="padding:5px 10px;font-size:12px">Permissions</button>` : ""}
+              ${u.username !== "admin" ? `<button class="btn btn-soft" type="button" onclick="confirmDeleteAdminUser(${u.id})" style="padding:5px 10px;font-size:12px;color:var(--danger)">Delete Login</button>` : ""}
             </div>
-          </div>
-        `)
+          </div>`;
+        })
         .join("");
     }
 
@@ -6887,7 +6888,8 @@
       }
     }
 
-    async function promptResetPassword(userId, name) {
+    async function promptResetPassword(userId) {
+      const name = (_adminUsersById[userId] || {}).name || "this user";
       const password = window.prompt(
         state.lang === "hi"
           ? `${name} के लिए नया पासवर्ड दर्ज करें (कम से कम 6 अक्षर):`
@@ -6905,9 +6907,10 @@
       }
     }
 
-    function openPermissionsModal(userId, name, u) {
+    function openPermissionsModal(userId) {
+      const u = _adminUsersById[userId] || {};
       document.getElementById("editPermissionsUserId").value = userId;
-      document.getElementById("editPermissionsSubtitle").textContent = `Permissions for ${name}`;
+      document.getElementById("editPermissionsSubtitle").textContent = `Permissions for ${u.name || "this coordinator"}`;
       document.getElementById("editPermCanDelete").checked = u.canDelete || false;
       document.getElementById("editPermCanManageSettings").checked = u.canManageSettings || false;
       document.getElementById("editPermCanApproveMissions").checked = u.canApproveMissions !== false;
@@ -6942,8 +6945,9 @@
       }
     }
 
-    function confirmDeleteAdminUser(userId, name) {
+    function confirmDeleteAdminUser(userId) {
       const hi = state.lang === "hi";
+      const name = (_adminUsersById[userId] || {}).name || "this user";
       openConfirmModal({
         icon: "🗑️",
         title: hi ? "लॉगिन हटाएं?" : `Delete login for ${name}?`,
@@ -7491,6 +7495,7 @@
     const state = loadState();
     state.adminLoggedIn = Boolean(getAdminToken());
     state.adminUser = getAdminUser();
+    let _adminUsersById = {};
 
     async function apiRequest(url, options = {}) {
       const token = getAdminToken();
