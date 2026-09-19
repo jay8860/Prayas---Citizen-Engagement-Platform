@@ -4218,6 +4218,12 @@
                 <textarea id="volMessage" data-i18n-placeholder="vol-message-placeholder" placeholder="Tell us how you want to help your district."></textarea>
               </div>
 
+              <div class="form-group full" id="volCivicOrgsGroup">
+                <label for="volCivicOrgs">Are you a member of any civic or social organization in the district?</label>
+                <input id="volCivicOrgs" type="text" placeholder="e.g. Lions Club, Rotary, NSS, NCC, Youth Club — leave blank if not" />
+                <span style="font-size:12px;color:var(--muted);display:block;margin-top:4px">Optional — helps us coordinate with your existing group.</span>
+              </div>
+
               <button class="btn btn-primary" type="submit" style="width:100%" id="volunteerSubmitBtn" data-i18n="vol-submit">Register as Volunteer</button>
             </form>
           </div>
@@ -5461,6 +5467,10 @@
             <label for="editVolunteerOccupation">Occupation</label>
             <input id="editVolunteerOccupation" type="text" />
           </div>
+        </div>
+        <div class="form-group full">
+          <label for="editVolunteerCivicOrgs">Civic / Social Organizations</label>
+          <input id="editVolunteerCivicOrgs" type="text" placeholder="e.g. Lions Club, Rotary, NSS" />
         </div>
         <div id="editVolunteerError" style="color:var(--danger);font-size:13px;margin-bottom:8px"></div>
         <button class="btn btn-primary" type="button" id="saveEditVolunteerBtn" style="width:100%">Save Changes</button>
@@ -10137,7 +10147,7 @@
           <tr>
             <td>${escapeHtml(volunteer.name)}</td>
             <td>${escapeHtml(volunteer.phone)}</td>
-            <td>${escapeHtml(volunteer.area || "-")}</td>
+            <td>${escapeHtml(volunteer.area || "-")}${volunteer.civicOrgs ? `<br><span style="font-size:11px;color:var(--muted)">🏛 ${escapeHtml(volunteer.civicOrgs)}</span>` : ""}</td>
             <td>${escapeHtml(volunteer.skills.join(", ") || "-")}</td>
             <td>⚡ ${volunteer.points || 0}</td>
             <td>${escapeHtml(volunteer.date)}</td>
@@ -11012,6 +11022,7 @@
       document.getElementById("volOccupation").value = profile.occupation || "";
       document.getElementById("volAvailability").value = profile.availability || "";
       document.getElementById("volMessage").value = profile.message || "";
+      document.getElementById("volCivicOrgs").value = profile.civicOrgs || "";
       const knownSkillValues = Array.from(document.querySelectorAll('#skillsGrid input[name="skills"]')).map((input) => input.value);
       document.querySelectorAll('#skillsGrid input[name="skills"]').forEach((input) => {
         input.checked = Array.isArray(profile.skills) && profile.skills.includes(input.value);
@@ -11031,7 +11042,7 @@
       const joinMode = missionSelected ? state.volunteerJoinMode : "general";
       const returning = Boolean(missionSelected && joinMode === "returning" && state.volunteerLookup.found && state.volunteerLookup.profile);
       const forceCompact = Boolean(missionSelected && joinMode === "returning");
-      const advancedIds = ["volEmailGroup", "volAreaGroup", "volOccupationGroup", "volSkillsGroup", "volAvailabilityGroup", "volMessageGroup"];
+      const advancedIds = ["volEmailGroup", "volAreaGroup", "volOccupationGroup", "volSkillsGroup", "volAvailabilityGroup", "volMessageGroup", "volCivicOrgsGroup"];
       advancedIds.forEach((id) => {
         const node = document.getElementById(id);
         if (node) node.classList.toggle("hidden", forceCompact);
@@ -11151,6 +11162,7 @@
             occupation: String(document.getElementById("volOccupation").value || "").trim(),
             availability: document.getElementById("volAvailability").value || "",
             message: String(document.getElementById("volMessage").value || "").trim(),
+            civicOrgs: String(document.getElementById("volCivicOrgs").value || "").trim(),
             skills
           })
         });
@@ -12905,7 +12917,7 @@
           <tr>
             <td>${escapeHtml(v.name)}</td>
             <td>${escapeHtml(v.phone)}</td>
-            <td>${escapeHtml(v.area || "-")}</td>
+            <td>${escapeHtml(v.area || "-")}${v.civicOrgs ? `<br><span style="font-size:11px;color:var(--muted)">🏛 ${escapeHtml(v.civicOrgs)}</span>` : ""}</td>
             <td>${escapeHtml(v.skills.join(", ") || "-")}</td>
             <td>⚡ ${v.points || 0}</td>
             <td>${escapeHtml(v.joinedDate)}</td>
@@ -12949,6 +12961,7 @@
       document.getElementById("editVolunteerPhone").value = volunteer?.phone || "";
       document.getElementById("editVolunteerArea").value = volunteer?.area || "";
       document.getElementById("editVolunteerOccupation").value = volunteer?.occupation || "";
+      document.getElementById("editVolunteerCivicOrgs").value = volunteer?.civicOrgs || "";
       document.getElementById("editVolunteerError").textContent = "";
       openModal("editVolunteerModal");
     }
@@ -12967,7 +12980,8 @@
             name: document.getElementById("editVolunteerName").value.trim(),
             phone: document.getElementById("editVolunteerPhone").value.trim(),
             area: document.getElementById("editVolunteerArea").value.trim(),
-            occupation: document.getElementById("editVolunteerOccupation").value.trim()
+            occupation: document.getElementById("editVolunteerOccupation").value.trim(),
+            civicOrgs: document.getElementById("editVolunteerCivicOrgs").value.trim()
           })
         });
         closeModal("editVolunteerModal");

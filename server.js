@@ -1012,6 +1012,7 @@ try { db.exec("ALTER TABLE organization_comments ADD COLUMN ai_flag_reason TEXT"
 try { db.exec("ALTER TABLE organizations ADD COLUMN ai_recommendation TEXT"); } catch(e) {}
 try { db.exec("ALTER TABLE organizations ADD COLUMN ai_recommendation_reason TEXT"); } catch(e) {}
 try { db.exec("ALTER TABLE missions ADD COLUMN poster_ai_tries INTEGER NOT NULL DEFAULT 0"); } catch(e) {}
+try { db.exec("ALTER TABLE volunteer_profiles ADD COLUMN civic_orgs TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
@@ -3337,6 +3338,7 @@ function registerVolunteer(body) {
   const resolvedOccupation = String(body.occupation || "").trim() || existingProfile?.occupation || "";
   const resolvedAvailability = String(body.availability || "").trim() || existingProfile?.availability || "";
   const resolvedMessage = String(body.message || "").trim() || existingProfile?.message || "";
+  const resolvedCivicOrgs = String(body.civicOrgs || "").trim() || existingProfile?.civic_orgs || "";
   const incomingSkills = Array.isArray(body.skills) ? body.skills.map((item) => String(item || "").trim()).filter(Boolean) : [];
   const resolvedSkills = incomingSkills.length ? incomingSkills : (existingProfile ? safeJsonArray(existingProfile.skills_json) : []);
 
@@ -3349,6 +3351,7 @@ function registerVolunteer(body) {
     occupation: resolvedOccupation,
     availability: resolvedAvailability,
     message: resolvedMessage,
+    civicOrgs: resolvedCivicOrgs,
     skills: resolvedSkills
   });
   const finalProfile = profileId
@@ -3427,13 +3430,14 @@ function upsertVolunteerProfile(profile) {
   const occupation = String(profile.occupation || "").trim();
   const availability = String(profile.availability || "").trim();
   const message = String(profile.message || "").trim();
+  const civicOrgs = String(profile.civicOrgs || "").trim();
   const skillsJson = JSON.stringify(Array.isArray(profile.skills) ? profile.skills : []);
   const now = isoNow();
 
   if (existing) {
     db.prepare(`
       UPDATE volunteer_profiles
-      SET name = ?, phone = ?, email = ?, area = ?, occupation = ?, availability = ?, message = ?, skills_json = ?, last_active_at = ?
+      SET name = ?, phone = ?, email = ?, area = ?, occupation = ?, availability = ?, message = ?, civic_orgs = ?, skills_json = ?, last_active_at = ?
       WHERE id = ?
     `).run(
       name,
@@ -3443,6 +3447,7 @@ function upsertVolunteerProfile(profile) {
       occupation || existing.occupation || "",
       availability || existing.availability || "",
       message || existing.message || "",
+      civicOrgs || existing.civic_orgs || "",
       Array.isArray(profile.skills) && profile.skills.length ? skillsJson : existing.skills_json,
       now,
       existing.id
@@ -3452,8 +3457,8 @@ function upsertVolunteerProfile(profile) {
 
   db.prepare(`
     INSERT INTO volunteer_profiles (
-      name, normalized_name, phone, normalized_phone, email, area, occupation, availability, message, skills_json, first_registered_at, last_active_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      name, normalized_name, phone, normalized_phone, email, area, occupation, availability, message, civic_orgs, skills_json, first_registered_at, last_active_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     name,
     normalizedName,
@@ -3464,6 +3469,7 @@ function upsertVolunteerProfile(profile) {
     occupation,
     availability,
     message,
+    civicOrgs,
     skillsJson,
     now,
     now
@@ -3491,6 +3497,7 @@ function lookupVolunteerProfile(body) {
       occupation: profile.occupation || "",
       availability: profile.availability || "",
       message: profile.message || "",
+      civicOrgs: profile.civic_orgs || "",
       skills: safeJsonArray(profile.skills_json)
     }
   };
@@ -4626,7 +4633,7 @@ function searchVolunteers(params) {
   }
 
   const allRows = db.prepare(`
-    SELECT id, name, phone, email, area, occupation, availability, skills_json,
+    SELECT id, name, phone, email, area, occupation, availability, civic_orgs, skills_json,
            first_registered_at, last_active_at
     FROM volunteer_profiles
     WHERE ${where}
@@ -4663,6 +4670,7 @@ function searchVolunteers(params) {
       area: r.area || "",
       occupation: r.occupation || "",
       availability: r.availability || "",
+      civicOrgs: r.civic_orgs || "",
       skills: safeJsonArray(r.skills_json),
       points: pointsLookup.get(r.id)?.points || POINTS.register,
       joinedDate: new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" })
@@ -4688,12 +4696,13 @@ function updateVolunteerProfileAdmin(profileId, body, admin) {
   const area = String(body.area || "").trim();
   const occupation = String(body.occupation || "").trim();
   const availability = String(body.availability || "").trim();
+  const civicOrgs = String(body.civicOrgs || "").trim();
 
   db.prepare(`
     UPDATE volunteer_profiles
-    SET name = ?, normalized_name = ?, phone = ?, normalized_phone = ?, email = ?, area = ?, occupation = ?, availability = ?
+    SET name = ?, normalized_name = ?, phone = ?, normalized_phone = ?, email = ?, area = ?, occupation = ?, availability = ?, civic_orgs = ?
     WHERE id = ?
-  `).run(name, normalizeVolunteerName(name), phone, normalizedPhone, email, area, occupation, availability, profileId);
+  `).run(name, normalizeVolunteerName(name), phone, normalizedPhone, email, area, occupation, availability, civicOrgs, profileId);
 
   writeAuditLog("update_volunteer", "volunteer_profile", profileId, `Volunteer #${profileId} edited by ${admin ? admin.name : "admin"}`);
   return { ok: true };
