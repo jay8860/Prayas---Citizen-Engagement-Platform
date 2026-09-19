@@ -1011,6 +1011,7 @@ try { db.exec("ALTER TABLE organization_comments ADD COLUMN ai_hidden INTEGER NO
 try { db.exec("ALTER TABLE organization_comments ADD COLUMN ai_flag_reason TEXT"); } catch(e) {}
 try { db.exec("ALTER TABLE organizations ADD COLUMN ai_recommendation TEXT"); } catch(e) {}
 try { db.exec("ALTER TABLE organizations ADD COLUMN ai_recommendation_reason TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE missions ADD COLUMN poster_ai_tries INTEGER NOT NULL DEFAULT 0"); } catch(e) {}
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
@@ -1138,7 +1139,7 @@ function moderateMissionAsync(missionId) {
     const mission = db.prepare("SELECT * FROM missions WHERE id = ?").get(missionId);
     if (!mission) return;
     const result = await callClaude(
-      `You are a content moderator for JanPrayas, a citizen engagement portal for Dhamtari district, Chhattisgarh, India. Review mission proposals for legitimacy. Respond ONLY with JSON: {"decision":"approve"|"flag"|"reject","reason":"1-2 sentence explanation"}. APPROVE genuine civic activities (plantation, Swachhata, health camp, education, cultural events, sports, awareness drives) with plausible details. FLAG if vague, very incomplete, or needs human review. REJECT only clear spam, promotions for products/services, completely unrelated content, or gibberish.`,
+      `You are a content moderator for JanPrayas, a citizen engagement portal for Dhamtari district, Chhattisgarh, India. Review mission proposals for legitimacy. Respond ONLY with JSON: {"decision":"approve"|"reject","reason":"1-2 sentence explanation"}. APPROVE all genuine civic or community activities — plantation, Swachhata, health camps, education, cultural events, sports, awareness drives, tree planting, blood donation, cleanliness drives, digital literacy, skill training, welfare camps, heritage walks, or any plausible community activity. Be very generous: approve even if the description is brief or the details are incomplete, as long as the activity is a real civic purpose and not spam. REJECT only clear spam, commercial promotions, product advertisements, completely unrelated content, or pure gibberish with no discernible civic purpose.`,
       `Title: ${mission.title}\nDescription: ${mission.desc}\nCategory: ${mission.category}\nLocation: ${mission.location}, ${mission.ward}\nDate: ${mission.date}\nDuration: ${mission.duration}\nSlots: ${mission.total}\nHost: ${mission.host_name} (${mission.host_type})\nPhone: ${mission.host_phone}\nEmail: ${mission.host_email}`
     );
     if (!result) return;
@@ -1150,7 +1151,9 @@ function moderateMissionAsync(missionId) {
       } else if (decision === "reject") {
         db.prepare("UPDATE missions SET approval_status='rejected', ai_flag='rejected', ai_flag_reason=? WHERE id=?").run(reason, missionId);
       } else {
-        db.prepare("UPDATE missions SET ai_flag='flagged', ai_flag_reason=? WHERE id=?").run(reason, missionId);
+        // Anything other than explicit reject → approve (liberal policy)
+        db.prepare("UPDATE missions SET approval_status='approved', ai_flag='ok', ai_flag_reason=? WHERE id=?").run(reason, missionId);
+        try { ensureCheckInCode(missionId); } catch(e) {}
       }
     } else {
       // Already approved — just tag for info without changing approval
@@ -1508,6 +1511,19 @@ const server = http.createServer(async (req, res) => {
       const org = requireOrg(req);
       const body = await readJsonBody(req);
       return sendJson(res, 200, createOrgMission(org, body));
+    }
+
+    if (req.method === "POST" && /^\/api\/organizations\/me\/missions\/\d+\/generate-poster-text$/.test(url.pathname)) {
+      const org = requireOrg(req);
+      const missionId = Number(url.pathname.split("/")[5]);
+      const prep = orgGeneratePosterText(org, missionId);
+      const body = await readJsonBody(req);
+      const lang = String(body.lang || "en");
+      const text = await generatePosterText(
+        prep.mission.title, prep.mission.category,
+        prep.mission.date, prep.mission.location, lang
+      );
+      return sendJson(res, 200, { ok: true, text, triesUsed: prep.triesUsed, triesRemaining: prep.triesRemaining });
     }
 
     if (req.method === "GET" && /^\/api\/organizations\/\d+\/public$/.test(url.pathname)) {
@@ -1900,6 +1916,181 @@ const server = http.createServer(async (req, res) => {
         String(body.lang || "en")
       );
       return sendJson(res, 200, { ok: true, text: result });
+    }
+
+    // ── Mission-specific QR join landing page ─────────────────────────────────
+    if (req.method === "GET" && /^\/join\/\d+$/.test(url.pathname)) {
+      const missionId = Number(url.pathname.split("/")[2]);
+      const mission = db.prepare(
+        "SELECT id, title, desc, date, location, ward, category, volunteers, total, status, check_in_code FROM missions WHERE id = ? AND archived_at IS NULL"
+      ).get(missionId);
+      const notFound = !mission || mission.status === "closed";
+      const full = mission && (mission.status === "full" || mission.status === "completed");
+      const branding = getSiteBranding();
+      const districtName = branding.districtName || "Dhamtari";
+      const joinPage = `<!DOCTYPE html><html lang="hi"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${notFound ? "Mission not found" : escapeHtml(mission.title)} — JanPrayas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter','Noto Sans Devanagari',sans-serif;background:linear-gradient(135deg,#064E3B 0%,#065F46 50%,#047857 100%);min-height:100vh;padding:20px 16px 40px;display:flex;flex-direction:column;align-items:center}
+.card{background:#fff;border-radius:20px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden}
+.card-header{background:linear-gradient(135deg,#064E3B,#0D9488);padding:24px 24px 20px;text-align:center;position:relative}
+.tricolor{display:flex;height:7px}
+.tricolor div:nth-child(1){background:#FF9933;flex:1}
+.tricolor div:nth-child(2){background:#fff;flex:0.6}
+.tricolor div:nth-child(3){background:#138808;flex:1}
+.logos{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.logos img{width:56px;height:56px;object-fit:contain;background:#fff;border-radius:50%;padding:4px}
+.hdr-title{color:rgba(255,255,255,0.85);font-size:13px;font-weight:500;letter-spacing:.5px}
+.hdr-district{color:#fff;font-size:20px;font-weight:700;margin:2px 0 4px}
+.hdr-platform{color:rgba(255,255,255,0.7);font-size:13px}
+.mission-banner{background:rgba(255,255,255,0.12);border-radius:12px;padding:14px 16px;margin-top:16px;text-align:left}
+.mission-cat{display:inline-block;background:rgba(255,255,255,0.2);color:#fff;font-size:12px;font-weight:600;letter-spacing:1px;padding:3px 10px;border-radius:20px;margin-bottom:8px;text-transform:uppercase}
+.mission-title{color:#fff;font-size:18px;font-weight:700;line-height:1.35;margin-bottom:10px}
+.mission-meta{display:flex;flex-direction:column;gap:5px}
+.meta-row{display:flex;gap:8px;align-items:flex-start;color:rgba(255,255,255,0.85);font-size:13px}
+.meta-icon{flex-shrink:0;width:18px;text-align:center}
+.card-body{padding:24px}
+.status-full{background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:12px;padding:16px;text-align:center;color:#92400E;font-weight:600;font-size:15px;margin-bottom:0}
+.status-ok{color:#065F46;font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:6px}
+.status-ok span{background:#D1FAE5;padding:4px 10px;border-radius:20px}
+label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px}
+input,select{width:100%;padding:11px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:15px;font-family:inherit;color:#111;transition:border-color .2s;margin-bottom:14px}
+input:focus,select:focus{outline:none;border-color:#059669;box-shadow:0 0 0 3px rgba(5,150,105,0.12)}
+.btn{width:100%;padding:14px;background:linear-gradient(135deg,#059669,#0D9488);color:#fff;font-size:16px;font-weight:700;font-family:inherit;border:none;border-radius:12px;cursor:pointer;transition:opacity .2s;letter-spacing:.3px}
+.btn:disabled{opacity:0.6;cursor:not-allowed}
+.btn:hover:not(:disabled){opacity:0.9}
+.success-box{text-align:center;padding:10px 0 4px}
+.success-icon{font-size:56px;margin-bottom:12px}
+.success-title{font-size:22px;font-weight:700;color:#065F46;margin-bottom:8px}
+.success-sub{font-size:15px;color:#374151;line-height:1.6;margin-bottom:20px}
+.success-badge{background:#D1FAE5;border:1.5px solid #34D399;border-radius:12px;padding:14px;font-size:13px;color:#065F46;font-weight:600;margin-bottom:16px}
+.already{background:#EFF6FF;border:1.5px solid #93C5FD;border-radius:12px;padding:14px;font-size:14px;color:#1E40AF;font-weight:600;margin-bottom:16px}
+.footer-note{font-size:11px;color:rgba(255,255,255,0.6);margin-top:20px;text-align:center;max-width:480px}
+.err{color:#B91C1C;font-size:13px;margin-top:-10px;margin-bottom:10px}
+.lang-toggle{position:absolute;top:14px;right:16px}
+.lang-btn{background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit}
+</style>
+</head>
+<body>
+${notFound ? `
+<div class="card"><div class="card-header"><div class="hdr-district">JanPrayas</div><div class="hdr-platform">Mission not found or no longer active.</div></div><div class="card-body"><p style="color:#6B7280;font-size:15px">This mission link may have expired or been removed. Please contact your coordinator.</p></div></div>
+` : `
+<div class="card">
+  <div class="card-header">
+    <div class="tricolor"><div></div><div></div><div></div></div>
+    <div class="logos">
+      <img src="/assets/dhamtari-emblem.png" alt="Dhamtari">
+      <div>
+        <div class="hdr-title">GOVERNMENT OF CHHATTISGARH</div>
+        <div class="hdr-district">जिला ${escapeHtml(districtName)} — ${escapeHtml(districtName)} District</div>
+        <div class="hdr-platform">JanPrayas Citizen Engagement Platform</div>
+      </div>
+      <img src="/assets/janprayas-logo.png" alt="JanPrayas">
+    </div>
+    <div class="mission-banner">
+      <div class="mission-cat">${escapeHtml(mission.category)}</div>
+      <div class="mission-title" id="mTitle">${escapeHtml(mission.title)}</div>
+      <div class="mission-meta">
+        <div class="meta-row"><span class="meta-icon">📅</span><span>${escapeHtml(mission.date)}</span></div>
+        <div class="meta-row"><span class="meta-icon">📍</span><span>${escapeHtml(mission.location)}${mission.ward ? ", " + escapeHtml(mission.ward) : ""}</span></div>
+        ${mission.total > 0 ? `<div class="meta-row"><span class="meta-icon">👥</span><span>${mission.volunteers}/${mission.total} joined</span></div>` : ""}
+      </div>
+    </div>
+    <button class="lang-btn lang-toggle" onclick="toggleLang()" id="langBtn">हिंदी</button>
+  </div>
+  <div class="card-body">
+    ${full ? `<div class="status-full" id="fullMsg">⚠️ This mission is full or completed. Registration is closed.<br><br>आयोजन भर गया है। पंजीकरण बंद है।</div>` : `
+    <div id="formArea">
+      <div class="status-ok"><span id="slotsLeft">✅ ${mission.total > mission.volunteers ? (mission.total - mission.volunteers) + " slots available" : "Open registration"}</span></div>
+      <form id="joinForm" onsubmit="handleJoin(event)">
+        <label id="lName">Full Name / पूरा नाम *</label>
+        <input type="text" id="fName" placeholder="Ramkumar Yadav" required autocomplete="name">
+        <label id="lPhone">Mobile Number / मोबाइल नंबर *</label>
+        <input type="tel" id="fPhone" placeholder="9876543210" required autocomplete="tel" pattern="[0-9]{10}" maxlength="10">
+        <div class="err" id="errMsg" hidden></div>
+        <label id="lArea">Village / Ward / Area (Optional)</label>
+        <input type="text" id="fArea" placeholder="e.g. Ward 5, Dhamtari / वार्ड 5, धमतरी">
+        <button type="submit" class="btn" id="joinBtn">🤝 Join this Mission / इस मिशन से जुड़ें</button>
+      </form>
+    </div>
+    <div id="successArea" hidden class="success-box">
+      <div class="success-icon">🎉</div>
+      <div class="success-title" id="successTitle">You're Registered!</div>
+      <div class="success-sub" id="successSub">You have successfully joined <strong>${escapeHtml(mission.title)}</strong>. Show up on <strong>${escapeHtml(mission.date)}</strong> at <strong>${escapeHtml(mission.location)}</strong>.</div>
+      <div class="success-badge" id="successBadge">🏆 You earned <strong>+25 civic points</strong> for joining!<br>Attend &amp; complete to earn +50 more. Build your rank on JanPrayas!</div>
+    </div>
+    <div id="alreadyArea" hidden class="already">✅ <span id="alreadyMsg">You are already registered for this mission!</span></div>
+    `}
+  </div>
+</div>
+<p class="footer-note">JanPrayas — District ${escapeHtml(districtName)}, Chhattisgarh &nbsp;|&nbsp; janprayas.dhamtari.gov.in</p>
+`}
+<script>
+const MISSION_ID = ${mission ? mission.id : 0};
+let lang = 'en';
+const T = {
+  en: { name:'Full Name *', phone:'Mobile Number (10 digits) *', area:'Village / Ward / Area (optional)', btn:'🤝 Join this Mission', slots:'slot available', slotsPlural:'slots available', open:'Open registration', ok:'You\'re Registered! आप पंजीकृत हो गए!', sub:'You have successfully joined this mission. Show up on time and earn civic points!', badge:'🏆 You earned +25 civic points for joining! Attend & complete to earn +50 more.', already:'You are already registered for this mission!' },
+  hi: { name:'पूरा नाम *', phone:'मोबाइल नंबर (10 अंक) *', area:'गांव / वार्ड / क्षेत्र (वैकल्पिक)', btn:'🤝 इस मिशन से जुड़ें', slots:'स्लॉट बाकी', slotsPlural:'स्लॉट बाकी', open:'खुला पंजीकरण', ok:'आप पंजीकृत हो गए!', sub:'आपने इस मिशन में सफलतापूर्वक पंजीकरण किया। समय पर आएं और नागरिक अंक अर्जित करें!', badge:'🏆 जुड़ने पर +25 अंक मिले! उपस्थित होने पर +50 अतिरिक्त अंक।', already:'आप पहले से इस मिशन में पंजीकृत हैं!' }
+};
+function toggleLang() {
+  lang = lang === 'en' ? 'hi' : 'en';
+  document.getElementById('langBtn').textContent = lang === 'en' ? 'हिंदी' : 'English';
+  const t = T[lang];
+  document.getElementById('lName').textContent = t.name;
+  document.getElementById('lPhone').textContent = t.phone;
+  document.getElementById('lArea').textContent = t.area;
+  document.getElementById('joinBtn').textContent = t.btn;
+}
+async function handleJoin(e) {
+  e.preventDefault();
+  const name = document.getElementById('fName').value.trim();
+  const phone = document.getElementById('fPhone').value.trim();
+  const area = document.getElementById('fArea').value.trim();
+  const errEl = document.getElementById('errMsg');
+  errEl.hidden = true;
+  if (!/^[0-9]{10}$/.test(phone)) {
+    errEl.textContent = 'Please enter a valid 10-digit mobile number.';
+    errEl.hidden = false; return;
+  }
+  const btn = document.getElementById('joinBtn');
+  btn.disabled = true; btn.textContent = '⏳ Registering…';
+  try {
+    const res = await fetch('/api/volunteers', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, phone, area, missionId: MISSION_ID })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errEl.textContent = data.error || 'Registration failed. Please try again.';
+      errEl.hidden = false;
+      btn.disabled = false; btn.textContent = T[lang].btn; return;
+    }
+    document.getElementById('formArea').hidden = true;
+    const t = T[lang];
+    if (data.alreadyJoinedMission || data.alreadyRegistered) {
+      document.getElementById('alreadyMsg').textContent = t.already;
+      document.getElementById('alreadyArea').hidden = false;
+    } else {
+      document.getElementById('successTitle').textContent = t.ok;
+      document.getElementById('successSub').textContent = t.sub;
+      document.getElementById('successBadge').textContent = t.badge;
+      document.getElementById('successArea').hidden = false;
+    }
+  } catch(err) {
+    errEl.textContent = 'Network error. Please check your connection.'; errEl.hidden = false;
+    btn.disabled = false; btn.textContent = T[lang].btn;
+  }
+}
+</script>
+</body></html>`;
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache", ...securityHeaders() });
+      res.end(joinPage);
+      return;
     }
 
     if (url.pathname === "/" || url.pathname === "/index.html") {
@@ -3609,10 +3800,24 @@ function createOrgMission(orgPayload, body) {
 function listOrgMissions(orgPayload) {
   const rows = db.prepare(`
     SELECT id, title, category, ward, location, date, status, approval_status,
-           volunteers, total, created_at, outcome_note, actual_turnout
+           volunteers, total, created_at, outcome_note, actual_turnout, poster_ai_tries
     FROM missions WHERE org_id = ? ORDER BY created_at DESC
   `).all(orgPayload.oid);
   return { missions: rows };
+}
+
+function orgGeneratePosterText(orgPayload, missionId) {
+  const mission = db.prepare(
+    "SELECT id, title, category, date, location, ward, org_id, poster_ai_tries FROM missions WHERE id = ? AND org_id = ?"
+  ).get(missionId, orgPayload.oid);
+  if (!mission) throw publicError(404, "Mission not found or not owned by your organization.");
+  const MAX_TRIES = 3;
+  if (mission.poster_ai_tries >= MAX_TRIES) {
+    throw publicError(429, `AI poster text limit reached. Maximum ${MAX_TRIES} generations are allowed per mission to conserve resources.`);
+  }
+  db.prepare("UPDATE missions SET poster_ai_tries = poster_ai_tries + 1 WHERE id = ?").run(missionId);
+  const remaining = MAX_TRIES - mission.poster_ai_tries - 1;
+  return { missionId, triesUsed: mission.poster_ai_tries + 1, triesRemaining: remaining, mission };
 }
 
 function getOrgPublicProfile(orgId) {
@@ -3703,7 +3908,26 @@ function adminReviewOrganization(organizationId, body, admin) {
   }
   db.prepare("UPDATE organizations SET status = ?, updated_at = ? WHERE id = ?").run(status, isoNow(), org.id);
   writeAuditLog("review_organization", "organization", org.id, `Organization #${org.id} set to "${status}" by ${admin ? admin.name : "admin"}`);
-  return { ok: true };
+
+  // When an org is approved, auto-approve any missions they already submitted
+  // that are still waiting in the pending queue (common when org posts missions
+  // immediately after signup, before admin gets to their org review).
+  if (status === "approved") {
+    const pendingOrgMissions = db.prepare(
+      "SELECT id FROM missions WHERE org_id = ? AND approval_status = 'pending' AND archived_at IS NULL"
+    ).all(org.id);
+    for (const m of pendingOrgMissions) {
+      db.prepare("UPDATE missions SET approval_status = 'approved', ai_flag = 'ok', ai_flag_reason = ? WHERE id = ?")
+        .run("Auto-approved: organization verified by admin.", m.id);
+      try { ensureCheckInCode(m.id); } catch(e) {}
+    }
+    if (pendingOrgMissions.length > 0) {
+      writeAuditLog("auto_approve_org_missions", "organization", org.id,
+        `${pendingOrgMissions.length} pending mission(s) auto-approved on org approval by ${admin ? admin.name : "admin"}`);
+    }
+  }
+
+  return { ok: true, autoApprovedMissions: status === "approved" ? db.prepare("SELECT COUNT(*) AS n FROM missions WHERE org_id = ? AND approval_status = 'approved'").get(org.id).n : 0 };
 }
 
 function adminUpdateOrganization(organizationId, body, admin) {
