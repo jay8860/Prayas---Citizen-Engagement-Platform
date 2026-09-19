@@ -9130,7 +9130,16 @@
           listEl.innerHTML = `<p style="color:var(--text-muted);font-size:13px">No missions yet. Submit your first one above.</p>`;
           return;
         }
-        listEl.innerHTML = missions.map((m) => {
+        const hasApproved = missions.some(m => m.approval_status === "approved");
+        const featureBanner = hasApproved ? `
+          <div style="background:linear-gradient(135deg,#1E40AF,#0EA5E9);border-radius:14px;padding:16px 18px;margin-bottom:4px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+            <div style="font-size:36px;flex-shrink:0">🎨</div>
+            <div style="flex:1;min-width:180px">
+              <div style="color:#fff;font-weight:700;font-size:15px;margin-bottom:3px">Free AI Poster Generator Available!</div>
+              <div style="color:rgba(255,255,255,0.85);font-size:13px;line-height:1.5">For every approved mission you can generate a professional recruitment poster — with AI-written text, your org name & contact, QR code for direct volunteer sign-up, and all incentives listed. <strong style="color:#FCD34D">Up to 3 AI designs per mission, free.</strong></div>
+            </div>
+          </div>` : "";
+        listEl.innerHTML = featureBanner + missions.map((m) => {
           const statusBadge = {
             approved: `<span style="background:#DCFCE7;color:#166534;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">✅ Approved</span>`,
             pending:  `<span style="background:#FEF3C7;color:#B45309;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">⏳ Pending Review</span>`,
@@ -9143,13 +9152,28 @@
           }[m.status] || "";
           const triesLeft = 3 - (m.poster_ai_tries || 0);
           const canPoster = m.approval_status === "approved";
-          const posterBtn = canPoster
-            ? `<button type="button" onclick="generateOrgPoster(${m.id})" style="font-size:12px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card-bg,#fff);cursor:pointer;color:var(--navy,#1E40AF);font-weight:600" title="Generate mission poster with AI (${triesLeft} of 3 AI tries left)">🖼️ Poster <span style="font-size:10px;color:var(--text-muted)">${triesLeft}/3 left</span></button>`
-            : "";
-          return `<div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:10px;padding:14px 16px">
+          const posterSection = canPoster ? `
+            <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+              <button type="button" onclick="generateOrgPoster(${m.id})"
+                style="width:100%;padding:11px 16px;border-radius:10px;border:none;
+                  background:${triesLeft > 0 ? "linear-gradient(135deg,#1E40AF,#2563EB)" : "#6B7280"};
+                  color:#fff;font-size:14px;font-weight:700;cursor:${triesLeft > 0 ? "pointer" : "default"};
+                  display:flex;align-items:center;justify-content:center;gap:8px">
+                <span style="font-size:20px">🖼️</span>
+                <span>${triesLeft > 0 ? "Generate Recruitment Poster" : "Generate Poster (no AI copy — limit reached)"}</span>
+                <span style="margin-left:auto;background:rgba(255,255,255,0.2);border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600">
+                  ${triesLeft}/3 AI tries left
+                </span>
+              </button>
+              ${triesLeft === 0 ? `<div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:5px">AI text limit reached. Poster will use default copy.</div>` : ""}
+            </div>` : (m.approval_status === "pending" ? `
+            <div style="margin-top:10px;font-size:12px;color:var(--text-muted);padding:8px 10px;background:var(--surface,#F9FAFB);border-radius:8px">
+              🖼️ Poster generator will be available once this mission is approved.
+            </div>` : "");
+          return `<div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
               <div style="font-weight:700;font-size:14px">${escapeHtml(m.title)}</div>
-              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${statusBadge}${mStatus}${posterBtn}</div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${statusBadge}${mStatus}</div>
             </div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:4px">
               📅 ${escapeHtml(m.date)} &nbsp;|&nbsp; 📍 ${escapeHtml(m.location)}, ${escapeHtml(m.ward)}
@@ -9157,6 +9181,7 @@
             <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
               👥 ${m.volunteers || 0} registered / ${m.total} slots &nbsp;|&nbsp; ✅ ${m.actual_turnout || 0} QR-verified
             </div>
+            ${posterSection}
           </div>`;
         }).join("");
       } catch (error) {
@@ -9244,6 +9269,7 @@
 
       const org = state.orgAuth && state.orgAuth.org;
       const orgName = org ? org.name : "";
+      const orgPhone = (org && org.contactPhone) ? org.contactPhone : "";
 
       // Reuse the same THEMES and drawing logic (inline the essential parts)
       const THEMES = {
@@ -9283,7 +9309,8 @@
       const rows = [
         ["📅", lang === "hi" ? "तिथि" : "Date", m.date],
         ["📍", lang === "hi" ? "स्थान" : "Venue", m.location + (m.ward ? " — " + m.ward : "")],
-        ...(orgName ? [["🏢", lang === "hi" ? "आयोजक संस्था" : "Organized by", orgName]] : [])
+        ...(orgName ? [["🏢", lang === "hi" ? "आयोजक संस्था" : "Organized by", orgName]] : []),
+        ...(orgPhone ? [["📞", lang === "hi" ? "संपर्क करें" : "Contact", orgPhone]] : [])
       ];
       const CARD_H = rows.length * ROW_H + 36;
       const CARD_END = CARD_Y + CARD_H;
@@ -9382,7 +9409,8 @@
         const ftMidY=FOOTER_Y+footerH*0.42;
         ctx.fillStyle="#FFFFFF"; ctx.font="bold 24px Georgia,serif"; ctx.textAlign="left"; ctx.fillText(lang==="hi"?`जिला ${state.districtName||"धमतरी"} · ${state.stateName||"छत्तीसगढ़"}`:`District ${state.districtName||"Dhamtari"} · ${state.stateName||"Chhattisgarh"}`,56,ftMidY-28);
         if(orgName){ctx.fillStyle="rgba(255,255,255,0.80)";ctx.font="600 16px Inter";ctx.fillText((lang==="hi"?"आयोजक: ":"By: ")+orgName,56,ftMidY);}
-        ctx.fillStyle="rgba(255,255,255,0.60)"; ctx.font="400 14px Inter"; ctx.fillText("janprayas.dhamtari.gov.in",56,ftMidY+(orgName?22:0));
+        if(orgPhone){ctx.fillStyle="rgba(255,255,255,0.70)";ctx.font="600 15px Inter";ctx.fillText("📞 "+orgPhone,56,ftMidY+(orgName?22:0));}
+        ctx.fillStyle="rgba(255,255,255,0.50)"; ctx.font="400 13px Inter"; ctx.fillText("janprayas.dhamtari.gov.in",56,ftMidY+(orgName?22:0)+(orgPhone?20:0));
         // Org disclaimer
         const disc=lang==="hi"?"⚠️ यह आयोजन एक पंजीकृत संस्था द्वारा है। विस्तार हेतु आयोजक से संपर्क करें।":"⚠️ Event organized by a registered civic organization on JanPrayas. Contact organizer for details.";
         ctx.fillStyle="rgba(255,255,255,0.45)"; ctx.font="400 12px Inter"; ctx.textAlign="center"; wrapCanvasText(ctx,disc,W/2,H-44,W-80,16,2);
