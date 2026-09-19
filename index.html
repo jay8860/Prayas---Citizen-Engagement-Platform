@@ -3818,10 +3818,13 @@
                         </div>
                       </div>
                     </div>
-                    <div style="background:#fff;border:1px solid #c7d2fe;border-radius:8px;padding:10px 12px;font-size:12px;color:#3730a3">
+                    <div style="background:#fff;border:1px solid #c7d2fe;border-radius:8px;padding:10px 12px;font-size:12px;color:#3730a3;margin-bottom:10px">
                       <strong>💡 Tip for your event:</strong> Print and display the <em>Check-in Poster</em> (available below for each approved mission) at a clearly visible spot at your venue. Ask volunteers to scan it as they arrive. After the event, mark the mission as <strong>Completed</strong> — certificates are then automatically generated for every volunteer who checked in.
                     </div>
-                    <p style="margin:10px 0 0;font-size:12px;color:var(--muted)">Your organization earns <strong>20 base points</strong> per mission + <strong>5 points per QR-verified volunteer</strong>. Consistent monthly activity earns bonus points.</p>
+                    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px 12px;font-size:12px;color:#166534">
+                      <strong>✅ Walk-in / Self-Reporting Option (Recommended for new events):</strong> If a volunteer arrives without having pre-registered, your organization's login can mark their attendance on the spot using the <strong>"Mark Walk-in Attendance"</strong> form on each mission card below. Just enter their <strong>name and mobile number</strong> — they will be auto-registered on the portal instantly, and can fill in their full profile details later. They will still be eligible for a participation certificate once the mission is marked completed.
+                    </div>
+                    <p style="margin:10px 0 0;font-size:12px;color:var(--muted)">Your organization earns <strong>20 base points</strong> per mission + <strong>5 points per QR-verified or walk-in volunteer</strong>. Consistent monthly activity earns bonus points.</p>
                   </div>
                 </div>
 
@@ -9449,6 +9452,30 @@
             <div style="margin-top:10px;font-size:12px;color:var(--text-muted);padding:8px 10px;background:var(--surface,#F9FAFB);border-radius:8px">
               🖼️ Poster generator will be available once this mission is approved.
             </div>` : "");
+          const canWalkin = m.approval_status === "approved" && m.status !== "completed";
+          const walkinSection = canWalkin ? `
+            <div style="margin-top:12px;border:1.5px solid #86efac;border-radius:10px;overflow:hidden">
+              <div style="background:#16a34a;padding:6px 12px;display:flex;align-items:center;gap:6px">
+                <span style="color:#fff;font-size:12px;font-weight:700">✅ Mark Walk-in Attendance — For volunteers arriving on the spot</span>
+              </div>
+              <div style="padding:10px 12px;background:#f0fdf4">
+                <div style="font-size:11px;color:#166534;margin-bottom:8px;line-height:1.5">
+                  Volunteer doesn't need to pre-register. Enter their name &amp; number — they'll be registered on the portal automatically and will receive a certificate after mission completion.
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+                  <input id="walkin-name-${m.id}" type="text" placeholder="Volunteer name *" maxlength="100"
+                    style="flex:1;min-width:130px;padding:8px 10px;border:1px solid #86efac;border-radius:7px;font-size:13px;background:#fff">
+                  <input id="walkin-phone-${m.id}" type="tel" placeholder="Mobile number *" maxlength="10"
+                    style="flex:1;min-width:120px;padding:8px 10px;border:1px solid #86efac;border-radius:7px;font-size:13px;background:#fff">
+                  <button type="button" onclick="orgMarkWalkin(${m.id})"
+                    style="padding:8px 14px;background:#16a34a;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
+                    Mark Present ✓
+                  </button>
+                </div>
+                <div id="walkin-feedback-${m.id}" style="font-size:12px;min-height:16px"></div>
+                ${m.walkinCount > 0 ? `<div style="font-size:11px;color:#166534;margin-top:4px">👥 ${m.walkinCount} walk-in ${m.walkinCount === 1 ? "attendance" : "attendances"} recorded for this mission.</div>` : ""}
+              </div>
+            </div>` : "";
           return `<div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
               <div style="font-weight:700;font-size:14px">${escapeHtml(m.title)}</div>
@@ -9458,13 +9485,51 @@
               📅 ${escapeHtml(m.date)} &nbsp;|&nbsp; 📍 ${escapeHtml(m.location)}, ${escapeHtml(m.ward)}
             </div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
-              👥 ${m.volunteers || 0} registered / ${m.total} slots &nbsp;|&nbsp; ✅ ${m.actual_turnout || 0} QR-verified
+              👥 ${m.volunteers || 0} registered / ${m.total} slots &nbsp;|&nbsp; ✅ ${m.actual_turnout || 0} QR-verified &nbsp;|&nbsp; 🤝 ${m.walkinCount || 0} walk-in
             </div>
             ${posterSection}
+            ${walkinSection}
           </div>`;
         }).join("");
       } catch (error) {
         listEl.innerHTML = `<p style="color:var(--error);font-size:13px">Could not load missions.</p>`;
+      }
+    }
+
+    async function orgMarkWalkin(missionId) {
+      const nameEl = document.getElementById(`walkin-name-${missionId}`);
+      const phoneEl = document.getElementById(`walkin-phone-${missionId}`);
+      const feedbackEl = document.getElementById(`walkin-feedback-${missionId}`);
+      if (!nameEl || !phoneEl || !feedbackEl) return;
+      const name = nameEl.value.trim();
+      const phone = phoneEl.value.trim();
+      if (!name || !phone) {
+        feedbackEl.style.color = "var(--danger,#dc2626)";
+        feedbackEl.textContent = "Please enter both volunteer name and mobile number.";
+        return;
+      }
+      feedbackEl.style.color = "#6b7280";
+      feedbackEl.textContent = "Marking attendance…";
+      try {
+        const result = await orgApiRequest(`/api/organizations/me/missions/${missionId}/walkin`, {
+          method: "POST",
+          body: JSON.stringify({ name, phone })
+        });
+        nameEl.value = "";
+        phoneEl.value = "";
+        if (result.alreadyCheckedIn) {
+          feedbackEl.style.color = "#b45309";
+          feedbackEl.textContent = `⚠️ ${result.volunteerName} was already marked present for this mission.`;
+        } else {
+          feedbackEl.style.color = "#16a34a";
+          feedbackEl.textContent = result.isNewRegistration
+            ? `✅ ${result.volunteerName} marked present and auto-registered on JanPrayas!`
+            : `✅ ${result.volunteerName} marked present.`;
+        }
+        await loadOrgMissions();
+      } catch (error) {
+        feedbackEl.style.color = "var(--danger,#dc2626)";
+        feedbackEl.textContent = error?.message || "Could not mark attendance. Please try again.";
       }
     }
 

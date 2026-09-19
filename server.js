@@ -973,6 +973,9 @@ try {
   db.exec("ALTER TABLE volunteer_participations ADD COLUMN selfie_photo TEXT");
 } catch (error) {}
 try {
+  db.exec("ALTER TABLE volunteer_participations ADD COLUMN checkin_method TEXT NOT NULL DEFAULT 'qr'");
+} catch (error) {}
+try {
   db.exec("ALTER TABLE missions ADD COLUMN completion_requested INTEGER NOT NULL DEFAULT 0");
 } catch (error) {}
 try {
@@ -1533,6 +1536,13 @@ const server = http.createServer(async (req, res) => {
       const org = requireOrg(req);
       const body = await readJsonBody(req);
       return sendJson(res, 200, createOrgMission(org, body));
+    }
+
+    if (req.method === "POST" && /^\/api\/organizations\/me\/missions\/\d+\/walkin$/.test(url.pathname)) {
+      const org = requireOrg(req);
+      const missionId = Number(url.pathname.split("/")[5]);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, orgWalkinCheckin(org, missionId, body));
     }
 
     if (req.method === "POST" && /^\/api\/organizations\/me\/missions\/\d+\/generate-poster-text$/.test(url.pathname)) {
@@ -4069,10 +4079,62 @@ function createOrgMission(orgPayload, body) {
 function listOrgMissions(orgPayload) {
   const rows = db.prepare(`
     SELECT id, title, category, ward, location, date, status, approval_status,
-           volunteers, total, created_at, outcome_note, actual_turnout, poster_ai_tries
+           volunteers, total, created_at, outcome_note, actual_turnout, poster_ai_tries,
+           check_in_code
     FROM missions WHERE org_id = ? ORDER BY created_at DESC
   `).all(orgPayload.oid);
-  return { missions: rows };
+  return {
+    missions: rows.map(m => {
+      const walkinCount = db.prepare(
+        `SELECT COUNT(*) AS n FROM volunteer_participations WHERE mission_id = ? AND checkin_method = 'walkin'`
+      ).get(m.id).n;
+      return { ...m, checkInCode: m.check_in_code || "", walkinCount };
+    })
+  };
+}
+
+function orgWalkinCheckin(orgPayload, missionId, body) {
+  const mission = db.prepare(
+    "SELECT id, title, ward, status, approval_status FROM missions WHERE id = ? AND org_id = ?"
+  ).get(missionId, orgPayload.oid);
+  if (!mission) throw publicError(404, "Mission not found or not owned by your organization.");
+  if (mission.approval_status !== "approved") throw publicError(400, "Walk-in attendance is only available for approved missions.");
+  if (mission.status === "completed") throw publicError(400, "This mission is already completed.");
+
+  const name = String(body.name || "").trim().slice(0, 100);
+  const phone = String(body.phone || "").trim();
+  if (!name) throw publicError(400, "Volunteer name is required.");
+  const normalizedPhone = normalizeVolunteerPhone(phone);
+  if (normalizedPhone.length !== 10) throw publicError(400, "Please enter a valid 10-digit mobile number.");
+
+  // Auto-register volunteer if not found
+  let profile = db.prepare("SELECT * FROM volunteer_profiles WHERE normalized_phone = ? LIMIT 1").get(normalizedPhone);
+  const isNewRegistration = !profile;
+  if (!profile) {
+    const profileId = upsertVolunteerProfile({ name, phone, area: mission.ward || "", email: "", occupation: "", availability: "", message: "", civicOrgs: "", skills: [] });
+    profile = db.prepare("SELECT * FROM volunteer_profiles WHERE id = ?").get(profileId);
+  }
+
+  const dateLabel = new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  let participation = db.prepare(
+    "SELECT id, attended_at FROM volunteer_participations WHERE volunteer_profile_id = ? AND mission_id = ? LIMIT 1"
+  ).get(profile.id, mission.id);
+
+  if (participation) {
+    if (participation.attended_at) return { ok: true, alreadyCheckedIn: true, volunteerName: profile.name, missionTitle: mission.title };
+    db.prepare("UPDATE volunteer_participations SET attended_at = ?, checkin_method = 'walkin' WHERE id = ?").run(isoNow(), participation.id);
+  } else {
+    db.exec("BEGIN");
+    try {
+      db.prepare(`INSERT INTO volunteer_participations (volunteer_profile_id, mission_id, mission_title, date_label, attended_at, checkin_method, created_at) VALUES (?, ?, ?, ?, ?, 'walkin', ?)`)
+        .run(profile.id, mission.id, mission.title, dateLabel, isoNow(), isoNow());
+      db.exec("COMMIT");
+    } catch (e) { db.exec("ROLLBACK"); throw e; }
+  }
+
+  writeAuditLog("walkin_checkin", "volunteer_participation", profile.id,
+    `Walk-in attendance: ${profile.name} (${normalizedPhone}) for mission "${mission.title}"${isNewRegistration ? " — auto-registered" : ""}`, null);
+  return { ok: true, checkedIn: true, volunteerName: profile.name, isNewRegistration, missionTitle: mission.title };
 }
 
 function orgGeneratePosterText(orgPayload, missionId) {
