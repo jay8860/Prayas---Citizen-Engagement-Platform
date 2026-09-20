@@ -1397,6 +1397,40 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, deleteAdminUser(userId, actor));
     }
 
+    if (req.method === "GET" && url.pathname === "/api/admin/pending-checkins") {
+      requireAdmin(req);
+      const rows = db.prepare(`
+        SELECT vp.id, vp.volunteer_profile_id, vp.mission_id, vp.mission_title, vp.date_label,
+               vp.attended_at, vp.selfie_photo, vp.gps_lat, vp.gps_lng, vp.created_at,
+               p.name, p.phone, p.area
+        FROM volunteer_participations vp
+        JOIN volunteer_profiles p ON p.id = vp.volunteer_profile_id
+        WHERE vp.checkin_method = 'qr_new'
+        ORDER BY vp.created_at DESC
+      `).all();
+      return sendJson(res, 200, { pending: rows });
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/pending-checkins\/\d+\/approve$/.test(url.pathname)) {
+      const actor = requireAdmin(req);
+      const participationId = Number(url.pathname.split("/")[4]);
+      const row = db.prepare("SELECT id FROM volunteer_participations WHERE id = ? AND checkin_method = 'qr_new'").get(participationId);
+      if (!row) throw publicError(404, "Pending check-in not found.");
+      db.prepare("UPDATE volunteer_participations SET checkin_method = 'qr' WHERE id = ?").run(participationId);
+      writeAuditLog("approve_checkin", "volunteer_participation", participationId, `Pending check-in approved by ${actor.name}`, null);
+      return sendJson(res, 200, { ok: true });
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/pending-checkins\/\d+\/reject$/.test(url.pathname)) {
+      const actor = requireAdmin(req);
+      const participationId = Number(url.pathname.split("/")[4]);
+      const row = db.prepare("SELECT id FROM volunteer_participations WHERE id = ? AND checkin_method = 'qr_new'").get(participationId);
+      if (!row) throw publicError(404, "Pending check-in not found.");
+      db.prepare("DELETE FROM volunteer_participations WHERE id = ?").run(participationId);
+      writeAuditLog("reject_checkin", "volunteer_participation", participationId, `Pending check-in rejected by ${actor.name}`, null);
+      return sendJson(res, 200, { ok: true });
+    }
+
     if (req.method === "POST" && url.pathname === "/api/volunteers") {
       const body = await readJsonBody(req);
       const result = registerVolunteer(body);
@@ -5143,12 +5177,14 @@ function checkInVolunteer(body) {
     const profileId = upsertVolunteerProfile({ name: volunteerName, phone, area: mission.ward || "", email: "", occupation: "", availability: "", message: "", civicOrgs: "", skills: [] });
     const profile = db.prepare("SELECT * FROM volunteer_profiles WHERE id = ?").get(profileId);
     const dateLabel = new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+    // checkin_method='qr_new' = auto-registered at venue — marks attendance as pending review.
+    // Admin must approve before it counts for certificates/leaderboard.
     db.prepare(`INSERT INTO volunteer_participations (volunteer_profile_id, mission_id, mission_title, date_label, attended_at, selfie_photo, checkin_method, gps_lat, gps_lng, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, 'qr', ?, ?, ?)`)
+      VALUES (?, ?, ?, ?, ?, ?, 'qr_new', ?, ?, ?)`)
       .run(profile.id, mission.id, mission.title, dateLabel, isoNow(), selfiePhoto, gpsLat, gpsLng, isoNow());
     writeAuditLog("checkin_auto_register", "volunteer_participation", profile.id,
-      `On-spot QR check-in: ${volunteerName} (${normalizedPhone}) auto-registered for "${mission.title}"`, null);
-    return { ok: true, checkedIn: true, isNewRegistration: true, missionTitle: mission.title };
+      `On-spot QR check-in (pending review): ${volunteerName} (${normalizedPhone}) auto-registered for "${mission.title}"`, null);
+    return { ok: true, pendingReview: true, isNewRegistration: true, missionTitle: mission.title };
   }
 
   if (participation.attended_at) return { ok: true, alreadyCheckedIn: true, missionTitle: mission.title };
