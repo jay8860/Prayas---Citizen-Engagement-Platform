@@ -676,6 +676,21 @@
       gap: 10px;
     }
 
+    /* Compact attendance button on mission cards */
+    .btn-attend {
+      background: #16a34a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn-attend:hover { background: #15803d; }
+
     .hero-checkin-btn {
       background: linear-gradient(135deg, #16a34a, #15803d) !important;
       color: #fff !important;
@@ -8747,16 +8762,13 @@
                   <span><strong>${mission.volunteers}</strong> ${hi ? "स्वयंसेवक जुड़े" : "volunteers joined"} · ${percentage}% ${hi ? "भरा" : "filled"}</span>
                 </div>
                 <div class="progress-bar"><div class="progress-fill" style="width:${percentage}%"></div></div>
-                ${mission.status === "open" && mission.checkInCode ? `
-                <div style="margin-top:10px">
-                  <button class="btn btn-checkin-card" type="button" onclick="openModal('checkInModal')" style="width:100%;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-                    <span style="font-size:18px">✅</span>
-                    ${hi ? "यहाँ चेक-इन करें" : "Check In at This Mission"}
-                  </button>
-                </div>` : ""}
                 <div class="mission-footer" style="${avatars ? "" : "justify-content:flex-end"}">
                   ${avatars ? `<div class="volunteers-avatars">${avatars}</div>` : ""}
                   <div class="mission-actions">
+                    ${mission.status === "open" && mission.checkInCode ? `
+                    <button class="btn btn-attend" type="button" onclick="openModal('checkInModal')" title="${hi ? "यहाँ उपस्थिति दर्ज करें" : "Mark your attendance at this mission"}">
+                      ✅ ${hi ? "उपस्थिति" : "Attend"}
+                    </button>` : ""}
                     <button class="mission-share" type="button" onclick="shareMission(${mission.id})" aria-label="Share mission">
                       <i class="fa-brands fa-whatsapp"></i>
                     </button>
