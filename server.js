@@ -976,6 +976,12 @@ try {
   db.exec("ALTER TABLE volunteer_participations ADD COLUMN checkin_method TEXT NOT NULL DEFAULT 'qr'");
 } catch (error) {}
 try {
+  db.exec("ALTER TABLE volunteer_participations ADD COLUMN gps_lat REAL");
+} catch (error) {}
+try {
+  db.exec("ALTER TABLE volunteer_participations ADD COLUMN gps_lng REAL");
+} catch (error) {}
+try {
   db.exec("ALTER TABLE missions ADD COLUMN completion_requested INTEGER NOT NULL DEFAULT 0");
 } catch (error) {}
 try {
@@ -5108,9 +5114,13 @@ function checkInVolunteer(body) {
   }
   if (selfiePhoto.length > 500_000) throw publicError(400, "Selfie photo is too large. Please retake.");
 
+  const gpsLat = typeof body.gpsLat === "number" && isFinite(body.gpsLat) ? body.gpsLat : null;
+  const gpsLng = typeof body.gpsLng === "number" && isFinite(body.gpsLng) ? body.gpsLng : null;
+  const volunteerName = String(body.name || "").trim().slice(0, 100);
+
   const normalizedPhone = normalizeVolunteerPhone(phone);
 
-  const mission = db.prepare("SELECT id, title, status FROM missions WHERE check_in_code = ? AND archived_at IS NULL").get(code);
+  const mission = db.prepare("SELECT id, title, status, ward FROM missions WHERE check_in_code = ? AND archived_at IS NULL").get(code);
   if (!mission) throw publicError(404, "Invalid check-in code. Please verify with your mission coordinator.");
 
   // Join across ALL profiles with this phone — avoids the wrong-profile bug when
@@ -5124,11 +5134,27 @@ function checkInVolunteer(body) {
     LIMIT 1
   `).get(normalizedPhone, mission.id);
 
-  if (!participation) throw publicError(409, "You are not registered for this mission. Please register first.");
+  if (!participation) {
+    // Volunteer not registered for this mission.
+    // If they provided their name, auto-register + mark attendance (on-the-spot check-in).
+    if (!volunteerName) {
+      return { ok: false, notRegistered: true, missionTitle: mission.title };
+    }
+    const profileId = upsertVolunteerProfile({ name: volunteerName, phone, area: mission.ward || "", email: "", occupation: "", availability: "", message: "", civicOrgs: "", skills: [] });
+    const profile = db.prepare("SELECT * FROM volunteer_profiles WHERE id = ?").get(profileId);
+    const dateLabel = new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+    db.prepare(`INSERT INTO volunteer_participations (volunteer_profile_id, mission_id, mission_title, date_label, attended_at, selfie_photo, checkin_method, gps_lat, gps_lng, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, 'qr', ?, ?, ?)`)
+      .run(profile.id, mission.id, mission.title, dateLabel, isoNow(), selfiePhoto, gpsLat, gpsLng, isoNow());
+    writeAuditLog("checkin_auto_register", "volunteer_participation", profile.id,
+      `On-spot QR check-in: ${volunteerName} (${normalizedPhone}) auto-registered for "${mission.title}"`, null);
+    return { ok: true, checkedIn: true, isNewRegistration: true, missionTitle: mission.title };
+  }
+
   if (participation.attended_at) return { ok: true, alreadyCheckedIn: true, missionTitle: mission.title };
 
-  db.prepare("UPDATE volunteer_participations SET attended_at = ?, selfie_photo = ? WHERE id = ?")
-    .run(isoNow(), selfiePhoto, participation.id);
+  db.prepare("UPDATE volunteer_participations SET attended_at = ?, selfie_photo = ?, gps_lat = ?, gps_lng = ? WHERE id = ?")
+    .run(isoNow(), selfiePhoto, gpsLat, gpsLng, participation.id);
   return { ok: true, checkedIn: true, missionTitle: mission.title };
 }
 
