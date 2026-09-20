@@ -629,6 +629,53 @@
 
     .hero-utility button:hover { color: #fff; }
 
+    /* Copy deep-link button — sits next to action buttons */
+    .copy-link-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: var(--card-bg, #fff);
+      color: var(--text-muted, #64748b);
+      cursor: pointer;
+      font-size: 16px;
+      flex-shrink: 0;
+      position: relative;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      vertical-align: middle;
+    }
+    .copy-link-btn:hover {
+      background: #e8f5e9;
+      border-color: #16a34a;
+      color: #16a34a;
+    }
+    .copy-link-btn::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a1a;
+      color: #fff;
+      font-size: 11px;
+      white-space: nowrap;
+      padding: 5px 10px;
+      border-radius: 6px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 100;
+    }
+    .copy-link-btn:hover::after { opacity: 1; }
+    .copy-link-btn-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .hero-checkin-btn {
       background: linear-gradient(135deg, #16a34a, #15803d) !important;
       color: #fff !important;
@@ -3421,10 +3468,13 @@
               Citizens, groups, schools, and resident bodies can propose missions. Phone number and email are mandatory so the administration can coordinate and verify the request quickly.
             </p>
           </div>
-          <button class="btn btn-saffron" type="button" id="hostMissionToggleBtn">
-            <i class="fa-solid fa-bullhorn"></i>
-            <span data-i18n="host-toggle">Propose a Mission</span>
-          </button>
+          <div class="copy-link-btn-wrap">
+            <button class="btn btn-saffron" type="button" id="hostMissionToggleBtn">
+              <i class="fa-solid fa-bullhorn"></i>
+              <span data-i18n="host-toggle">Propose a Mission</span>
+            </button>
+            <button class="copy-link-btn" type="button" onclick="copyDeepLink('mission')" data-tip="Copy shareable link" aria-label="Copy link to share">🔗</button>
+          </div>
         </div>
         <div class="form-card hidden" id="hostMissionFormCard">
           <h3 class="form-card-title" data-i18n="host-form-title">Propose a Community Mission</h3>
@@ -3562,10 +3612,13 @@
         <div style="display:flex;justify-content:center;gap:10px;margin-top:18px" id="showcasePager"></div>
 
         <div class="story-form-wrap">
-          <button class="btn btn-saffron story-toggle" type="button" id="storyToggleBtn">
-            <i class="fa-solid fa-camera"></i>
-            <span data-i18n="story-toggle">Share Your Story</span>
-          </button>
+          <div class="copy-link-btn-wrap">
+            <button class="btn btn-saffron story-toggle" type="button" id="storyToggleBtn">
+              <i class="fa-solid fa-camera"></i>
+              <span data-i18n="story-toggle">Share Your Story</span>
+            </button>
+            <button class="copy-link-btn" type="button" onclick="copyDeepLink('story')" data-tip="Copy shareable link" aria-label="Copy link to share">🔗</button>
+          </div>
 
           <div class="story-form-card hidden" id="storyFormCard">
             <h3 class="form-card-title" data-i18n="story-form-title">Share what you did for your district</h3>
@@ -3665,10 +3718,13 @@
         </div>
 
         <div class="story-form-wrap">
-          <button class="btn btn-saffron story-toggle" type="button" id="orgAuthToggleBtn" onclick="toggleOrgAuthCard()">
-            <i class="fa-solid fa-building-flag"></i>
-            <span data-i18n="org-auth-toggle">Register / Log In Your Organization</span>
-          </button>
+          <div class="copy-link-btn-wrap">
+            <button class="btn btn-saffron story-toggle" type="button" id="orgAuthToggleBtn" onclick="toggleOrgAuthCard()">
+              <i class="fa-solid fa-building-flag"></i>
+              <span data-i18n="org-auth-toggle">Register / Log In Your Organization</span>
+            </button>
+            <button class="copy-link-btn" type="button" onclick="copyDeepLink('org')" data-tip="Copy shareable link" aria-label="Copy link to share">🔗</button>
+          </div>
 
           <div class="story-form-card hidden" id="orgAuthCard">
             <!-- Logged-out: login + signup -->
@@ -4231,7 +4287,10 @@
               <button class="btn btn-soft" type="button" onclick="clearSelectedMission()" data-i18n="selected-mission-clear">Clear</button>
             </div>
 
-            <h3 class="form-card-title" data-i18n="volunteer-form-title">Register as a Volunteer</h3>
+            <div style="display:flex;align-items:center;gap:10px">
+              <h3 class="form-card-title" style="margin:0" data-i18n="volunteer-form-title">Register as a Volunteer</h3>
+              <button class="copy-link-btn" type="button" onclick="copyDeepLink('volunteer')" data-tip="Copy shareable link" aria-label="Copy link to share" style="flex-shrink:0">🔗</button>
+            </div>
             <p class="form-card-subtitle" data-i18n="volunteer-form-subtitle">Free to join. Built for rapid district deployment.</p>
             <div class="message-card hidden" id="missionJoinChoiceCard" style="margin-bottom:16px">
               <div class="message-name" id="missionJoinChoiceTitle">How would you like to join this mission?</div>
@@ -11172,11 +11231,80 @@
         openModal("checkInModal");
       }
 
-      if (missionId || checkinCode) {
+      const openTarget = params.get("open") || "";
+      if (openTarget) {
+        setTimeout(() => {
+          if (openTarget === "volunteer") {
+            const el = document.getElementById("volunteer");
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+          } else if (openTarget === "story") {
+            const el = document.getElementById("showcase");
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            const card = document.getElementById("storyFormCard");
+            if (card && card.classList.contains("hidden")) {
+              const btn = document.getElementById("storyToggleBtn");
+              if (btn) btn.click();
+            }
+          } else if (openTarget === "mission") {
+            const el = document.getElementById("host-mission");
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            const card = document.getElementById("hostMissionFormCard");
+            if (card && card.classList.contains("hidden")) {
+              const btn = document.getElementById("hostMissionToggleBtn");
+              if (btn) btn.click();
+            }
+          } else if (openTarget === "org") {
+            const el = document.getElementById("org-showcase");
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            const card = document.getElementById("orgAuthCard");
+            if (card && card.classList.contains("hidden")) {
+              const btn = document.getElementById("orgAuthToggleBtn");
+              if (btn) btn.click();
+            }
+          }
+        }, 800);
+      }
+
+      if (missionId || checkinCode || openTarget) {
         // Clean the URL so refreshing or sharing it doesn't replay the deep link.
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
       }
+    }
+
+    // Copy a shareable deep-link URL to the clipboard and show a toast.
+    function copyDeepLink(key) {
+      const base = window.location.origin + window.location.pathname;
+      const url = `${base}?open=${encodeURIComponent(key)}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => showToast(url)).catch(() => fallbackCopy(url));
+      } else {
+        fallbackCopy(url);
+      }
+    }
+    function fallbackCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); showToast(text); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    function showToast(url) {
+      const hi = state.lang === "hi";
+      let toast = document.getElementById("deepLinkToast");
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "deepLinkToast";
+        toast.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;z-index:9999;max-width:90vw;word-break:break-all;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,0.3);transition:opacity 0.3s";
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = (hi ? "✅ लिंक कॉपी हो गया! व्हाट्सएप पर पेस्ट करें<br>" : "✅ Link copied! Paste it on WhatsApp<br>") +
+        `<span style="font-size:11px;opacity:0.7;word-break:break-all">${url}</span>`;
+      toast.style.opacity = "1";
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => { toast.style.opacity = "0"; }, 4000);
     }
 
     // What scanning the QR code on a downloaded certificate or ID card
