@@ -629,6 +629,50 @@
 
     .hero-utility button:hover { color: #fff; }
 
+    .hero-checkin-btn {
+      background: linear-gradient(135deg, #16a34a, #15803d) !important;
+      color: #fff !important;
+      border: none !important;
+      border-radius: 10px !important;
+      padding: 11px 22px !important;
+      font-size: 15px !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      text-decoration: none !important;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(22,163,74,0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .hero-checkin-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(22,163,74,0.45);
+    }
+
+    /* Floating check-in button visible while scrolling past hero */
+    #floatingCheckIn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 999;
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 14px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 6px 24px rgba(22,163,74,0.45);
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s;
+    }
+    #floatingCheckIn.visible { display: flex; }
+    #floatingCheckIn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(22,163,74,0.55); }
+
     .hero-visual {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -3237,8 +3281,10 @@
             <a class="btn btn-soft" href="#volunteer" data-i18n="hero-register">Register as Volunteer</a>
           </div>
           <div class="hero-utility">
+            <button type="button" class="hero-checkin-btn" onclick="openModal('checkInModal')" data-i18n="hero-utility-checkin">✅ Check in at venue</button>
+          </div>
+          <div class="hero-utility" style="margin-top:8px">
             <span data-i18n="hero-utility-label">Already contributing?</span>
-            <button type="button" onclick="openModal('checkInModal')" data-i18n="hero-utility-checkin">Check in at venue</button>
             <button type="button" onclick="openModal('trackMissionModal')" data-i18n="hero-utility-track">Track my request</button>
             <button type="button" onclick="openModal('myPassportModal')" data-i18n="hero-utility-passport">🎖️ My passport &amp; certificate</button>
           </div>
@@ -8613,6 +8659,13 @@
                   <span><strong>${mission.volunteers}</strong> ${hi ? "स्वयंसेवक जुड़े" : "volunteers joined"} · ${percentage}% ${hi ? "भरा" : "filled"}</span>
                 </div>
                 <div class="progress-bar"><div class="progress-fill" style="width:${percentage}%"></div></div>
+                ${mission.status === "open" && mission.checkInCode ? `
+                <div style="margin-top:10px">
+                  <button class="btn btn-checkin-card" type="button" onclick="openModal('checkInModal')" style="width:100%;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+                    <span style="font-size:18px">✅</span>
+                    ${hi ? "यहाँ चेक-इन करें" : "Check In at This Mission"}
+                  </button>
+                </div>` : ""}
                 <div class="mission-footer" style="${avatars ? "" : "justify-content:flex-end"}">
                   ${avatars ? `<div class="volunteers-avatars">${avatars}</div>` : ""}
                   <div class="mission-actions">
@@ -14058,5 +14111,34 @@
 
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
+
+  <!-- Floating check-in button — appears once the user scrolls past the hero -->
+  <button id="floatingCheckIn" type="button" onclick="openModal('checkInModal')">
+    ✅ <span id="floatingCheckInLabel">Check In</span>
+  </button>
+  <script>
+    (function () {
+      const btn = document.getElementById("floatingCheckIn");
+      const labelEl = document.getElementById("floatingCheckInLabel");
+      if (!btn) return;
+      function updateFloatingLabel() {
+        if (labelEl) labelEl.textContent = (typeof state !== "undefined" && state.lang === "hi") ? "चेक-इन करें" : "Check In";
+      }
+      const hero = document.querySelector(".hero");
+      if (!hero) return;
+      const obs = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            btn.classList.remove("visible");
+          } else {
+            updateFloatingLabel();
+            btn.classList.add("visible");
+          }
+        },
+        { threshold: 0.1 }
+      );
+      obs.observe(hero);
+    })();
+  </script>
 </body>
 </html>
