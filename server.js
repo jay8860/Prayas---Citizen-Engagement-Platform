@@ -878,6 +878,19 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS in_kind_donations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    area TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'other',
+    description TEXT NOT NULL,
+    pickup TEXT NOT NULL DEFAULT '',
+    message TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS admin_audit_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     action TEXT NOT NULL,
@@ -1680,6 +1693,25 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/donations") {
       const body = await readJsonBody(req);
       return sendJson(res, 200, recordDonation(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/inkind-donations") {
+      const body = await readJsonBody(req);
+      const { name, phone, area, category, description, pickup = "", message = "" } = body;
+      if (!name || !phone || !area || !category || !description) {
+        return sendJson(res, 400, { error: "Missing required fields" });
+      }
+      const stmt = db.prepare(
+        "INSERT INTO in_kind_donations (name, phone, area, category, description, pickup, message) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      );
+      const info = stmt.run(name.slice(0, 100), phone.slice(0, 15), area.slice(0, 150), category.slice(0, 50), description.slice(0, 500), pickup.slice(0, 100), message.slice(0, 300));
+      return sendJson(res, 200, { ok: true, id: info.lastInsertRowid });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/admin/inkind-donations") {
+      requireAdmin(req);
+      const rows = db.prepare("SELECT * FROM in_kind_donations ORDER BY created_at DESC").all();
+      return sendJson(res, 200, { donations: rows });
     }
 
     if (req.method === "POST" && /^\/api\/admin\/donations\/\d+\/verify$/.test(url.pathname)) {

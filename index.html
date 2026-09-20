@@ -939,6 +939,7 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 24px;
+      align-items: stretch;
     }
 
     .mission-card,
@@ -953,6 +954,8 @@
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow);
       transition: all 0.28s ease;
+      display: flex;
+      flex-direction: column;
     }
 
     .mission-card:hover,
@@ -971,8 +974,32 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 58px;
+      font-size: 38px;
       overflow: hidden;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      flex-shrink: 0;
+    }
+
+    .mission-banner-photo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .mission-banner-icon {
+      position: relative;
+      z-index: 1;
+      opacity: 0.65;
+      font-size: 38px;
+    }
+
+    .mission-banner-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.32) 100%);
+      z-index: 1;
     }
 
     .mission-tag,
@@ -986,6 +1013,7 @@
       font-weight: 800;
       letter-spacing: 0.4px;
       text-transform: uppercase;
+      z-index: 2;
     }
 
     .mission-tag {
@@ -1009,7 +1037,7 @@
     .status-full { background: var(--danger-light); color: var(--danger); }
     .status-completed { background: #EDE9FE; color: #6D28D9; }
 
-    .mission-body { padding: 22px; }
+    .mission-body { padding: 22px; flex: 1; display: flex; flex-direction: column; }
 
     .mission-title {
       color: var(--navy);
@@ -1074,6 +1102,7 @@
       align-items: center;
       gap: 14px;
       margin-bottom: 16px;
+      margin-top: auto;
     }
 
     .mission-timing-badge {
@@ -1089,6 +1118,7 @@
       border-radius: 999px;
       background: rgba(255,255,255,0.92);
       color: #B45309;
+      z-index: 2;
     }
     .mission-timing-badge.tone-live { color: #B91C1C; }
 
@@ -1695,8 +1725,8 @@
 
     .leaderboard-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
     }
 
     .pulse-grid {
@@ -1919,7 +1949,7 @@
       position: relative;
       overflow: hidden;
       text-align: center;
-      padding: 24px;
+      padding: 18px 12px 14px;
     }
 
     .leader-card.gold { border-color: #FFD700; }
@@ -1928,14 +1958,14 @@
 
     .leader-rank {
       position: absolute;
-      top: 12px;
-      right: 14px;
-      font-size: 20px;
+      top: 10px;
+      right: 10px;
+      font-size: 17px;
     }
 
     .leader-avatar {
-      width: 70px;
-      height: 70px;
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
       margin: 0 auto 14px;
       color: white;
@@ -2457,6 +2487,57 @@
       accent-color: var(--navy);
       padding: 0;
       border: none;
+    }
+
+    /* ── Donate section ── */
+    .donate-categories {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .donate-cat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .donate-cat-item i {
+      font-size: 22px;
+      color: #92400e;
+    }
+
+    .donate-form-wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 32px;
+    }
+
+    .donate-form .form-row { display: flex; gap: 16px; }
+    .donate-form .form-row .form-group { flex: 1; min-width: 0; }
+
+    @media (max-width: 680px) {
+      .donate-categories { grid-template-columns: repeat(4, 1fr); }
+      .donate-form-wrap { padding: 20px 16px; }
+      .donate-form .form-row { flex-direction: column; }
+    }
+
+    @media (max-width: 440px) {
+      .donate-categories { grid-template-columns: repeat(2, 1fr); }
     }
 
     .newsletter-bar {
@@ -3192,10 +3273,13 @@
       .sponsor-grid,
       .showcase-grid,
       .missions-grid,
-      .leaderboard-grid,
       .leader-report-grid,
       .admin-grid {
         grid-template-columns: 1fr;
+      }
+
+      .leaderboard-grid {
+        grid-template-columns: repeat(3, 1fr);
       }
     }
 
@@ -3226,6 +3310,10 @@
       .passport-stats,
       .leader-report-grid {
         grid-template-columns: 1fr;
+      }
+
+      .leaderboard-grid {
+        grid-template-columns: repeat(2, 1fr);
       }
 
       .pulse-report-top,
@@ -3284,13 +3372,13 @@
         <ul class="nav-links">
           <li><a href="#missions" data-i18n="nav-missions">Missions</a></li>
           <li><a href="#host-mission" data-i18n="nav-funding">Host Mission</a></li>
-          <li><a href="#district-map" data-i18n="nav-map">District Map</a></li>
           <li><a href="#showcase" data-i18n="nav-showcase">Showcase</a></li>
           <li><a href="#org-showcase" data-i18n="nav-org-showcase">Organizations</a></li>
           <li><a href="#gallery" data-i18n="nav-gallery">Gallery</a></li>
           <li><a href="#leaderboard" data-i18n="nav-leaders">Leaders</a></li>
           <li><a href="#incentives" data-i18n="nav-incentives">JanPrayas Samman</a></li>
           <li><a href="#volunteer" data-i18n="nav-volunteer">Volunteer</a></li>
+          <li><a href="#donate">Donate</a></li>
         </ul>
       </nav>
 
@@ -3307,13 +3395,13 @@
     <div class="mobile-menu" id="mobileMenu">
       <a href="#missions" data-i18n="nav-missions" onclick="closeMobileMenu()">Missions</a>
       <a href="#host-mission" data-i18n="nav-funding" onclick="closeMobileMenu()">Host Mission</a>
-      <a href="#district-map" data-i18n="nav-map" onclick="closeMobileMenu()">District Map</a>
       <a href="#showcase" data-i18n="nav-showcase" onclick="closeMobileMenu()">Showcase</a>
       <a href="#org-showcase" data-i18n="nav-org-showcase" onclick="closeMobileMenu()">Organizations</a>
       <a href="#gallery" data-i18n="nav-gallery" onclick="closeMobileMenu()">Gallery</a>
       <a href="#leaderboard" data-i18n="nav-leaders" onclick="closeMobileMenu()">Leaders</a>
       <a href="#incentives" data-i18n="nav-incentives" onclick="closeMobileMenu()">JanPrayas Samman</a>
       <a href="#volunteer" data-i18n="nav-volunteer" onclick="closeMobileMenu()">Volunteer</a>
+      <a href="#donate" onclick="closeMobileMenu()">Donate</a>
       <button type="button" onclick="openAdminLogin(); closeMobileMenu();" data-i18n="nav-admin">Admin</button>
     </div>
   </header>
@@ -3577,6 +3665,17 @@
             <div class="form-group">
               <label for="hostMissionDescription" data-i18n="host-description-label">Description</label>
               <textarea id="hostMissionDescription" maxlength="500" required></textarea>
+            </div>
+            <div class="form-group">
+              <label>Mission Cover Photo <span style="font-size:12px;font-weight:400;color:var(--muted)">(optional — shown as card banner)</span></label>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+                <button type="button" class="btn btn-soft" style="font-size:13px;padding:8px 14px" onclick="document.getElementById('hostMissionPhotoInput').click()">
+                  <i class="fa-solid fa-image"></i> Choose Photo
+                </button>
+                <span id="hostMissionPhotoName" style="font-size:13px;color:var(--muted)">No file chosen</span>
+              </div>
+              <input type="file" id="hostMissionPhotoInput" accept="image/*" style="display:none" onchange="previewMissionPhoto('hostMissionPhotoInput','hostMissionPhotoPreview','hostMissionPhotoName')">
+              <img id="hostMissionPhotoPreview" src="" alt="" hidden style="max-height:120px;border-radius:8px;margin-top:10px;object-fit:cover;width:100%">
             </div>
             <button class="btn btn-primary" type="submit" data-i18n="host-submit">Send Mission Request</button>
           </form>
@@ -3988,6 +4087,17 @@
                     <label for="orgMissionDesc">Description *</label>
                     <textarea id="orgMissionDesc" maxlength="500" required placeholder="Describe the mission objective and what volunteers will do."></textarea>
                   </div>
+                  <div class="form-group">
+                    <label>Mission Cover Photo <span style="font-size:12px;font-weight:400;color:var(--muted)">(optional)</span></label>
+                    <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+                      <button type="button" class="btn btn-soft" style="font-size:13px;padding:8px 14px" onclick="document.getElementById('orgMissionPhotoInput').click()">
+                        <i class="fa-solid fa-image"></i> Choose Photo
+                      </button>
+                      <span id="orgMissionPhotoName" style="font-size:13px;color:var(--muted)">No file chosen</span>
+                    </div>
+                    <input type="file" id="orgMissionPhotoInput" accept="image/*" style="display:none" onchange="previewMissionPhoto('orgMissionPhotoInput','orgMissionPhotoPreview','orgMissionPhotoName')">
+                    <img id="orgMissionPhotoPreview" src="" alt="" hidden style="max-height:120px;border-radius:8px;margin-top:10px;object-fit:cover;width:100%">
+                  </div>
                   <button class="btn btn-primary" type="submit">Submit Mission</button>
                 </form>
 
@@ -4374,6 +4484,98 @@
       </div>
     </section>
 
+    <!-- ── Donate Section ──────────────────────────────────────── -->
+    <section class="section" id="donate">
+      <div class="section-inner">
+        <div class="section-top center">
+          <div>
+            <div class="section-badge" style="background:#fef3c7;color:#92400e">
+              <i class="fa-solid fa-hand-holding-heart"></i>
+              <span>Donate</span>
+            </div>
+            <h2 class="section-title">Give what you can. Change a life.</h2>
+            <p class="section-subtitle">
+              Donate in kind — books, clothes, toys, electronics, furniture, food and more. Submit a request and our team will coordinate pickup from your doorstep.
+            </p>
+          </div>
+        </div>
+
+        <!-- What can you donate? -->
+        <div class="donate-categories">
+          <div class="donate-cat-item"><i class="fa-solid fa-book"></i><span>Books &amp; Stationery</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-shirt"></i><span>Clothes &amp; Footwear</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-gamepad"></i><span>Toys &amp; Games</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-laptop"></i><span>Electronics</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-couch"></i><span>Furniture</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-wheat-awn"></i><span>Food &amp; Groceries</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-stethoscope"></i><span>Medical Equipment</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-ellipsis"></i><span>Other Items</span></div>
+        </div>
+
+        <!-- Donate Form -->
+        <div class="donate-form-wrap">
+          <form id="donateForm" class="donate-form">
+            <h3 class="form-card-title" style="margin-bottom:20px">Submit a Donation Request</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="donateName">Your Name *</label>
+                <input id="donateName" type="text" maxlength="100" required placeholder="Full name" />
+              </div>
+              <div class="form-group">
+                <label for="donatePhone">Phone Number *</label>
+                <input id="donatePhone" type="tel" pattern="[6-9][0-9]{9}" maxlength="10" required placeholder="10-digit mobile" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="donateArea">Area / Locality *</label>
+                <input id="donateArea" type="text" list="locationSuggestions" maxlength="150" required placeholder="Your ward, village or locality" />
+              </div>
+              <div class="form-group">
+                <label for="donateCategory">What are you donating? *</label>
+                <select id="donateCategory" required>
+                  <option value="">Select category…</option>
+                  <option value="books">Books &amp; Stationery</option>
+                  <option value="clothes">Clothes &amp; Footwear</option>
+                  <option value="toys">Toys &amp; Games</option>
+                  <option value="electronics">Electronics &amp; Gadgets</option>
+                  <option value="furniture">Furniture &amp; Household Items</option>
+                  <option value="food">Food &amp; Groceries</option>
+                  <option value="medical">Medical Equipment / Aids</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="donateDescription">Description of Items *</label>
+              <textarea id="donateDescription" maxlength="500" required placeholder="Describe what you are donating — quantity, condition, size, etc. E.g. '3 school bags (good condition), 12 textbooks (Class 5–7)'"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="donatePickup">Preferred Pickup Timing</label>
+              <input id="donatePickup" type="text" maxlength="100" placeholder="e.g. Weekday mornings, Sundays after 10 AM" />
+            </div>
+            <div class="form-group">
+              <label for="donateMessage">Any additional message</label>
+              <textarea id="donateMessage" maxlength="300" placeholder="Any special instructions, story behind the donation, etc. (optional)"></textarea>
+            </div>
+            <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px 16px;margin-bottom:18px;font-size:13px;color:#166534">
+              <i class="fa-solid fa-circle-info" style="margin-right:6px"></i>
+              After submission, our volunteer coordinator will call you within <strong>48 hours</strong> to arrange pickup. You can also drop items at your nearest district community centre.
+            </div>
+            <button class="btn btn-primary" type="submit" id="donateSubmitBtn" style="min-width:180px">
+              <i class="fa-solid fa-heart"></i> Submit Donation Request
+            </button>
+          </form>
+          <div id="donateSuccess" hidden style="text-align:center;padding:48px 24px">
+            <div style="font-size:56px;margin-bottom:16px">🙏</div>
+            <h3 style="color:var(--navy);font-size:24px;font-weight:800;margin-bottom:10px">Thank you for your generosity!</h3>
+            <p style="color:var(--muted);font-size:15px;max-width:420px;margin:0 auto 24px">Our team will reach out to you within 48 hours to coordinate pickup. Your donation will go directly to a family or student in need.</p>
+            <button class="btn btn-soft" type="button" onclick="resetDonateForm()">Submit another donation</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="newsletter-bar">
       <div class="newsletter-inner">
         <h2 data-i18n="newsletter-title">Never miss a mission.</h2>
@@ -4412,7 +4614,6 @@
           <ul>
             <li><a href="#missions" data-i18n="nav-missions">Missions</a></li>
             <li><a href="#host-mission" data-i18n="nav-funding">Host Mission</a></li>
-            <li><a href="#district-map" data-i18n="nav-map">District Map</a></li>
             <li><a href="#showcase" data-i18n="nav-showcase">Showcase</a></li>
             <li><a href="#org-showcase" data-i18n="nav-org-showcase">Organizations</a></li>
             <li><a href="#gallery" data-i18n="nav-gallery">Gallery</a></li>
@@ -4436,10 +4637,9 @@
           <h4 data-i18n="footer-admin">Administration</h4>
           <ul>
             <li><a href="#volunteer" data-i18n="nav-volunteer">Volunteer</a></li>
+            <li><a href="#donate" data-i18n="footer-donate-link">Donate</a></li>
             <li><a href="#sponsors" data-i18n="footer-sponsor-link">Sponsor a Mission</a></li>
             <li><a href="#" onclick="openAdminLogin(); return false;" data-i18n="footer-admin-link">Open Admin Panel</a></li>
-            <li><a href="#district-map" data-i18n="footer-wards-link">Ward Overview</a></li>
-            <li><a href="#host-mission" data-i18n="footer-donate-link">Host a Mission</a></li>
           </ul>
         </div>
       </div>
@@ -8751,7 +8951,9 @@
           return `
             <article class="mission-card">
               <div class="mission-banner" style="background:${mission.bg}">
-                ${mission.emoji}
+                ${mission.photoUrl
+                  ? `<img src="${escapeHtml(mission.photoUrl)}" class="mission-banner-photo" alt="" loading="lazy"><div class="mission-banner-overlay"></div>`
+                  : `<span class="mission-banner-icon">${mission.emoji}</span>`}
                 <span class="mission-tag">${escapeHtml(categoryLabel(mission.category))}</span>
                 <span class="mission-status status-${mission.status}">${escapeHtml(statusLabel(mission.status))}</span>
                 ${timing ? `<span class="mission-timing-badge tone-${timing.tone}">${timing.label}</span>` : ""}
@@ -9929,6 +10131,7 @@
       const orig = btn.textContent;
       btn.disabled = true;
       try {
+        const photoUrl = await readFileAsDataUrl("orgMissionPhotoInput");
         const result = await orgApiRequest("/api/organizations/me/missions", {
           method: "POST",
           body: JSON.stringify({
@@ -9940,10 +10143,13 @@
             duration: document.getElementById("orgMissionDuration").value.trim(),
             total: Number(document.getElementById("orgMissionSlots").value),
             age: document.getElementById("orgMissionAge").value.trim(),
-            desc: document.getElementById("orgMissionDesc").value.trim()
+            desc: document.getElementById("orgMissionDesc").value.trim(),
+            photoUrl
           })
         });
         event.target.reset();
+        document.getElementById("orgMissionPhotoPreview").hidden = true;
+        document.getElementById("orgMissionPhotoName").textContent = "No file chosen";
         showToast(result.autoApproved ? "Mission published to the portal!" : "Mission submitted — pending district review.", result.autoApproved ? "✅" : "⏳");
         loadOrgMissions();
       } catch (error) {
@@ -9963,24 +10169,23 @@
         </div>`;
         return;
       }
-      grid.innerHTML = state.leaders.map((leader) => {
-        const rankLabel = state.lang === "hi" ? (leader.civicRankHi || leader.civicRankEn || "") : (leader.civicRankEn || "");
+      const hi = state.lang === "hi";
+      const top5 = state.leaders.slice(0, 5);
+      grid.innerHTML = top5.map((leader) => {
+        const rankLabel = hi ? (leader.civicRankHi || leader.civicRankEn || "") : (leader.civicRankEn || "");
         const streakTxt = leader.streak > 0
-          ? (state.lang === "hi" ? `🔥 ${leader.streak} माह की स्ट्रीक` : `🔥 ${leader.streak}-month streak`)
+          ? (hi ? `🔥 ${leader.streak} माह` : `🔥 ${leader.streak}mo`)
           : "";
         return `
           <article class="leader-card ${leader.cls}">
             <div class="leader-rank">${leader.rank}</div>
             <div class="leader-avatar" style="background:${leader.color}">${escapeHtml(leader.initials)}</div>
-            <div class="leader-name">${escapeHtml(leader.name)}</div>
-            ${rankLabel ? `<div class="civic-rank-badge">${escapeHtml(rankLabel)}</div>` : ""}
-            <div class="leader-area"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(leader.area)}</div>
-            <div class="leader-score">⚡ ${leader.points} ${state.lang === "hi" ? "अंक" : "pts"} · ${leader.missions} ${state.lang === "hi" ? "अभियान" : "missions"}</div>
-            ${streakTxt ? `<div class="streak-pill active">${streakTxt}</div>` : ""}
-            <div class="leader-badges">${(leader.badges || []).map((b) => `<span class="badge-emoji">${b}</span>`).join("")}</div>
-            <button class="btn btn-primary" type="button" style="width:100%;margin-top:8px" onclick="showVolunteerVerification(${leader.id})">
-              ${state.lang === "hi" ? "प्रोफ़ाइल सत्यापित करें" : "Verify Profile"}
-            </button>
+            <div class="leader-name" style="font-size:14px">${escapeHtml(leader.name)}</div>
+            ${rankLabel ? `<div class="civic-rank-badge" style="font-size:10px">${escapeHtml(rankLabel)}</div>` : ""}
+            <div class="leader-area" style="font-size:11px"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(leader.area)}</div>
+            <div class="leader-score" style="font-size:11px">⚡ ${leader.points} ${hi ? "अंक" : "pts"} · ${leader.missions} ${hi ? "अभियान" : "missions"}</div>
+            ${streakTxt ? `<div class="streak-pill active" style="font-size:10px;padding:2px 7px">${streakTxt}</div>` : ""}
+            <div class="leader-badges" style="margin-top:4px">${(leader.badges || []).slice(0, 3).map((b) => `<span class="badge-emoji">${b}</span>`).join("")}</div>
           </article>`;
       }).join("");
     }
@@ -11803,6 +12008,40 @@
       }
     }
 
+    async function submitDonateForm(event) {
+      event.preventDefault();
+      const btn = document.getElementById("donateSubmitBtn");
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting…';
+      try {
+        await apiRequest("/api/inkind-donations", {
+          method: "POST",
+          body: JSON.stringify({
+            name: document.getElementById("donateName").value.trim(),
+            phone: document.getElementById("donatePhone").value.trim(),
+            area: document.getElementById("donateArea").value.trim(),
+            category: document.getElementById("donateCategory").value,
+            description: document.getElementById("donateDescription").value.trim(),
+            pickup: document.getElementById("donatePickup").value.trim(),
+            message: document.getElementById("donateMessage").value.trim()
+          })
+        });
+        document.getElementById("donateForm").hidden = true;
+        document.getElementById("donateSuccess").hidden = false;
+      } catch (error) {
+        handleRequestError(error);
+        btn.disabled = false;
+        btn.innerHTML = orig;
+      }
+    }
+
+    function resetDonateForm() {
+      document.getElementById("donateForm").reset();
+      document.getElementById("donateForm").hidden = false;
+      document.getElementById("donateSuccess").hidden = true;
+    }
+
     async function submitNewsletterForm(event) {
       event.preventDefault();
       const input = document.getElementById("newsletterEmail");
@@ -12561,6 +12800,28 @@
       }
     }
 
+    function previewMissionPhoto(inputId, previewId, nameId) {
+      const file = document.getElementById(inputId).files[0];
+      if (!file) return;
+      const preview = document.getElementById(previewId);
+      const nameEl = document.getElementById(nameId);
+      if (nameEl) nameEl.textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => { preview.src = e.target.result; preview.hidden = false; };
+      reader.readAsDataURL(file);
+    }
+
+    async function readFileAsDataUrl(inputId) {
+      const file = (document.getElementById(inputId) || {}).files && document.getElementById(inputId).files[0];
+      if (!file) return "";
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => resolve("");
+        reader.readAsDataURL(file);
+      });
+    }
+
     async function submitHostMissionForm(event) {
       event.preventDefault();
       const hostDate = assembleMissionDate("hostMission");
@@ -12573,6 +12834,7 @@
       btn.disabled = true;
       btn.textContent = state.lang === "hi" ? "सेव हो रहा है..." : "Saving...";
       try {
+        const photoUrl = await readFileAsDataUrl("hostMissionPhotoInput");
         await apiRequest("/api/community-missions", {
           method: "POST",
           body: JSON.stringify({
@@ -12589,10 +12851,13 @@
             hostType: (document.querySelector('input[name="hostMissionType"]:checked') || {}).value || "individual",
             coordinator: document.getElementById("hostMissionName").value.trim(),
             desc: document.getElementById("hostMissionDescription").value.trim(),
-            impact: state.lang === "hi" ? "एडमिन समीक्षा लंबित" : "Pending admin review"
+            impact: state.lang === "hi" ? "एडमिन समीक्षा लंबित" : "Pending admin review",
+            photoUrl
           })
         });
         event.target.reset();
+        document.getElementById("hostMissionPhotoPreview").hidden = true;
+        document.getElementById("hostMissionPhotoName").textContent = "No file chosen";
         initTimeSelects();
         ["hostMissionTitle","hostMissionDescription"].forEach((id) => document.getElementById(id)?.dispatchEvent(new Event("input")));
         await refreshPortalData();
@@ -13418,6 +13683,7 @@
         updateVolunteerFormMode();
       });
       document.getElementById("newsletterForm").addEventListener("submit", submitNewsletterForm);
+      document.getElementById("donateForm").addEventListener("submit", submitDonateForm);
       document.getElementById("storyToggleBtn").addEventListener("click", toggleStoryForm);
       document.getElementById("hostMissionToggleBtn").addEventListener("click", toggleHostMissionForm);
       document.getElementById("saveBrandingBtn").addEventListener("click", saveBranding);
