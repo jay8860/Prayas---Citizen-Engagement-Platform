@@ -1046,6 +1046,7 @@ try { db.exec("ALTER TABLE admin_users ADD COLUMN can_manage_orgs INTEGER NOT NU
 try { db.exec("ALTER TABLE admin_users ADD COLUMN can_post_announcements INTEGER NOT NULL DEFAULT 1"); } catch(e) {}
 try { db.exec("ALTER TABLE admin_users ADD COLUMN can_export_data INTEGER NOT NULL DEFAULT 1"); } catch(e) {}
 try { db.exec("ALTER TABLE volunteer_participations ADD COLUMN ai_flag TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN can_float_missions INTEGER NOT NULL DEFAULT 1"); } catch(e) {}
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
@@ -1826,7 +1827,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/missions") {
-      const admin = requireAdmin(req);
+      const admin = requireCanFloatMissions(req);
       const body = await readJsonBody(req);
       return sendJson(res, 200, createMission(body, admin));
     }
@@ -2747,6 +2748,7 @@ function createAdminToken(user) {
     canManageOrgs: isSuperAdmin || Boolean(user.can_manage_orgs),
     canPostAnnouncements: isSuperAdmin || Boolean(user.can_post_announcements),
     canExportData: isSuperAdmin || Boolean(user.can_export_data),
+    canFloatMissions: isSuperAdmin || Boolean(user.can_float_missions),
     exp: Date.now() + TOKEN_TTL_MS
   };
   const encodedPayload = base64Url(JSON.stringify(payload));
@@ -2822,6 +2824,14 @@ function requireCanPostAnnouncements(req) {
   const admin = requireAdmin(req);
   if (admin.role !== "super_admin" && !admin.canPostAnnouncements) {
     throw publicError(403, "You do not have permission to post announcements.");
+  }
+  return admin;
+}
+
+function requireCanFloatMissions(req) {
+  const admin = requireAdmin(req);
+  if (admin.role !== "super_admin" && !admin.canFloatMissions) {
+    throw publicError(403, "You do not have permission to create new missions. Ask the district admin to enable 'Float new missions' for your account.");
   }
   return admin;
 }
@@ -2960,6 +2970,7 @@ function sanitizeUserRow(row) {
     canManageOrgs: isSuperAdmin || Boolean(row.can_manage_orgs),
     canPostAnnouncements: isSuperAdmin || Boolean(row.can_post_announcements),
     canExportData: isSuperAdmin || Boolean(row.can_export_data),
+    canFloatMissions: isSuperAdmin || Boolean(row.can_float_missions),
     createdAt: row.created_at,
     lastLoginAt: row.last_login_at || null
   };
@@ -2997,15 +3008,17 @@ function createAdminUser(body) {
   const canManageOrgs = role === "super_admin" ? 1 : (body.canManageOrgs !== false ? 1 : 0);
   const canPostAnnouncements = role === "super_admin" ? 1 : (body.canPostAnnouncements !== false ? 1 : 0);
   const canExportData = role === "super_admin" ? 1 : (body.canExportData !== false ? 1 : 0);
+  const canFloatMissions = role === "super_admin" ? 1 : (body.canFloatMissions !== false ? 1 : 0);
   db.prepare(`
-    INSERT INTO admin_users (name, username, password_hash, password_salt, role, scope_ward, can_delete, can_manage_settings, can_approve_missions, can_manage_orgs, can_post_announcements, can_export_data, active, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
-  `).run(name, username, hash, salt, role, scopeWard, canDelete, canManageSettings, canApproveMissions, canManageOrgs, canPostAnnouncements, canExportData, isoNow());
+    INSERT INTO admin_users (name, username, password_hash, password_salt, role, scope_ward, can_delete, can_manage_settings, can_approve_missions, can_manage_orgs, can_post_announcements, can_export_data, can_float_missions, active, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+  `).run(name, username, hash, salt, role, scopeWard, canDelete, canManageSettings, canApproveMissions, canManageOrgs, canPostAnnouncements, canExportData, canFloatMissions, isoNow());
   const newId = Number(db.prepare("SELECT last_insert_rowid() AS id").get().id);
   const permFlags = [
     canDelete ? "can_delete" : null, canManageSettings ? "can_manage_settings" : null,
     canApproveMissions ? null : "no_approve_missions", canManageOrgs ? null : "no_manage_orgs",
-    canPostAnnouncements ? null : "no_post_announcements", canExportData ? null : "no_export_data"
+    canPostAnnouncements ? null : "no_post_announcements", canExportData ? null : "no_export_data",
+    canFloatMissions ? null : "no_float_missions"
   ].filter(Boolean).join(", ");
   writeAuditLog("create_user", "admin_user", newId, `Login created for ${name} (${username}) — ${role}${scopeWard ? ", " + scopeWard : ""}${permFlags ? " [" + permFlags + "]" : ""}`, null);
   return { ok: true, id: newId };
@@ -3046,8 +3059,9 @@ function updateAdminUserPermissions(userId, body, actor) {
   const canManageOrgs = body.canManageOrgs ? 1 : 0;
   const canPostAnnouncements = body.canPostAnnouncements ? 1 : 0;
   const canExportData = body.canExportData ? 1 : 0;
-  db.prepare(`UPDATE admin_users SET can_delete=?, can_manage_settings=?, can_approve_missions=?, can_manage_orgs=?, can_post_announcements=?, can_export_data=? WHERE id=?`)
-    .run(canDelete, canManageSettings, canApproveMissions, canManageOrgs, canPostAnnouncements, canExportData, userId);
+  const canFloatMissions = body.canFloatMissions ? 1 : 0;
+  db.prepare(`UPDATE admin_users SET can_delete=?, can_manage_settings=?, can_approve_missions=?, can_manage_orgs=?, can_post_announcements=?, can_export_data=?, can_float_missions=? WHERE id=?`)
+    .run(canDelete, canManageSettings, canApproveMissions, canManageOrgs, canPostAnnouncements, canExportData, canFloatMissions, userId);
   writeAuditLog("update_user_permissions", "admin_user", userId, `Permissions updated for ${row.name} (${row.username})`, actor);
   return { ok: true };
 }

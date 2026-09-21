@@ -5896,6 +5896,10 @@
                 <div style="background:var(--surface-alt,#f8f9fa);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px">
                   <p style="margin:0 0 4px;font-size:12px;color:var(--muted)">Enabled by default — uncheck to restrict this coordinator:</p>
                   <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+                    <input type="checkbox" id="newUserCanFloatMissions" checked style="width:15px;height:15px;accent-color:var(--primary)">
+                    <span><strong>Float new missions</strong> — create and publish new missions</span>
+                  </label>
+                  <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
                     <input type="checkbox" id="newUserCanApproveMissions" checked style="width:15px;height:15px;accent-color:var(--primary)">
                     <span><strong>Approve / reject mission requests</strong></span>
                   </label>
@@ -5989,6 +5993,15 @@
       <div class="modal-body">
         <input type="hidden" id="editPermissionsUserId">
         <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Standard access — uncheck to restrict:</p>
+        <div class="form-group" style="margin-bottom:8px">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+            <input type="checkbox" id="editPermCanFloatMissions" style="width:15px;height:15px;accent-color:var(--primary);margin-top:3px;flex-shrink:0">
+            <div>
+              <div style="font-weight:600">Float new missions</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:1px">Create and publish new missions on the platform.</div>
+            </div>
+          </label>
+        </div>
         <div class="form-group" style="margin-bottom:8px">
           <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
             <input type="checkbox" id="editPermCanApproveMissions" style="width:15px;height:15px;accent-color:var(--primary);margin-top:3px;flex-shrink:0">
@@ -7367,6 +7380,7 @@
         .map((u) => {
           const isMaster = u.username === "admin";
           const badgeList = u.role !== "super_admin" ? [
+            u.canFloatMissions ? null : "🚫 No new missions",
             u.canApproveMissions ? null : "🚫 No mission approval",
             u.canManageOrgs ? null : "🚫 No org management",
             u.canPostAnnouncements ? null : "🚫 No announcements",
@@ -7417,6 +7431,7 @@
             name, username, password, role, scope,
             canDelete: document.getElementById("newUserCanDelete")?.checked || false,
             canManageSettings: document.getElementById("newUserCanManageSettings")?.checked || false,
+            canFloatMissions: document.getElementById("newUserCanFloatMissions")?.checked !== false,
             canApproveMissions: document.getElementById("newUserCanApproveMissions")?.checked !== false,
             canManageOrgs: document.getElementById("newUserCanManageOrgs")?.checked !== false,
             canPostAnnouncements: document.getElementById("newUserCanPostAnnouncements")?.checked !== false,
@@ -7427,7 +7442,7 @@
           document.getElementById(id).value = "";
         });
         ["newUserCanDelete", "newUserCanManageSettings"].forEach(id => { document.getElementById(id).checked = false; });
-        ["newUserCanApproveMissions", "newUserCanManageOrgs", "newUserCanPostAnnouncements", "newUserCanExportData"].forEach(id => { document.getElementById(id).checked = true; });
+        ["newUserCanFloatMissions", "newUserCanApproveMissions", "newUserCanManageOrgs", "newUserCanPostAnnouncements", "newUserCanExportData"].forEach(id => { document.getElementById(id).checked = true; });
         await loadAdminUsersList();
         showToast(state.lang === "hi" ? "नया लॉगिन बना दिया गया।" : "New login created.", "✅");
       } catch (error) {
@@ -7469,6 +7484,7 @@
       document.getElementById("editPermissionsSubtitle").textContent = `Permissions for ${u.name || "this coordinator"}`;
       document.getElementById("editPermCanDelete").checked = u.canDelete || false;
       document.getElementById("editPermCanManageSettings").checked = u.canManageSettings || false;
+      document.getElementById("editPermCanFloatMissions").checked = u.canFloatMissions !== false;
       document.getElementById("editPermCanApproveMissions").checked = u.canApproveMissions !== false;
       document.getElementById("editPermCanManageOrgs").checked = u.canManageOrgs !== false;
       document.getElementById("editPermCanPostAnnouncements").checked = u.canPostAnnouncements !== false;
@@ -7487,6 +7503,7 @@
           body: JSON.stringify({
             canDelete: document.getElementById("editPermCanDelete").checked,
             canManageSettings: document.getElementById("editPermCanManageSettings").checked,
+            canFloatMissions: document.getElementById("editPermCanFloatMissions").checked,
             canApproveMissions: document.getElementById("editPermCanApproveMissions").checked,
             canManageOrgs: document.getElementById("editPermCanManageOrgs").checked,
             canPostAnnouncements: document.getElementById("editPermCanPostAnnouncements").checked,
