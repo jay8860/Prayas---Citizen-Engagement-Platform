@@ -43,6 +43,7 @@
       --danger-light: #FEE2E2;
       --warning: #F59E0B;
       --success: #0F9D58;
+      --surface-alt: #F0F2F6;
     }
 
     html { scroll-behavior: smooth; }
@@ -67,6 +68,7 @@
       --shadow: 0 10px 34px rgba(0,0,0,0.5);
       --shadow-lg: 0 24px 64px rgba(0,0,0,0.68);
       --ticker-bg: #020407;
+      --surface-alt: #0D1117;
       background:
         radial-gradient(circle at top right, rgba(31, 81, 163, 0.22), transparent 28%),
         radial-gradient(circle at top left, rgba(255, 153, 51, 0.12), transparent 22%),
@@ -5061,7 +5063,7 @@
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="missionsetup" data-i18n="admin-tab-missionsetup">Mission Setup</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="data" data-i18n="admin-tab-data">Data Mode</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="newsletter" data-i18n="admin-tab-newsletter">Newsletter</button>
-          <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="users" data-i18n="admin-tab-users">Users &amp; Delegation</button>
+          <button class="admin-tab-btn master-admin-only" type="button" data-admin-tab="users" data-i18n="admin-tab-users">Users &amp; Delegation</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="aiqueue">🤖 AI Queue</button>
         </div>
 
@@ -5863,7 +5865,7 @@
               <p data-i18n="users-current-subtitle">Each block/ward coordinator gets their own login. They can post missions and approve/reject citizen requests only for their own ward — everything else stays with you.</p>
               <div class="announcement-stream" id="adminUsersList"></div>
             </div>
-            <div class="panel-card">
+            <div class="panel-card" id="adminCreateLoginPanel">
               <h3 data-i18n="users-create-title">Create a New Login</h3>
               <p data-i18n="users-create-subtitle">Give a block coordinator, intern, or volunteer their own account so mission approvals don't depend on you.</p>
               <div class="form-group">
@@ -6045,6 +6047,39 @@
         </div>
         <div id="editPermissionsError" style="color:var(--danger);font-size:13px;margin:8px 0"></div>
         <button class="btn btn-primary" type="button" onclick="savePermissions()" style="width:100%">Save Permissions</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit admin user name / role / scope -->
+  <div class="modal-overlay" id="editAdminUserModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Edit Access</h2>
+          <p class="modal-subtitle" id="editAdminUserSubtitle">Change role, scope or name for this login.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="editAdminUserModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editAdminUserId">
+        <div class="form-group">
+          <label for="editAdminUserName">Full Name</label>
+          <input id="editAdminUserName" type="text" maxlength="100" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label for="editAdminUserRole">Role</label>
+          <select id="editAdminUserRole" onchange="toggleEditAdminRoleField()">
+            <option value="coordinator">Block / Ward Coordinator</option>
+            <option value="super_admin">District Administrator (full access)</option>
+          </select>
+        </div>
+        <div class="form-group" id="editAdminUserScopeGroup">
+          <label for="editAdminUserScope">Assigned Ward / Block <span style="font-size:12px;font-weight:400;color:var(--muted)">(optional — leave blank for district-wide)</span></label>
+          <input id="editAdminUserScope" type="text" list="locationSuggestions" maxlength="100" placeholder="Enter ward, gram panchayat, city or village">
+        </div>
+        <div id="editAdminUserError" style="color:var(--danger);font-size:13px;margin:8px 0"></div>
+        <button class="btn btn-primary" type="button" onclick="saveEditAdminUser()" style="width:100%">Save Changes</button>
       </div>
     </div>
   </div>
@@ -7201,6 +7236,10 @@
       return Boolean(state.adminUser && state.adminUser.role === "super_admin");
     }
 
+    function isMasterAdmin() {
+      return Boolean(state.adminUser && state.adminUser.username === "admin");
+    }
+
     function getOrgToken() {
       return window.localStorage.getItem(ORG_TOKEN_KEY) || "";
     }
@@ -7250,8 +7289,12 @@
     // Applies role-based visibility (block coordinator vs. district admin) across the admin panel.
     function applyAdminRoleUI() {
       const superAdmin = isSuperAdmin();
+      const masterAdmin = isMasterAdmin();
       document.querySelectorAll(".super-admin-only").forEach((el) => {
         el.style.display = superAdmin ? "" : "none";
+      });
+      document.querySelectorAll(".master-admin-only").forEach((el) => {
+        el.style.display = masterAdmin ? "" : "none";
       });
       const identityBar = document.getElementById("adminIdentityBar");
       if (state.adminUser) {
@@ -7265,7 +7308,10 @@
       }
       // If a coordinator is currently sitting on a hidden tab (e.g. after a super
       // admin session ended), snap back to the Overview tab.
-      if (!superAdmin && ["analytics", "exports", "audit", "locations", "data", "newsletter", "users"].includes(state.currentAdminTab)) {
+      if (!superAdmin && ["analytics", "exports", "audit", "locations", "data", "newsletter"].includes(state.currentAdminTab)) {
+        switchAdminTab("overview");
+      }
+      if (!masterAdmin && state.currentAdminTab === "users") {
         switchAdminTab("overview");
       }
       applyCoordinatorPostLock();
@@ -7312,8 +7358,14 @@
       }
       _adminUsersById = {};
       users.forEach(u => { _adminUsersById[u.id] = u; });
+
+      // Show/hide the Create New Login form based on master-admin status
+      const createPanel = document.getElementById("adminCreateLoginPanel");
+      if (createPanel) createPanel.style.display = isMasterAdmin() ? "" : "none";
+
       container.innerHTML = users
         .map((u) => {
+          const isMaster = u.username === "admin";
           const badgeList = u.role !== "super_admin" ? [
             u.canApproveMissions ? null : "🚫 No mission approval",
             u.canManageOrgs ? null : "🚫 No org management",
@@ -7322,17 +7374,24 @@
             u.canDelete ? "🗑 Can delete" : null,
             u.canManageSettings ? "⚙️ Can manage settings" : null
           ].filter(Boolean) : [];
+          const roleBadge = isMaster
+            ? `<span style="background:#1B3A6B;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-left:6px">👑 Master Admin</span>`
+            : u.role === "super_admin"
+              ? `<span style="background:#92400e;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-left:6px">District Admin</span>`
+              : "";
           return `
-          <div class="message-card">
-            <div class="message-name">${escapeHtml(u.name)} ${u.active ? "" : `<span style="color:#c0392b;font-size:12px">(${state.lang === "hi" ? "निष्क्रिय" : "inactive"})</span>`}</div>
+          <div class="message-card" style="${isMaster ? "border:2px solid var(--navy);box-shadow:0 0 0 2px rgba(27,58,107,0.08)" : ""}">
+            <div class="message-name">${escapeHtml(u.name)}${roleBadge} ${u.active ? "" : `<span style="color:#c0392b;font-size:12px">(${state.lang === "hi" ? "निष्क्रिय" : "inactive"})</span>`}</div>
             <div class="message-text">@${escapeHtml(u.username)} · ${u.role === "super_admin" ? (state.lang === "hi" ? "जिला प्रशासक" : "District Administrator") : `${state.lang === "hi" ? "समन्वयक" : "Coordinator"} — ${escapeHtml(u.scope)}`}</div>
             ${u.role !== "super_admin" ? `<div class="message-time" style="margin-top:4px;line-height:1.6">${badgeList.length ? badgeList.join(" · ") : "✅ Standard access"}</div>` : ""}
             <div class="message-time">${u.lastLoginAt ? `${state.lang === "hi" ? "अंतिम लॉगिन" : "Last login"}: ${formatDate(new Date(u.lastLoginAt), state.lang)}` : (state.lang === "hi" ? "अभी तक लॉगिन नहीं हुआ" : "Never logged in")}</div>
+            ${isMaster ? `<div class="message-time" style="color:var(--navy);font-weight:600;font-size:12px;margin-top:4px">🔒 This account cannot be reclassified or deleted.</div>` : ""}
             <div class="message-actions">
-              ${u.username === "admin" ? "" : `<button class="btn btn-soft" type="button" onclick="toggleAdminUserAccount(${u.id})">${u.active ? (state.lang === "hi" ? "निष्क्रिय करें" : "Deactivate") : (state.lang === "hi" ? "सक्रिय करें" : "Activate")}</button>`}
+              ${!isMaster ? `<button class="btn btn-soft" type="button" onclick="toggleAdminUserAccount(${u.id})">${u.active ? (state.lang === "hi" ? "निष्क्रिय करें" : "Deactivate") : (state.lang === "hi" ? "सक्रिय करें" : "Activate")}</button>` : ""}
               <button class="btn btn-soft" type="button" onclick="promptResetPassword(${u.id})">${state.lang === "hi" ? "पासवर्ड रीसेट करें" : "Reset Password"}</button>
-              ${u.username !== "admin" && u.role !== "super_admin" ? `<button class="btn btn-soft" type="button" onclick="openPermissionsModal(${u.id})" style="padding:5px 10px;font-size:12px">Permissions</button>` : ""}
-              ${u.username !== "admin" ? `<button class="btn btn-soft" type="button" onclick="confirmDeleteAdminUser(${u.id})" style="padding:5px 10px;font-size:12px;color:var(--danger)">Delete Login</button>` : ""}
+              ${!isMaster ? `<button class="btn btn-soft" type="button" onclick="openEditAdminUser(${u.id})" style="padding:5px 10px;font-size:12px">Edit Access</button>` : ""}
+              ${!isMaster && u.role !== "super_admin" ? `<button class="btn btn-soft" type="button" onclick="openPermissionsModal(${u.id})" style="padding:5px 10px;font-size:12px">Permissions</button>` : ""}
+              ${!isMaster ? `<button class="btn btn-soft" type="button" onclick="confirmDeleteAdminUser(${u.id})" style="padding:5px 10px;font-size:12px;color:var(--danger)">Delete Login</button>` : ""}
             </div>
           </div>`;
         })
@@ -7439,6 +7498,45 @@
         await loadAdminUsersList();
       } catch (error) {
         errorEl.textContent = error?.message || "Failed to update permissions.";
+      }
+    }
+
+    function openEditAdminUser(userId) {
+      const u = _adminUsersById[userId] || {};
+      document.getElementById("editAdminUserId").value = userId;
+      document.getElementById("editAdminUserSubtitle").textContent = `Editing: ${u.name || "this login"}`;
+      document.getElementById("editAdminUserName").value = u.name || "";
+      document.getElementById("editAdminUserRole").value = u.role || "coordinator";
+      document.getElementById("editAdminUserScope").value = u.scope || "";
+      document.getElementById("editAdminUserError").textContent = "";
+      toggleEditAdminRoleField();
+      openModal("editAdminUserModal");
+    }
+
+    function toggleEditAdminRoleField() {
+      const role = document.getElementById("editAdminUserRole")?.value;
+      const sg = document.getElementById("editAdminUserScopeGroup");
+      if (sg) sg.style.display = role === "coordinator" ? "" : "none";
+    }
+
+    async function saveEditAdminUser() {
+      const userId = Number(document.getElementById("editAdminUserId").value);
+      const name = document.getElementById("editAdminUserName").value.trim();
+      const role = document.getElementById("editAdminUserRole").value;
+      const scope = document.getElementById("editAdminUserScope").value.trim();
+      const errorEl = document.getElementById("editAdminUserError");
+      errorEl.textContent = "";
+      if (!name) { errorEl.textContent = "Name cannot be empty."; return; }
+      try {
+        await apiRequest(`/api/admin/users/${userId}/update`, {
+          method: "POST",
+          body: JSON.stringify({ name, role, scope })
+        });
+        closeModal("editAdminUserModal");
+        showToast("Access updated.", "✅");
+        await loadAdminUsersList();
+      } catch (e) {
+        errorEl.textContent = e?.message || "Failed to update.";
       }
     }
 

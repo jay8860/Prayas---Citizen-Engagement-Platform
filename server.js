@@ -1471,6 +1471,14 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, updateAdminUserPermissions(userId, body, actor));
     }
 
+    if (req.method === "POST" && /^\/api\/admin\/users\/\d+\/update$/.test(url.pathname)) {
+      const actor = requireSuperAdmin(req);
+      if (actor.username !== "admin") throw publicError(403, "Only the master district administrator can reclassify admin accounts.");
+      const userId = Number(url.pathname.split("/")[4]);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, updateAdminUserDetails(userId, body, actor));
+    }
+
     if (req.method === "POST" && /^\/api\/admin\/users\/\d+\/delete$/.test(url.pathname)) {
       const actor = requireSuperAdmin(req);
       const userId = Number(url.pathname.split("/")[4]);
@@ -3041,6 +3049,20 @@ function updateAdminUserPermissions(userId, body, actor) {
   db.prepare(`UPDATE admin_users SET can_delete=?, can_manage_settings=?, can_approve_missions=?, can_manage_orgs=?, can_post_announcements=?, can_export_data=? WHERE id=?`)
     .run(canDelete, canManageSettings, canApproveMissions, canManageOrgs, canPostAnnouncements, canExportData, userId);
   writeAuditLog("update_user_permissions", "admin_user", userId, `Permissions updated for ${row.name} (${row.username})`, actor);
+  return { ok: true };
+}
+
+function updateAdminUserDetails(userId, body, actor) {
+  const row = db.prepare("SELECT * FROM admin_users WHERE id = ?").get(userId);
+  if (!row) throw publicError(404, "Login not found.");
+  if (row.username === "admin") throw publicError(400, "The master admin account cannot be reclassified.");
+  const name = String(body.name || "").trim().slice(0, 100) || row.name;
+  const role = ["coordinator", "super_admin"].includes(body.role) ? body.role : row.role;
+  const scopeWard = String(body.scope || "").trim().slice(0, 100);
+  db.prepare("UPDATE admin_users SET name = ?, role = ?, scope_ward = ? WHERE id = ?")
+    .run(name, role, scopeWard, userId);
+  writeAuditLog("update_user_details", "admin_user", userId,
+    `Details updated for ${row.name} → ${name}, role: ${row.role} → ${role}, scope: "${scopeWard}"`, actor);
   return { ok: true };
 }
 
