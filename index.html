@@ -3378,7 +3378,7 @@
           <li><a href="#leaderboard" data-i18n="nav-leaders">Leaders</a></li>
           <li><a href="#incentives" data-i18n="nav-incentives">JanPrayas Samman</a></li>
           <li><a href="#volunteer" data-i18n="nav-volunteer">Volunteer</a></li>
-          <li><a href="#donate">Donate</a></li>
+          <li><a href="#donate" data-i18n="donate-badge">Donate</a></li>
         </ul>
       </nav>
 
@@ -3401,7 +3401,7 @@
       <a href="#leaderboard" data-i18n="nav-leaders" onclick="closeMobileMenu()">Leaders</a>
       <a href="#incentives" data-i18n="nav-incentives" onclick="closeMobileMenu()">JanPrayas Samman</a>
       <a href="#volunteer" data-i18n="nav-volunteer" onclick="closeMobileMenu()">Volunteer</a>
-      <a href="#donate" onclick="closeMobileMenu()">Donate</a>
+      <a href="#donate" data-i18n="donate-badge" onclick="closeMobileMenu()">Donate</a>
       <button type="button" onclick="openAdminLogin(); closeMobileMenu();" data-i18n="nav-admin">Admin</button>
     </div>
   </header>
@@ -4491,15 +4491,15 @@
           <div>
             <div class="section-badge" style="background:#fef3c7;color:#92400e">
               <i class="fa-solid fa-hand-holding-heart"></i>
-              <span>Donate</span>
+              <span data-i18n="donate-badge">Donate</span>
             </div>
-            <h2 class="section-title">Give what you can. Change a life.</h2>
-            <p class="section-subtitle">
+            <h2 class="section-title" data-i18n="donate-title">Give what you can. Change a life.</h2>
+            <p class="section-subtitle" data-i18n="donate-subtitle">
               Donate in kind — books, clothes, toys, electronics, furniture, food and more. Submit a request and our team will coordinate pickup from your doorstep.
             </p>
             <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px">
               <button class="copy-link-btn" onclick="copyDeepLink('donate')" data-tip="Copy shareable link" style="width:auto;height:auto;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;gap:6px">
-                🔗 Share Donate Link
+                🔗 <span data-i18n="donate-share-btn">Share Donate Link</span>
               </button>
             </div>
           </div>
@@ -4507,75 +4507,75 @@
 
         <!-- What can you donate? -->
         <div class="donate-categories">
-          <div class="donate-cat-item"><i class="fa-solid fa-book"></i><span>Books &amp; Stationery</span></div>
-          <div class="donate-cat-item"><i class="fa-solid fa-shirt"></i><span>Clothes &amp; Footwear</span></div>
-          <div class="donate-cat-item"><i class="fa-solid fa-gamepad"></i><span>Toys &amp; Games</span></div>
-          <div class="donate-cat-item"><i class="fa-solid fa-laptop"></i><span>Electronics</span></div>
-          <div class="donate-cat-item"><i class="fa-solid fa-couch"></i><span>Furniture</span></div>
-          <div class="donate-cat-item"><i class="fa-solid fa-wheat-awn"></i><span>Food &amp; Groceries</span></div>
-          <div class="donate-cat-item"><i class="fa-solid fa-stethoscope"></i><span>Medical Equipment</span></div>
-          <div class="donate-cat-item"><i class="fa-solid fa-ellipsis"></i><span>Other Items</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-book"></i><span data-i18n="donate-cat-books">Books &amp; Stationery</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-shirt"></i><span data-i18n="donate-cat-clothes">Clothes &amp; Footwear</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-gamepad"></i><span data-i18n="donate-cat-toys">Toys &amp; Games</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-laptop"></i><span data-i18n="donate-cat-electronics">Electronics</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-couch"></i><span data-i18n="donate-cat-furniture">Furniture</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-wheat-awn"></i><span data-i18n="donate-cat-food">Food &amp; Groceries</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-stethoscope"></i><span data-i18n="donate-cat-medical">Medical Equipment</span></div>
+          <div class="donate-cat-item"><i class="fa-solid fa-ellipsis"></i><span data-i18n="donate-cat-other">Other Items</span></div>
         </div>
 
         <!-- Donate Form -->
         <div class="donate-form-wrap">
           <form id="donateForm" class="donate-form">
-            <h3 class="form-card-title" style="margin-bottom:20px">Submit a Donation Request</h3>
+            <h3 class="form-card-title" style="margin-bottom:20px" data-i18n="donate-form-title">Submit a Donation Request</h3>
             <div class="form-row">
               <div class="form-group">
-                <label for="donateName">Your Name *</label>
-                <input id="donateName" type="text" maxlength="100" required placeholder="Full name" />
+                <label for="donateName" data-i18n="donate-name-label">Your Name *</label>
+                <input id="donateName" type="text" maxlength="100" required data-i18n-placeholder="donate-name-ph" placeholder="Full name" />
               </div>
               <div class="form-group">
-                <label for="donatePhone">Phone Number *</label>
-                <input id="donatePhone" type="tel" pattern="[6-9][0-9]{9}" maxlength="10" required placeholder="10-digit mobile" />
+                <label for="donatePhone" data-i18n="donate-phone-label">Phone Number *</label>
+                <input id="donatePhone" type="tel" pattern="[6-9][0-9]{9}" maxlength="10" required data-i18n-placeholder="donate-phone-ph" placeholder="10-digit mobile" />
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label for="donateArea">Area / Locality *</label>
-                <input id="donateArea" type="text" list="locationSuggestions" maxlength="150" required placeholder="Your ward, village or locality" />
+                <label for="donateArea" data-i18n="donate-area-label">Area / Locality *</label>
+                <input id="donateArea" type="text" list="locationSuggestions" maxlength="150" required data-i18n-placeholder="donate-area-ph" placeholder="Your ward, village or locality" />
               </div>
               <div class="form-group">
-                <label for="donateCategory">What are you donating? *</label>
+                <label for="donateCategory" data-i18n="donate-category-label">What are you donating? *</label>
                 <select id="donateCategory" required>
-                  <option value="">Select category…</option>
-                  <option value="books">Books &amp; Stationery</option>
-                  <option value="clothes">Clothes &amp; Footwear</option>
-                  <option value="toys">Toys &amp; Games</option>
-                  <option value="electronics">Electronics &amp; Gadgets</option>
-                  <option value="furniture">Furniture &amp; Household Items</option>
-                  <option value="food">Food &amp; Groceries</option>
-                  <option value="medical">Medical Equipment / Aids</option>
-                  <option value="other">Other</option>
+                  <option value="" data-i18n="donate-cat-select">Select category…</option>
+                  <option value="books" data-i18n="donate-cat-books">Books &amp; Stationery</option>
+                  <option value="clothes" data-i18n="donate-cat-clothes">Clothes &amp; Footwear</option>
+                  <option value="toys" data-i18n="donate-cat-toys">Toys &amp; Games</option>
+                  <option value="electronics" data-i18n="donate-cat-electronics-full">Electronics &amp; Gadgets</option>
+                  <option value="furniture" data-i18n="donate-cat-furniture-full">Furniture &amp; Household Items</option>
+                  <option value="food" data-i18n="donate-cat-food">Food &amp; Groceries</option>
+                  <option value="medical" data-i18n="donate-cat-medical-full">Medical Equipment / Aids</option>
+                  <option value="other" data-i18n="donate-cat-other-short">Other</option>
                 </select>
               </div>
             </div>
             <div class="form-group">
-              <label for="donateDescription">Description of Items *</label>
-              <textarea id="donateDescription" maxlength="500" required placeholder="Describe what you are donating — quantity, condition, size, etc. E.g. '3 school bags (good condition), 12 textbooks (Class 5–7)'"></textarea>
+              <label for="donateDescription" data-i18n="donate-desc-label">Description of Items *</label>
+              <textarea id="donateDescription" maxlength="500" required data-i18n-placeholder="donate-desc-ph" placeholder="Describe what you are donating — quantity, condition, size, etc."></textarea>
             </div>
             <div class="form-group">
-              <label for="donatePickup">Preferred Pickup Timing</label>
-              <input id="donatePickup" type="text" maxlength="100" placeholder="e.g. Weekday mornings, Sundays after 10 AM" />
+              <label for="donatePickup" data-i18n="donate-pickup-label">Preferred Pickup Timing</label>
+              <input id="donatePickup" type="text" maxlength="100" data-i18n-placeholder="donate-pickup-ph" placeholder="e.g. Weekday mornings, Sundays after 10 AM" />
             </div>
             <div class="form-group">
-              <label for="donateMessage">Any additional message</label>
-              <textarea id="donateMessage" maxlength="300" placeholder="Any special instructions, story behind the donation, etc. (optional)"></textarea>
+              <label for="donateMessage" data-i18n="donate-msg-label">Any additional message</label>
+              <textarea id="donateMessage" maxlength="300" data-i18n-placeholder="donate-msg-ph" placeholder="Any special instructions, story behind the donation, etc. (optional)"></textarea>
             </div>
             <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px 16px;margin-bottom:18px;font-size:13px;color:#166534">
               <i class="fa-solid fa-circle-info" style="margin-right:6px"></i>
-              After submission, our volunteer coordinator will call you within <strong>48 hours</strong> to arrange pickup. You can also drop items at your nearest district community centre.
+              <span data-i18n="donate-info-note">After submission, our volunteer coordinator will call you within <strong>48 hours</strong> to arrange pickup. You can also drop items at your nearest district community centre.</span>
             </div>
             <button class="btn btn-primary" type="submit" id="donateSubmitBtn" style="min-width:180px">
-              <i class="fa-solid fa-heart"></i> Submit Donation Request
+              <i class="fa-solid fa-heart"></i> <span data-i18n="donate-submit-btn">Submit Donation Request</span>
             </button>
           </form>
           <div id="donateSuccess" hidden style="text-align:center;padding:48px 24px">
             <div style="font-size:56px;margin-bottom:16px">🙏</div>
-            <h3 style="color:var(--navy);font-size:24px;font-weight:800;margin-bottom:10px">Thank you for your generosity!</h3>
-            <p style="color:var(--muted);font-size:15px;max-width:420px;margin:0 auto 24px">Our team will reach out to you within 48 hours to coordinate pickup. Your donation will go directly to a family or student in need.</p>
-            <button class="btn btn-soft" type="button" onclick="resetDonateForm()">Submit another donation</button>
+            <h3 style="color:var(--navy);font-size:24px;font-weight:800;margin-bottom:10px" data-i18n="donate-thanks-title">Thank you for your generosity!</h3>
+            <p style="color:var(--muted);font-size:15px;max-width:420px;margin:0 auto 24px" data-i18n="donate-thanks-body">Our team will reach out to you within 48 hours to coordinate pickup. Your donation will go directly to a family or student in need.</p>
+            <button class="btn btn-soft" type="button" onclick="resetDonateForm()" data-i18n="donate-another-btn">Submit another donation</button>
           </div>
         </div>
       </div>
@@ -6704,7 +6704,44 @@
       "footer-sponsor-link": { en: "Host a Mission", hi: "मिशन होस्ट करें" },
       "footer-admin-link": { en: "Open Admin Panel", hi: "एडमिन पैनल खोलें" },
       "footer-wards-link": { en: "Location Overview", hi: "स्थान अवलोकन" },
-      "footer-donate-link": { en: "Host a Mission", hi: "मिशन होस्ट करें" },
+      "footer-donate-link": { en: "Donate", hi: "दान करें" },
+
+      "donate-badge":        { en: "Donate", hi: "दान करें" },
+      "donate-title":        { en: "Give what you can. Change a life.", hi: "जो दे सकें, दें। किसी की ज़िंदगी बदलें।" },
+      "donate-subtitle":     { en: "Donate in kind — books, clothes, toys, electronics, furniture, food and more. Submit a request and our team will coordinate pickup from your doorstep.", hi: "वस्तु रूप में दान करें — किताबें, कपड़े, खिलौने, इलेक्ट्रॉनिक्स, फर्नीचर, खाद्य सामग्री और बहुत कुछ। अनुरोध भेजें और हमारी टीम आपके दरवाजे से सामान ले जाएगी।" },
+      "donate-share-btn":    { en: "Share Donate Link", hi: "दान लिंक साझा करें" },
+      "donate-cat-books":    { en: "Books & Stationery", hi: "किताबें व लेखन सामग्री" },
+      "donate-cat-clothes":  { en: "Clothes & Footwear", hi: "कपड़े व जूते-चप्पल" },
+      "donate-cat-toys":     { en: "Toys & Games", hi: "खिलौने व खेल" },
+      "donate-cat-electronics": { en: "Electronics", hi: "इलेक्ट्रॉनिक्स" },
+      "donate-cat-furniture":   { en: "Furniture", hi: "फर्नीचर" },
+      "donate-cat-food":     { en: "Food & Groceries", hi: "खाद्य सामग्री" },
+      "donate-cat-medical":  { en: "Medical Equipment", hi: "चिकित्सा उपकरण" },
+      "donate-cat-other":    { en: "Other Items", hi: "अन्य वस्तुएँ" },
+      "donate-cat-select":   { en: "Select category…", hi: "श्रेणी चुनें…" },
+      "donate-cat-electronics-full": { en: "Electronics & Gadgets", hi: "इलेक्ट्रॉनिक्स व गैजेट" },
+      "donate-cat-furniture-full":   { en: "Furniture & Household Items", hi: "फर्नीचर व घरेलू सामान" },
+      "donate-cat-medical-full":     { en: "Medical Equipment / Aids", hi: "चिकित्सा उपकरण / सहायक सामग्री" },
+      "donate-cat-other-short":      { en: "Other", hi: "अन्य" },
+      "donate-form-title":   { en: "Submit a Donation Request", hi: "दान अनुरोध भेजें" },
+      "donate-name-label":   { en: "Your Name *", hi: "आपका नाम *" },
+      "donate-name-ph":      { en: "Full name", hi: "पूरा नाम" },
+      "donate-phone-label":  { en: "Phone Number *", hi: "फोन नंबर *" },
+      "donate-phone-ph":     { en: "10-digit mobile", hi: "10 अंकों का मोबाइल नंबर" },
+      "donate-area-label":   { en: "Area / Locality *", hi: "क्षेत्र / मोहल्ला *" },
+      "donate-area-ph":      { en: "Your ward, village or locality", hi: "अपना वार्ड, गाँव या मोहल्ला लिखें" },
+      "donate-category-label": { en: "What are you donating? *", hi: "आप क्या दान कर रहे हैं? *" },
+      "donate-desc-label":   { en: "Description of Items *", hi: "वस्तुओं का विवरण *" },
+      "donate-desc-ph":      { en: "Describe what you are donating — quantity, condition, size, etc.", hi: "दान की जाने वाली वस्तुओं का विवरण दें — मात्रा, स्थिति, आकार आदि।" },
+      "donate-pickup-label": { en: "Preferred Pickup Timing", hi: "पिकअप का उचित समय" },
+      "donate-pickup-ph":    { en: "e.g. Weekday mornings, Sundays after 10 AM", hi: "जैसे — सप्ताह के दिन सुबह, रविवार को 10 बजे के बाद" },
+      "donate-msg-label":    { en: "Any additional message", hi: "कोई अन्य संदेश" },
+      "donate-msg-ph":       { en: "Any special instructions, story behind the donation, etc. (optional)", hi: "कोई विशेष निर्देश, दान के पीछे की कहानी, आदि (वैकल्पिक)" },
+      "donate-info-note":    { en: "After submission, our volunteer coordinator will call you within <strong>48 hours</strong> to arrange pickup. You can also drop items at your nearest district community centre.", hi: "अनुरोध भेजने के बाद हमारा स्वयंसेवक समन्वयक <strong>48 घंटों</strong> के भीतर आपसे संपर्क करेगा। आप निकटतम जिला सामुदायिक केंद्र पर सामान भी छोड़ सकते हैं।" },
+      "donate-submit-btn":   { en: "Submit Donation Request", hi: "दान अनुरोध भेजें" },
+      "donate-thanks-title": { en: "Thank you for your generosity!", hi: "आपकी उदारता के लिए धन्यवाद!" },
+      "donate-thanks-body":  { en: "Our team will reach out to you within 48 hours to coordinate pickup. Your donation will go directly to a family or student in need.", hi: "हमारी टीम पिकअप की व्यवस्था के लिए 48 घंटों में आपसे संपर्क करेगी। आपका दान सीधे किसी जरूरतमंद परिवार या विद्यार्थी के पास जाएगा।" },
+      "donate-another-btn":  { en: "Submit another donation", hi: "एक और दान अनुरोध भेजें" },
       "footer-copy": { en: "© 2026 JanPrayas Citizen Platform · An initiative of the District Administration · Built with public service in mind.", hi: "© 2026 जनप्रयास नागरिक मंच · जिला प्रशासन की पहल · सार्वजनिक सेवा के उद्देश्य से निर्मित।" },
       "mission-tab-details": { en: "Details", hi: "विवरण" },
       "mission-tab-discussion": { en: "Discussion", hi: "चर्चा" },
