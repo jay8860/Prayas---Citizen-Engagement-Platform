@@ -4744,6 +4744,7 @@
           <h3 class="form-card-title" style="font-size:18px;margin:18px 0 12px" data-i18n="passport-timeline">Missions Attended</h3>
           <div class="timeline" id="passportTimeline"></div>
         </div>
+        <div id="passportPendingNotice" hidden></div>
         <div class="message-card" style="margin-top:18px">
           <div class="message-name" data-i18n="passport-completion-title">Certificate Eligibility</div>
           <div class="message-text" id="passportEligibilityText"></div>
@@ -11128,7 +11129,14 @@
               <div style="font-weight:700;font-size:14px">${escapeHtml(row.name)}</div>
               <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${escapeHtml(row.phone)} · ${escapeHtml(row.area || "—")}</div>
               <div style="font-size:12px;margin-bottom:4px"><strong>Mission:</strong> ${escapeHtml(row.mission_title)}</div>
-              <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${escapeHtml(row.date_label)} · ${row.gps_lat ? `📍 ${Number(row.gps_lat).toFixed(5)}, ${Number(row.gps_lng).toFixed(5)}` : "📍 No GPS"}</div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${escapeHtml(row.date_label)} · ${row.gps_lat ? `📍 ${Number(row.gps_lat).toFixed(5)}, ${Number(row.gps_lng).toFixed(5)}` : "📍 No GPS"}</div>
+              ${row.ai_flag ? `<div style="margin-bottom:8px">${{
+                ok: '<span style="background:#d1fae5;color:#065f46;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600">🤖 AI: Valid photo</span>',
+                dark: '<span style="background:#fee2e2;color:#991b1b;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600">⚫ AI: Very dark photo</span>',
+                no_face: '<span style="background:#fef3c7;color:#92400e;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600">👤 AI: No face detected</span>',
+                suspicious: '<span style="background:#fee2e2;color:#991b1b;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600">🚨 AI: Suspicious photo</span>',
+                high_frequency: '<span style="background:#fee2e2;color:#991b1b;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600">🚨 Flagged: 3+ check-ins today</span>',
+              }[row.ai_flag] || `<span style="background:#f3f4f6;color:#6b7280;border-radius:6px;padding:2px 8px;font-size:11px">🤖 AI: ${escapeHtml(row.ai_flag)}</span>`}</div>` : ""}
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" type="button" onclick="approveCheckin(${row.id})" style="padding:6px 14px;font-size:12px">✅ Approve</button>
                 <button class="btn" type="button" onclick="rejectCheckin(${row.id})" style="padding:6px 14px;font-size:12px;background:#DC2626;color:#fff">✗ Reject</button>
@@ -11762,16 +11770,45 @@
           : (best > 0 ? `${state.lang === "hi" ? "सर्वश्रेष्ठ" : "Best"}: ${best}` : "—");
       }
       document.getElementById("passportBadges").innerHTML = (leader.badges || []).map((badge) => `<span class="badge-emoji">${badge}</span>`).join("");
+      const pendingActivities = attended.filter((entry) => entry && entry.pending);
+      const hi = state.lang === "hi";
       document.getElementById("passportTimeline").innerHTML = attended.length
         ? attended
-            .map((entry) => `<div class="timeline-item">${escapeHtml(entry.title)}${entry.dateLabel ? ` · ${escapeHtml(entry.dateLabel)}` : ""}${entry.completed ? ` · ${state.lang === "hi" ? "पूर्ण" : "completed"}` : ""}</div>`)
+            .map((entry) => {
+              let suffix = "";
+              if (entry.pending) suffix = ` · <span style="color:#d97706;font-weight:600">${hi ? "⏳ एडमिन समीक्षा लंबित" : "⏳ Pending admin review"}</span>`;
+              else if (entry.completed) suffix = ` · <span style="color:var(--green)">${hi ? "✅ पूर्ण" : "✅ completed"}</span>`;
+              return `<div class="timeline-item">${escapeHtml(entry.title)}${entry.dateLabel ? ` · ${escapeHtml(entry.dateLabel)}` : ""}${suffix}</div>`;
+            })
             .join("")
-        : `<div class="timeline-item">${state.lang === "hi" ? "अभी तक कोई अभियान दर्ज नहीं है।" : "No missions recorded yet."}</div>`;
+        : `<div class="timeline-item">${hi ? "अभी तक कोई अभियान दर्ज नहीं है।" : "No missions recorded yet."}</div>`;
+
+      // Show pending notice above eligibility text
+      const pendingNoticeEl = document.getElementById("passportPendingNotice");
+      if (pendingNoticeEl) {
+        if (pendingActivities.length) {
+          pendingNoticeEl.innerHTML = hi
+            ? `<div style="background:#fffbeb;border:1px solid #fbbf24;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px">
+                <strong>⏳ ${pendingActivities.length} प्रविष्टि एडमिन समीक्षा के लिए लंबित है।</strong><br>
+                प्रमाणपत्र तब तक उपलब्ध नहीं होगा जब तक एडमिन इसे स्वीकृत न करें।<br>
+                <span style="color:var(--muted)">अधिक जानकारी के लिए JanPrayas नोडल अधिकारी या मुख्य कार्यकारी अधिकारी, जिला पंचायत कार्यालय से संपर्क करें।</span>
+              </div>`
+            : `<div style="background:#fffbeb;border:1px solid #fbbf24;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px">
+                <strong>⏳ ${pendingActivities.length} attendance record${pendingActivities.length > 1 ? "s are" : " is"} pending admin review.</strong><br>
+                Your certificate will not be available until the admin approves these records.<br>
+                <span style="color:var(--muted)">For assistance, please contact the JanPrayas administrative nodal officer or the CEO, Zila Panchayat office.</span>
+              </div>`;
+          pendingNoticeEl.hidden = false;
+        } else {
+          pendingNoticeEl.hidden = true;
+        }
+      }
+
       document.getElementById("passportEligibilityText").textContent = completedActivities.length
-        ? state.lang === "hi"
+        ? hi
           ? `${completedActivities.length} पूर्ण गतिविधि सत्यापित है। प्रमाणपत्र डाउनलोड सक्षम है।`
           : `${completedActivities.length} completed activity verified. Certificate download is enabled.`
-        : state.lang === "hi"
+        : hi
           ? "प्रमाणपत्र तभी खुलेगा जब एडमिन किसी पूर्ण की गई गतिविधि को completed चिह्नित करेगा।"
           : "Certificates unlock only after an admin marks at least one attended activity as completed.";
       document.getElementById("downloadCertificateBtn").disabled = !completedActivities.length;
@@ -14610,12 +14647,44 @@
       }
     }
 
+    function _isSelfieBlack(canvas) {
+      try {
+        const ctx = canvas.getContext("2d");
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let total = 0;
+        const step = Math.max(1, Math.floor(data.length / (4 * 200)));
+        let samples = 0;
+        for (let i = 0; i < data.length; i += 4 * step) {
+          total += (data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114);
+          samples++;
+        }
+        return samples > 0 && (total / samples) < 12;
+      } catch (e) { return false; }
+    }
+
     function checkInCaptureSelfie() {
       const video = document.getElementById("checkInCamera");
       const canvas = document.getElementById("checkInCanvas");
+      const errEl = document.getElementById("checkInError");
       canvas.width = 320;
       canvas.height = Math.round(video.videoHeight * (320 / video.videoWidth)) || 240;
       canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      if (_isSelfieBlack(canvas)) {
+        errEl.innerHTML = `<strong>📷 Camera blocked or too dark.</strong><br>Please allow camera access in your browser settings and try again.`;
+        _stopCheckInCamera();
+        // Restart camera automatically after short delay
+        setTimeout(async () => {
+          try {
+            _checkInStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+            document.getElementById("checkInCamera").srcObject = _checkInStream;
+            document.getElementById("checkInCamera").style.display = "";
+          } catch (e) { /* permission still denied — error stays visible */ }
+        }, 1500);
+        return;
+      }
+
+      errEl.textContent = "";
       _checkInSelfieData = canvas.toDataURL("image/jpeg", 0.65);
       document.getElementById("checkInSelfieImg").src = _checkInSelfieData;
       document.getElementById("checkInSelfiePreview").style.display = "";

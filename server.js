@@ -95,7 +95,8 @@ function getCivicRank(points) {
 // Returns a Map: profileId -> { points, missionCount, streak, longestStreak, badges, attended }
 function computeAllVolunteerStats() {
   const allParticipations = db.prepare(`
-    SELECT vp.volunteer_profile_id, vp.created_at, vp.date_label, vp.mission_title, m.status, m.category
+    SELECT vp.volunteer_profile_id, vp.created_at, vp.date_label, vp.mission_title,
+           vp.checkin_method, m.status, m.category
     FROM volunteer_participations vp
     LEFT JOIN missions m ON m.id = vp.mission_id
     ORDER BY vp.volunteer_profile_id, vp.created_at ASC
@@ -160,6 +161,7 @@ function computeAllVolunteerStats() {
       .map((r) => ({
         title: r.mission_title,
         completed: r.status === "completed",
+        pending: r.checkin_method === "qr_new",
         dateLabel: r.date_label || ""
       }));
 
@@ -1043,6 +1045,7 @@ try { db.exec("ALTER TABLE admin_users ADD COLUMN can_approve_missions INTEGER N
 try { db.exec("ALTER TABLE admin_users ADD COLUMN can_manage_orgs INTEGER NOT NULL DEFAULT 1"); } catch(e) {}
 try { db.exec("ALTER TABLE admin_users ADD COLUMN can_post_announcements INTEGER NOT NULL DEFAULT 1"); } catch(e) {}
 try { db.exec("ALTER TABLE admin_users ADD COLUMN can_export_data INTEGER NOT NULL DEFAULT 1"); } catch(e) {}
+try { db.exec("ALTER TABLE volunteer_participations ADD COLUMN ai_flag TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
@@ -1147,6 +1150,70 @@ async function callGeminiRaw(system, user, maxTokens = 300) {
     console.error("[AI] callGeminiRaw error:", e.message);
     return null;
   }
+}
+
+// Calls Gemini with an image + text prompt. Returns parsed JSON or null.
+async function callGeminiVision(imageDataUrl, prompt, maxTokens = 100) {
+  const apiKey = process.env.GOOGLE_API_KEY;
+  if (!apiKey) return null;
+  const m = imageDataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+  if (!m) return null;
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [
+            { inlineData: { mimeType: m[1], data: m[2] } },
+            { text: prompt }
+          ]}],
+          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.1 }
+        })
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const text = (data.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
+    const match = text.match(/\{[\s\S]*?\}/);
+    return match ? JSON.parse(match[0]) : null;
+  } catch (e) {
+    console.error("[AI] callGeminiVision error:", e.message);
+    return null;
+  }
+}
+
+// Fire-and-forget: run AI selfie check after check-in is stored, update ai_flag.
+function analyzeCheckinSelfieAsync(participationId, selfieDataUrl) {
+  setImmediate(async () => {
+    try {
+      const result = await callGeminiVision(
+        selfieDataUrl,
+        `This is a volunteer check-in selfie from a civic engagement app. Respond ONLY with JSON: {"flag":"ok"|"dark"|"no_face"|"suspicious","note":"brief reason (max 10 words)"}. Use "ok" if it clearly shows a real person's face. Use "dark" if the photo is very dark or black. Use "no_face" if no human face is visible. Use "suspicious" if it appears to be a screenshot, printed photo, or otherwise fake.`
+      );
+      if (!result) return;
+      const allowed = ["ok", "dark", "no_face", "suspicious"];
+      const flag = allowed.includes(result.flag) ? result.flag : "ok";
+      db.prepare("UPDATE volunteer_participations SET ai_flag = ? WHERE id = ?").run(flag, participationId);
+    } catch (e) {
+      console.error("[AI] selfie analyze error:", e.message);
+    }
+  });
+}
+
+// Parses "4 September 2026, 9:00 AM – 12:00 PM" into a Date for the start time.
+// Returns null if the string doesn't match.
+function parseMissionStart(dateStr) {
+  if (!dateStr) return null;
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const m = String(dateStr).match(/^(\d{1,2})\s+(\w+)\s+(\d{4}),\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!m) return null;
+  const monthIdx = MONTHS.indexOf(m[2]);
+  if (monthIdx === -1) return null;
+  let hour = Number(m[4]) % 12;
+  if (/pm/i.test(m[6])) hour += 12;
+  return new Date(Number(m[3]), monthIdx, Number(m[1]), hour, Number(m[5]));
 }
 
 async function generatePosterText(title, category, date, venue, lang) {
@@ -1415,6 +1482,7 @@ const server = http.createServer(async (req, res) => {
       const rows = db.prepare(`
         SELECT vp.id, vp.volunteer_profile_id, vp.mission_id, vp.mission_title, vp.date_label,
                vp.attended_at, vp.selfie_photo, vp.gps_lat, vp.gps_lng, vp.created_at,
+               vp.ai_flag,
                p.name, p.phone, p.area
         FROM volunteer_participations vp
         JOIN volunteer_profiles p ON p.id = vp.volunteer_profile_id
@@ -5208,8 +5276,15 @@ function checkInVolunteer(body) {
 
   const normalizedPhone = normalizeVolunteerPhone(phone);
 
-  const mission = db.prepare("SELECT id, title, status, ward FROM missions WHERE check_in_code = ? AND archived_at IS NULL").get(code);
+  const mission = db.prepare("SELECT id, title, status, ward, date FROM missions WHERE check_in_code = ? AND archived_at IS NULL").get(code);
   if (!mission) throw publicError(404, "Invalid check-in code. Please verify with your mission coordinator.");
+
+  // Enforce: check-in only allowed on or after the mission's start time.
+  const missionStart = parseMissionStart(mission.date);
+  if (missionStart && new Date() < missionStart) {
+    const fmt = missionStart.toLocaleString("en-IN", { day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" });
+    throw publicError(400, `Check-in opens at ${fmt}. Please return when the mission begins.`);
+  }
 
   // Join across ALL profiles with this phone — avoids the wrong-profile bug when
   // the same phone has multiple profile rows (different name spellings).
@@ -5222,6 +5297,23 @@ function checkInVolunteer(body) {
     LIMIT 1
   `).get(normalizedPhone, mission.id);
 
+  // High-frequency fraud check: if this volunteer checked into 3+ distinct
+  // missions today, flag as suspicious and force pending review.
+  const todayPrefix = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+  let highFrequency = false;
+  {
+    const profile0 = db.prepare(
+      "SELECT id FROM volunteer_profiles WHERE normalized_phone = ? LIMIT 1"
+    ).get(normalizedPhone);
+    if (profile0) {
+      const todayCount = db.prepare(`
+        SELECT COUNT(DISTINCT mission_id) AS n FROM volunteer_participations
+        WHERE volunteer_profile_id = ? AND created_at LIKE ? AND mission_id != ?
+      `).get(profile0.id, `${todayPrefix}%`, mission.id).n;
+      if (todayCount >= 3) highFrequency = true;
+    }
+  }
+
   if (!participation) {
     // Volunteer not registered for this mission.
     // If they provided their name, auto-register + mark attendance (on-the-spot check-in).
@@ -5233,18 +5325,33 @@ function checkInVolunteer(body) {
     const dateLabel = new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
     // checkin_method='qr_new' = auto-registered at venue — marks attendance as pending review.
     // Admin must approve before it counts for certificates/leaderboard.
-    db.prepare(`INSERT INTO volunteer_participations (volunteer_profile_id, mission_id, mission_title, date_label, attended_at, selfie_photo, checkin_method, gps_lat, gps_lng, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, 'qr_new', ?, ?, ?)`)
-      .run(profile.id, mission.id, mission.title, dateLabel, isoNow(), selfiePhoto, gpsLat, gpsLng, isoNow());
+    const initialFlag = highFrequency ? "high_frequency" : "";
+    db.prepare(`INSERT INTO volunteer_participations (volunteer_profile_id, mission_id, mission_title, date_label, attended_at, selfie_photo, checkin_method, gps_lat, gps_lng, created_at, ai_flag)
+      VALUES (?, ?, ?, ?, ?, ?, 'qr_new', ?, ?, ?, ?)`)
+      .run(profile.id, mission.id, mission.title, dateLabel, isoNow(), selfiePhoto, gpsLat, gpsLng, isoNow(), initialFlag);
+    const newRow = db.prepare("SELECT id FROM volunteer_participations WHERE volunteer_profile_id = ? AND mission_id = ? ORDER BY id DESC LIMIT 1").get(profile.id, mission.id);
+    if (newRow && !highFrequency) analyzeCheckinSelfieAsync(newRow.id, selfiePhoto);
     writeAuditLog("checkin_auto_register", "volunteer_participation", profile.id,
-      `On-spot QR check-in (pending review): ${volunteerName} (${normalizedPhone}) auto-registered for "${mission.title}"`, null);
+      `On-spot QR check-in (pending review): ${volunteerName} (${normalizedPhone}) auto-registered for "${mission.title}"${highFrequency ? " [HIGH-FREQUENCY FLAG]" : ""}`, null);
     return { ok: true, pendingReview: true, isNewRegistration: true, missionTitle: mission.title };
   }
 
   if (participation.attended_at) return { ok: true, alreadyCheckedIn: true, missionTitle: mission.title };
 
+  // Existing registered volunteer checking in.
+  // High-frequency: force pending review + flag. Otherwise auto-confirm.
+  if (highFrequency) {
+    db.prepare("UPDATE volunteer_participations SET attended_at = ?, selfie_photo = ?, gps_lat = ?, gps_lng = ?, checkin_method = 'qr_new', ai_flag = 'high_frequency' WHERE id = ?")
+      .run(isoNow(), selfiePhoto, gpsLat, gpsLng, participation.id);
+    writeAuditLog("checkin_flagged", "volunteer_participation", participation.id,
+      `Check-in flagged high-frequency for ${normalizedPhone} on mission "${mission.title}"`, null);
+    return { ok: true, pendingReview: true, missionTitle: mission.title };
+  }
+
+  // Normal path: auto-confirm, run AI analysis in background for admin info.
   db.prepare("UPDATE volunteer_participations SET attended_at = ?, selfie_photo = ?, gps_lat = ?, gps_lng = ? WHERE id = ?")
     .run(isoNow(), selfiePhoto, gpsLat, gpsLng, participation.id);
+  analyzeCheckinSelfieAsync(participation.id, selfiePhoto);
   return { ok: true, checkedIn: true, missionTitle: mission.title };
 }
 
