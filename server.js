@@ -1444,6 +1444,30 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true });
     }
 
+    if (req.method === "POST" && url.pathname === "/api/admin/pending-checkins/bulk") {
+      const actor = requireAdmin(req);
+      const body = await readJsonBody(req);
+      const { action, ids } = body;
+      if (!["approve", "reject"].includes(action)) throw publicError(400, "Invalid action.");
+      if (!Array.isArray(ids) || ids.length === 0) throw publicError(400, "No IDs provided.");
+      const safeIds = ids.map(Number).filter((n) => Number.isInteger(n) && n > 0);
+      const placeholders = safeIds.map(() => "?").join(",");
+      const validRows = db.prepare(
+        `SELECT id FROM volunteer_participations WHERE id IN (${placeholders}) AND checkin_method = 'qr_new'`
+      ).all(...safeIds);
+      const validIds = validRows.map((r) => r.id);
+      if (!validIds.length) return sendJson(res, 200, { ok: true, processed: 0 });
+      const ph2 = validIds.map(() => "?").join(",");
+      if (action === "approve") {
+        db.prepare(`UPDATE volunteer_participations SET checkin_method = 'qr' WHERE id IN (${ph2})`).run(...validIds);
+        validIds.forEach((id) => writeAuditLog("approve_checkin", "volunteer_participation", id, `Bulk approved by ${actor.name}`, null));
+      } else {
+        db.prepare(`DELETE FROM volunteer_participations WHERE id IN (${ph2})`).run(...validIds);
+        validIds.forEach((id) => writeAuditLog("reject_checkin", "volunteer_participation", id, `Bulk rejected by ${actor.name}`, null));
+      }
+      return sendJson(res, 200, { ok: true, processed: validIds.length });
+    }
+
     if (req.method === "POST" && url.pathname === "/api/volunteers") {
       const body = await readJsonBody(req);
       const result = registerVolunteer(body);

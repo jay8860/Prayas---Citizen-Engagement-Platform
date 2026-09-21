@@ -5226,11 +5226,27 @@
         <div class="admin-pane" id="adminPaneVolunteers">
           <!-- Pending check-in reviews -->
           <div id="pendingCheckinsPanel" style="margin-bottom:24px;display:none">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
               <h3 style="margin:0;font-size:17px;color:var(--navy)">⏳ Pending Check-in Reviews</h3>
               <span id="pendingCheckinsCount" style="background:#fbbf24;color:#78350f;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:700"></span>
             </div>
-            <p style="font-size:13px;color:var(--muted);margin-bottom:12px">These volunteers registered on-the-spot via QR code. Review their selfie and GPS, then approve or reject.</p>
+            <p style="font-size:13px;color:var(--muted);margin-bottom:10px">These volunteers registered on-the-spot via QR code. Review their selfie and GPS, then approve or reject.</p>
+            <!-- Bulk toolbar -->
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:10px 14px;background:var(--surface-alt,#f8f9fa);border:1px solid var(--border);border-radius:10px">
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600;user-select:none">
+                <input type="checkbox" id="checkinSelectAll" onchange="toggleAllCheckins(this.checked)" style="width:16px;height:16px;cursor:pointer">
+                Select all
+              </label>
+              <span id="checkinSelectedCount" style="font-size:12px;color:var(--muted)">0 selected</span>
+              <div style="margin-left:auto;display:flex;gap:8px">
+                <button class="btn btn-primary" type="button" id="bulkApproveBtn" onclick="bulkActionCheckins('approve')" disabled style="padding:6px 16px;font-size:12px;opacity:0.4">
+                  ✅ Approve Selected
+                </button>
+                <button class="btn" type="button" id="bulkRejectBtn" onclick="bulkActionCheckins('reject')" disabled style="padding:6px 16px;font-size:12px;background:#DC2626;color:#fff;opacity:0.4">
+                  ✗ Reject Selected
+                </button>
+              </div>
+            </div>
             <div id="pendingCheckinsList" style="display:flex;flex-direction:column;gap:10px"></div>
           </div>
 
@@ -10829,9 +10845,16 @@
         const rows = data.pending || [];
         panel.style.display = rows.length ? "" : "none";
         if (countEl) countEl.textContent = `${rows.length} pending`;
+        // Reset select-all and bulk bar
+        const selAll = document.getElementById("checkinSelectAll");
+        if (selAll) selAll.checked = false;
+        _updateCheckinBulkBar();
         list.innerHTML = rows.map((row) => `
-          <div style="border:1px solid #fbbf24;border-radius:12px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start;background:#fffbeb">
-            ${row.selfie_photo ? `<img src="${escapeHtml(row.selfie_photo)}" style="width:80px;height:80px;border-radius:8px;object-fit:cover;flex-shrink:0" alt="Selfie">` : `<div style="width:80px;height:80px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:28px">🤳</div>`}
+          <div class="pending-checkin-row" data-id="${row.id}" style="border:1px solid #fbbf24;border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;background:#fffbeb;transition:background 0.15s">
+            <label style="display:flex;align-items:flex-start;padding-top:4px;cursor:pointer">
+              <input type="checkbox" class="checkin-chk" data-id="${row.id}" onchange="_updateCheckinBulkBar()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0">
+            </label>
+            ${row.selfie_photo ? `<img src="${escapeHtml(row.selfie_photo)}" style="width:80px;height:80px;border-radius:8px;object-fit:cover;flex-shrink:0" alt="Selfie">` : `<div style="width:80px;height:80px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🤳</div>`}
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:14px">${escapeHtml(row.name)}</div>
               <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${escapeHtml(row.phone)} · ${escapeHtml(row.area || "—")}</div>
@@ -10845,6 +10868,62 @@
           </div>
         `).join("") || `<p style="color:var(--muted);font-size:13px">No pending check-ins.</p>`;
       } catch (e) { /* silently skip if admin not logged in */ }
+    }
+
+    function _updateCheckinBulkBar() {
+      const chks = document.querySelectorAll(".checkin-chk");
+      const checked = document.querySelectorAll(".checkin-chk:checked");
+      const selAll = document.getElementById("checkinSelectAll");
+      const countEl = document.getElementById("checkinSelectedCount");
+      const approveBtn = document.getElementById("bulkApproveBtn");
+      const rejectBtn = document.getElementById("bulkRejectBtn");
+      const n = checked.length;
+      if (selAll) selAll.indeterminate = n > 0 && n < chks.length;
+      if (selAll && n === chks.length && chks.length > 0) selAll.checked = true;
+      if (countEl) countEl.textContent = n > 0 ? `${n} selected` : "0 selected";
+      const enabled = n > 0;
+      if (approveBtn) { approveBtn.disabled = !enabled; approveBtn.style.opacity = enabled ? "1" : "0.4"; }
+      if (rejectBtn)  { rejectBtn.disabled  = !enabled; rejectBtn.style.opacity  = enabled ? "1" : "0.4"; }
+    }
+
+    function toggleAllCheckins(checked) {
+      document.querySelectorAll(".checkin-chk").forEach((cb) => { cb.checked = checked; });
+      _updateCheckinBulkBar();
+    }
+
+    function _selectedCheckinIds() {
+      return Array.from(document.querySelectorAll(".checkin-chk:checked")).map((cb) => Number(cb.dataset.id));
+    }
+
+    async function bulkActionCheckins(action) {
+      const ids = _selectedCheckinIds();
+      if (!ids.length) return;
+      if (action === "reject") {
+        openConfirmModal({
+          icon: "✗",
+          title: `Reject ${ids.length} Check-in${ids.length > 1 ? "s" : ""}?`,
+          message: `This will permanently delete ${ids.length} attendance record${ids.length > 1 ? "s" : ""}. These volunteers will not receive certificates for this mission.`,
+          confirmLabel: "Reject All",
+          onConfirm: () => _executeBulkCheckin("reject", ids)
+        });
+      } else {
+        await _executeBulkCheckin("approve", ids);
+      }
+    }
+
+    async function _executeBulkCheckin(action, ids) {
+      try {
+        const result = await apiRequest("/api/admin/pending-checkins/bulk", {
+          method: "POST",
+          body: JSON.stringify({ action, ids })
+        });
+        showToast(
+          action === "approve"
+            ? `✅ ${result.processed} check-in${result.processed !== 1 ? "s" : ""} approved`
+            : `✗ ${result.processed} check-in${result.processed !== 1 ? "s" : ""} rejected`
+        );
+        loadPendingCheckins();
+      } catch (e) { handleRequestError(e); }
     }
 
     async function approveCheckin(id) {
