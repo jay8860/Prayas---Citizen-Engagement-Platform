@@ -2909,9 +2909,7 @@ function createAdminUser(body) {
   if (password.length < 6) {
     throw publicError(400, "Password must be at least 6 characters.");
   }
-  if (role === "coordinator" && !scopeWard) {
-    throw publicError(400, "Select the ward/block this coordinator is responsible for.");
-  }
+  // scopeWard is optional — a coordinator with no scope has district-wide access
   const existing = db.prepare("SELECT id FROM admin_users WHERE username = ?").get(username);
   if (existing) {
     throw publicError(409, "That username is already taken.");
