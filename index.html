@@ -14977,20 +14977,6 @@
       canvas.height = Math.round(video.videoHeight * (320 / video.videoWidth)) || 240;
       canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      if (_isSelfieBlack(canvas)) {
-        errEl.innerHTML = `<strong>📷 Camera blocked or too dark.</strong><br>Please allow camera access in your browser settings and try again.`;
-        _stopCheckInCamera();
-        // Restart camera automatically after short delay
-        setTimeout(async () => {
-          try {
-            _checkInStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-            document.getElementById("checkInCamera").srcObject = _checkInStream;
-            document.getElementById("checkInCamera").style.display = "";
-          } catch (e) { /* permission still denied — error stays visible */ }
-        }, 1500);
-        return;
-      }
-
       errEl.textContent = "";
       _checkInSelfieData = canvas.toDataURL("image/jpeg", 0.65);
       document.getElementById("checkInSelfieImg").src = _checkInSelfieData;
