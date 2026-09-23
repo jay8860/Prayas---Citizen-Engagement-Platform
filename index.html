@@ -3436,6 +3436,11 @@
             <button type="button" onclick="openModal('trackMissionModal')" data-i18n="hero-utility-track">Track my request</button>
             <button type="button" onclick="openModal('myPassportModal')" data-i18n="hero-utility-passport">🎖️ My passport &amp; certificate</button>
           </div>
+          <div class="hero-utility" style="margin-top:8px">
+            <span>Organization?</span>
+            <button type="button" onclick="openOrgAuthSection('login')">🏢 Org Login</button>
+            <button type="button" onclick="openOrgAuthSection('signup')">📝 Register Org</button>
+          </div>
         </div>
 
         <div class="hero-visual">
@@ -9839,6 +9844,14 @@
         card.scrollIntoView({ behavior: "smooth", block: "start" });
         refreshOrgAuthView();
       }
+    }
+
+    function openOrgAuthSection(tab) {
+      const card = document.getElementById("orgAuthCard");
+      card.classList.remove("hidden");
+      switchOrgAuthTab(tab || "login");
+      refreshOrgAuthView();
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function switchOrgAuthTab(tab) {
