@@ -3859,7 +3859,41 @@
                   </div>
                 </div>
                 <button class="btn btn-primary" type="submit" data-i18n="org-login-submit">Log In</button>
+                <div style="margin-top:10px;display:flex;gap:16px;flex-wrap:wrap">
+                  <button type="button" class="btn btn-ghost" style="font-size:12px;padding:4px 8px" onclick="toggleOrgForgotPanel('username')">Forgot username?</button>
+                  <button type="button" class="btn btn-ghost" style="font-size:12px;padding:4px 8px" onclick="toggleOrgForgotPanel('password')">Forgot password?</button>
+                </div>
               </form>
+
+              <!-- Forgot Username panel -->
+              <div id="orgForgotUsernamePanel" hidden style="margin-top:12px;background:var(--surface-alt,#f8f9fa);border-radius:10px;padding:14px;border:1px solid var(--border)">
+                <p style="font-size:13px;font-weight:600;margin:0 0 10px">Find your username</p>
+                <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Enter the email or phone number you registered with.</p>
+                <div class="form-row" style="margin-bottom:10px">
+                  <div class="form-group">
+                    <label style="font-size:12px">Registered Email</label>
+                    <input id="forgotUsernameEmail" type="email" placeholder="your@email.com" autocomplete="email" />
+                  </div>
+                  <div class="form-group">
+                    <label style="font-size:12px">Or Registered Phone</label>
+                    <input id="forgotUsernamePhone" type="tel" placeholder="10-digit phone" />
+                  </div>
+                </div>
+                <button type="button" class="btn btn-primary" style="font-size:13px" onclick="submitForgotUsername()">Look Up Username</button>
+                <div id="forgotUsernameResult" style="margin-top:10px;font-size:13px"></div>
+              </div>
+
+              <!-- Forgot Password panel -->
+              <div id="orgForgotPasswordPanel" hidden style="margin-top:12px;background:var(--surface-alt,#f8f9fa);border-radius:10px;padding:14px;border:1px solid var(--border)">
+                <p style="font-size:13px;font-weight:600;margin:0 0 10px">Password hint</p>
+                <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Enter your username to see the hint you set when you signed up.</p>
+                <div class="form-group" style="margin-bottom:10px">
+                  <label style="font-size:12px">Your Username</label>
+                  <input id="forgotPasswordUsername" type="text" placeholder="your-org-username" autocomplete="username" />
+                </div>
+                <button type="button" class="btn btn-primary" style="font-size:13px" onclick="submitForgotPasswordHint()">Show My Hint</button>
+                <div id="forgotPasswordResult" style="margin-top:10px;font-size:13px"></div>
+              </div>
 
               <form id="orgSignupForm" class="hidden">
                 <h3 class="form-card-title" data-i18n="org-signup-title">Register Your Organization</h3>
@@ -3880,15 +3914,22 @@
                     <input id="orgSignupPassword" type="password" required minlength="8" autocomplete="new-password" />
                   </div>
                   <div class="form-group">
-                    <label for="orgSignupPhone" data-i18n="org-phone-label">Contact Phone</label>
-                    <input id="orgSignupPhone" type="tel" />
+                    <label for="orgSignupPasswordHint">Password Hint <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+                    <input id="orgSignupPasswordHint" type="text" maxlength="200" placeholder="A clue to jog your memory — don't write the password itself" autocomplete="off" />
+                    <p style="font-size:11px;color:var(--muted);margin:4px 0 0">This hint is shown when you click "Forgot password?" — keep it vague enough that only you understand it.</p>
                   </div>
                 </div>
                 <div class="form-row">
                   <div class="form-group">
+                    <label for="orgSignupPhone" data-i18n="org-phone-label">Contact Phone</label>
+                    <input id="orgSignupPhone" type="tel" />
+                  </div>
+                  <div class="form-group">
                     <label for="orgSignupEmail" data-i18n="org-email-label">Contact Email</label>
                     <input id="orgSignupEmail" type="email" />
                   </div>
+                </div>
+                <div class="form-row">
                   <div class="form-group">
                     <label for="orgSignupJoinLink" data-i18n="org-joinlink-label">Join / Website Link</label>
                     <input id="orgSignupJoinLink" type="url" data-i18n-placeholder="org-joinlink-placeholder" placeholder="https://" />
@@ -4002,6 +4043,26 @@
                     <span class="btn btn-soft" id="choosePhotoBtn">Choose Photo…</span>
                     <input id="orgPhotoInput" type="file" accept="image/*" style="display:none" />
                   </label>
+                </div>
+
+                <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:20px">
+                  <h3 class="form-card-title">Change Password</h3>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Current Password</label>
+                      <input id="orgCurrentPassword" type="password" autocomplete="current-password" />
+                    </div>
+                    <div class="form-group">
+                      <label>New Password <span style="font-weight:400;color:var(--muted)">(min 8 characters)</span></label>
+                      <input id="orgNewPassword" type="password" autocomplete="new-password" />
+                    </div>
+                  </div>
+                  <div class="form-group" style="margin-bottom:12px">
+                    <label>New Password Hint <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+                    <input id="orgNewPasswordHint" type="text" maxlength="200" placeholder="A personal clue — don't write the password itself" autocomplete="off" />
+                  </div>
+                  <button type="button" class="btn btn-soft" onclick="submitOrgChangePassword()">Update Password</button>
+                  <div id="orgChangePasswordStatus" style="margin-top:8px;font-size:13px"></div>
                 </div>
 
                 <button class="btn btn-ghost" type="button" style="margin-top:20px" onclick="logoutOrg()" data-i18n="org-logout">Log Out</button>
@@ -9889,6 +9950,7 @@
             name: document.getElementById("orgSignupName").value.trim(),
             username: document.getElementById("orgSignupUsername").value.trim(),
             password: document.getElementById("orgSignupPassword").value,
+            passwordHint: document.getElementById("orgSignupPasswordHint").value.trim(),
             contactPhone: document.getElementById("orgSignupPhone").value.trim(),
             contactEmail: document.getElementById("orgSignupEmail").value.trim(),
             joinLink: document.getElementById("orgSignupJoinLink").value.trim(),
@@ -13661,6 +13723,7 @@
                   ${org.status !== "rejected" ? `<button class="btn btn-soft" style="font-size:12px;padding:6px 12px" type="button" onclick="adminReviewOrg(${org.id},'rejected')">${state.lang === "hi" ? "अस्वीकृत करें" : "Reject"}</button>` : ""}
                   ${org.status !== "suspended" ? `<button class="btn btn-soft" style="font-size:12px;padding:6px 12px" type="button" onclick="adminReviewOrg(${org.id},'suspended')">${state.lang === "hi" ? "निलंबित करें" : "Suspend"}</button>` : `<button class="btn btn-soft" style="font-size:12px;padding:6px 12px" type="button" onclick="adminReviewOrg(${org.id},'approved')">${state.lang === "hi" ? "पुनः स्वीकृत करें" : "Reinstate"}</button>`}
                   <button class="btn btn-soft" style="font-size:12px;padding:6px 12px" type="button" onclick="adminEditOrgPrompt(${org.id})">✏️ ${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
+                  <button class="btn btn-soft" style="font-size:12px;padding:6px 12px" type="button" onclick="adminResetOrgPasswordPrompt(${org.id},'${escapeHtml(org.name)}')">🔑 ${state.lang === "hi" ? "पासवर्ड रीसेट" : "Reset Password"}</button>
                   <button class="btn btn-danger" style="font-size:12px;padding:6px 12px" type="button" onclick="adminDeleteOrgFromPanel(${org.id})">🗑️ ${state.lang === "hi" ? "हटाएँ" : "Delete"}</button>
                 </div>
               </div>
@@ -13746,6 +13809,122 @@
         showToast(state.lang === "hi" ? "फोटो हटा दी गई।" : "Photo deleted.", "🗑️");
       } catch (error) {
         handleRequestError(error);
+      }
+    }
+
+    async function adminResetOrgPasswordPrompt(orgId, orgName) {
+      const password = prompt(
+        state.lang === "hi"
+          ? `${orgName} के लिए नया पासवर्ड दर्ज करें (कम से कम 8 अक्षर):`
+          : `Enter a new password for ${orgName} (min 8 characters):`
+      );
+      if (!password) return;
+      if (password.length < 8) { alert("Password must be at least 8 characters."); return; }
+      try {
+        await apiRequest(`/api/admin/organizations/${orgId}/reset-password`, {
+          method: "POST",
+          body: JSON.stringify({ password })
+        });
+        showToast(state.lang === "hi" ? "पासवर्ड रीसेट हो गया।" : "Organization password reset.", "🔑");
+      } catch (error) {
+        handleRequestError(error);
+      }
+    }
+
+    function toggleOrgForgotPanel(which) {
+      const usernamePanel = document.getElementById("orgForgotUsernamePanel");
+      const passwordPanel = document.getElementById("orgForgotPasswordPanel");
+      if (which === "username") {
+        const next = usernamePanel.hidden;
+        usernamePanel.hidden = !next;
+        passwordPanel.hidden = true;
+        if (next) document.getElementById("forgotUsernameResult").innerHTML = "";
+      } else {
+        const next = passwordPanel.hidden;
+        passwordPanel.hidden = !next;
+        usernamePanel.hidden = true;
+        if (next) document.getElementById("forgotPasswordResult").innerHTML = "";
+      }
+    }
+
+    async function submitForgotUsername() {
+      const email = document.getElementById("forgotUsernameEmail").value.trim();
+      const phone = document.getElementById("forgotUsernamePhone").value.trim();
+      const resultEl = document.getElementById("forgotUsernameResult");
+      resultEl.innerHTML = "";
+      if (!email && !phone) {
+        resultEl.innerHTML = `<span style="color:var(--danger)">Please enter your registered email or phone.</span>`;
+        return;
+      }
+      try {
+        const data = await orgApiRequest("/api/organizations/forgot-username", {
+          method: "POST",
+          body: JSON.stringify({ email, phone })
+        });
+        resultEl.innerHTML = `<div style="background:#DCFCE7;color:#166534;padding:10px 12px;border-radius:8px;font-weight:600">
+          ✅ Found your account: <strong>${escapeHtml(data.name)}</strong><br>
+          Username: <code style="background:rgba(0,0,0,0.08);padding:2px 6px;border-radius:4px;font-size:14px">${escapeHtml(data.username)}</code>
+        </div>`;
+      } catch (error) {
+        resultEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(error?.message || "Not found.")}</span>`;
+      }
+    }
+
+    async function submitForgotPasswordHint() {
+      const username = document.getElementById("forgotPasswordUsername").value.trim();
+      const resultEl = document.getElementById("forgotPasswordResult");
+      resultEl.innerHTML = "";
+      if (!username) {
+        resultEl.innerHTML = `<span style="color:var(--danger)">Please enter your username.</span>`;
+        return;
+      }
+      try {
+        const data = await orgApiRequest("/api/organizations/forgot-password-hint", {
+          method: "POST",
+          body: JSON.stringify({ username })
+        });
+        if (data.hint) {
+          resultEl.innerHTML = `<div style="background:#EFF6FF;color:#1E40AF;padding:10px 12px;border-radius:8px">
+            <strong>${escapeHtml(data.name)}</strong><br>
+            Your hint: <em>"${escapeHtml(data.hint)}"</em>
+            <p style="margin:8px 0 0;font-size:12px;color:var(--muted)">If you still can't remember, contact the district office or the JanPrayas administrator to reset your password.</p>
+          </div>`;
+        } else {
+          resultEl.innerHTML = `<div style="background:#FEF3C7;color:#B45309;padding:10px 12px;border-radius:8px">
+            <strong>${escapeHtml(data.name)}</strong> — no hint was set for this account.<br>
+            <span style="font-size:12px">Contact the district office or the JanPrayas administrator to reset your password.</span>
+          </div>`;
+        }
+      } catch (error) {
+        resultEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(error?.message || "Not found.")}</span>`;
+      }
+    }
+
+    async function submitOrgChangePassword() {
+      const currentPassword = document.getElementById("orgCurrentPassword").value;
+      const newPassword = document.getElementById("orgNewPassword").value;
+      const newHint = document.getElementById("orgNewPasswordHint").value.trim();
+      const statusEl = document.getElementById("orgChangePasswordStatus");
+      statusEl.textContent = "";
+      if (!currentPassword || !newPassword) {
+        statusEl.style.color = "var(--danger)";
+        statusEl.textContent = "Please fill in both current and new password.";
+        return;
+      }
+      try {
+        await orgApiRequest("/api/organizations/change-password", {
+          method: "POST",
+          body: JSON.stringify({ currentPassword, newPassword, newHint })
+        });
+        document.getElementById("orgCurrentPassword").value = "";
+        document.getElementById("orgNewPassword").value = "";
+        document.getElementById("orgNewPasswordHint").value = "";
+        statusEl.style.color = "var(--success, #166534)";
+        statusEl.textContent = "✅ Password updated successfully.";
+        setTimeout(() => { statusEl.textContent = ""; }, 4000);
+      } catch (error) {
+        statusEl.style.color = "var(--danger)";
+        statusEl.textContent = error?.message || "Failed to update password.";
       }
     }
 

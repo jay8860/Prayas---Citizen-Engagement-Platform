@@ -1047,6 +1047,7 @@ try { db.exec("ALTER TABLE admin_users ADD COLUMN can_post_announcements INTEGER
 try { db.exec("ALTER TABLE admin_users ADD COLUMN can_export_data INTEGER NOT NULL DEFAULT 1"); } catch(e) {}
 try { db.exec("ALTER TABLE volunteer_participations ADD COLUMN ai_flag TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try { db.exec("ALTER TABLE admin_users ADD COLUMN can_float_missions INTEGER NOT NULL DEFAULT 1"); } catch(e) {}
+try { db.exec("ALTER TABLE organizations ADD COLUMN password_hint TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
@@ -1658,6 +1659,22 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, orgLogin(body));
     }
 
+    if (req.method === "POST" && url.pathname === "/api/organizations/forgot-username") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, orgForgotUsername(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/organizations/forgot-password-hint") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, orgForgotPasswordHint(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/organizations/change-password") {
+      const org = requireOrg(req);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, orgChangePassword(org, body));
+    }
+
     if (req.method === "GET" && url.pathname === "/api/organizations/me") {
       const org = requireOrg(req);
       return sendJson(res, 200, getOrgProfile(org));
@@ -1741,6 +1758,13 @@ const server = http.createServer(async (req, res) => {
       const body = await readJsonBody(req);
       const organizationId = Number(url.pathname.split("/")[4]);
       return sendJson(res, 200, adminUpdateOrganization(organizationId, body, admin));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/organizations\/\d+\/reset-password$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const body = await readJsonBody(req);
+      const organizationId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, adminResetOrgPassword(organizationId, body, admin));
     }
 
     if (req.method === "POST" && /^\/api\/admin\/organizations\/\d+\/delete$/.test(url.pathname)) {
@@ -4134,6 +4158,7 @@ function orgSignup(body) {
   const name = stripHtml(body.name).slice(0, 150);
   const username = String(body.username || "").trim().toLowerCase().slice(0, 60);
   const password = String(body.password || "");
+  const passwordHint = String(body.passwordHint || "").trim().slice(0, 200);
   const description = stripHtml(body.description).slice(0, 3000);
   const joinLink = String(body.joinLink || "").trim().slice(0, 500);
   const contactPhone = String(body.contactPhone || "").trim().slice(0, 20);
@@ -4159,9 +4184,9 @@ function orgSignup(body) {
   const { hash, salt } = hashPassword(password);
   const now = isoNow();
   const result = db.prepare(`
-    INSERT INTO organizations (name, username, password_hash, password_salt, description, join_link, contact_phone, contact_email, status, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-  `).run(name, username, hash, salt, description, joinLink, contactPhone, contactEmail, now, now);
+    INSERT INTO organizations (name, username, password_hash, password_salt, password_hint, description, join_link, contact_phone, contact_email, status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+  `).run(name, username, hash, salt, passwordHint, description, joinLink, contactPhone, contactEmail, now, now);
   const orgId = Number(result.lastInsertRowid);
   recommendOrgAsync(orgId);
   const org = db.prepare("SELECT * FROM organizations WHERE id = ?").get(orgId);
@@ -4191,6 +4216,66 @@ function orgLogin(body) {
     throw publicError(403, "This organization account has been suspended by the district administration.");
   }
   return { ok: true, token: createOrgToken(org), org: sanitizeOrgRow(org), photos: getOrgPhotos(org.id) };
+}
+
+function orgForgotUsername(body) {
+  const email = String(body.email || "").trim().toLowerCase();
+  const phone = String(body.phone || "").trim();
+  if (!email && !phone) {
+    throw publicError(400, "Please provide your registered email or phone number.");
+  }
+  let org = null;
+  if (email) {
+    org = db.prepare("SELECT id, username, name FROM organizations WHERE LOWER(contact_email) = ?").get(email);
+  }
+  if (!org && phone) {
+    org = db.prepare("SELECT id, username, name FROM organizations WHERE contact_phone = ?").get(phone);
+  }
+  if (!org) {
+    throw publicError(404, "No account found with that email or phone number. Please check the details and try again.");
+  }
+  return { ok: true, username: org.username, name: org.name };
+}
+
+function orgForgotPasswordHint(body) {
+  const username = String(body.username || "").trim().toLowerCase();
+  if (!username) throw publicError(400, "Please enter your username.");
+  const org = db.prepare("SELECT id, name, password_hint FROM organizations WHERE username = ?").get(username);
+  if (!org) throw publicError(404, "No account found with that username.");
+  return { ok: true, hint: org.password_hint || "", name: org.name };
+}
+
+function orgChangePassword(orgPayload, body) {
+  const currentPassword = String(body.currentPassword || "");
+  const newPassword = String(body.newPassword || "");
+  const newHint = String(body.newHint || "").trim().slice(0, 200);
+  if (!currentPassword || !newPassword) {
+    throw publicError(400, "Current and new password are required.");
+  }
+  if (newPassword.length < 8) {
+    throw publicError(400, "New password must be at least 8 characters.");
+  }
+  const org = db.prepare("SELECT * FROM organizations WHERE id = ?").get(orgPayload.oid);
+  if (!org) throw publicError(404, "Organization not found.");
+  if (!verifyPassword(currentPassword, org.password_hash, org.password_salt)) {
+    throw publicError(401, "Current password is incorrect.");
+  }
+  const { hash, salt } = hashPassword(newPassword);
+  db.prepare("UPDATE organizations SET password_hash=?, password_salt=?, password_hint=?, updated_at=? WHERE id=?")
+    .run(hash, salt, newHint, isoNow(), org.id);
+  return { ok: true };
+}
+
+function adminResetOrgPassword(organizationId, body, actor) {
+  const org = db.prepare("SELECT * FROM organizations WHERE id = ?").get(organizationId);
+  if (!org) throw publicError(404, "Organization not found.");
+  const password = String(body.password || "");
+  if (password.length < 8) throw publicError(400, "Password must be at least 8 characters.");
+  const { hash, salt } = hashPassword(password);
+  db.prepare("UPDATE organizations SET password_hash=?, password_salt=?, updated_at=? WHERE id=?")
+    .run(hash, salt, isoNow(), organizationId);
+  writeAuditLog("reset_org_password", "organization", organizationId, `Password reset for ${org.name} (@${org.username})`, actor);
+  return { ok: true };
 }
 
 function getOrgProfile(orgPayload) {
