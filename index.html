@@ -3381,6 +3381,7 @@
           <li><a href="#incentives" data-i18n="nav-incentives">JanPrayas Samman</a></li>
           <li><a href="#volunteer" data-i18n="nav-volunteer">Volunteer</a></li>
           <li><a href="#donate" data-i18n="donate-badge">Donate</a></li>
+          <li><a href="#guide" data-i18n="nav-guide">Guide</a></li>
         </ul>
       </nav>
 
@@ -3404,6 +3405,7 @@
       <a href="#incentives" data-i18n="nav-incentives" onclick="closeMobileMenu()">JanPrayas Samman</a>
       <a href="#volunteer" data-i18n="nav-volunteer" onclick="closeMobileMenu()">Volunteer</a>
       <a href="#donate" data-i18n="donate-badge" onclick="closeMobileMenu()">Donate</a>
+      <a href="#guide" data-i18n="nav-guide" onclick="closeMobileMenu()">Guide</a>
       <button type="button" onclick="openAdminLogin(); closeMobileMenu();" data-i18n="nav-admin">Admin</button>
     </div>
   </header>
@@ -4335,7 +4337,6 @@
               <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-3">The "JanPrayas Fellow" title with a formal certificate.</span></li>
               <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-4">Preferential selection for exposure visits to other cities (e.g. Delhi, Hyderabad) or leading institutions, as such opportunities arise.</span></li>
               <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-5">Mentorship access to leading personalities from the district and beyond, where it can be arranged.</span></li>
-              <li><i class="fa-solid fa-check"></i><span data-i18n="samman-jansewak-6">Your verified volunteer record considered as a positive factor in local recruitment (e.g. Rozgar Sahayak, Anganwadi Worker), subject to the recruitment rules in force at that time.</span></li>
             </ul>
           </div>
 
@@ -4649,6 +4650,29 @@
       </div>
     </section>
 
+    <!-- ══ PORTAL GUIDE ══ -->
+    <section class="section" id="guide">
+      <div class="section-header">
+        <h2 data-i18n="guide-title">JanPrayas Portal Guide</h2>
+        <p data-i18n="guide-subtitle">Everything you need to know about using the portal — step by step, in plain language.</p>
+      </div>
+      <div style="max-width:860px;margin:0 auto">
+        <!-- Language + Search bar -->
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:24px">
+          <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+            <button id="guideLangEn" type="button" onclick="switchGuideLang('en')" style="padding:7px 16px;border:none;background:var(--navy,#1B3A6B);color:#fff;font-size:13px;cursor:pointer;font-weight:600">English</button>
+            <button id="guideLangHi" type="button" onclick="switchGuideLang('hi')" style="padding:7px 16px;border:none;background:transparent;color:var(--text);font-size:13px;cursor:pointer">हिन्दी</button>
+          </div>
+          <input id="guideSearch" type="search" placeholder="Search guide…" oninput="filterGuide(this.value)"
+            style="flex:1;min-width:180px;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;background:var(--surface-alt,#f8f9fa);color:var(--text)">
+        </div>
+        <!-- Guide content container -->
+        <div id="guideContent"></div>
+        <p id="guideNoResults" hidden style="color:var(--text-muted);font-size:14px;text-align:center;padding:32px 0">No matching topics found.</p>
+      </div>
+    </section>
+    <!-- ══ END PORTAL GUIDE ══ -->
+
     <section class="newsletter-bar">
       <div class="newsletter-inner">
         <h2 data-i18n="newsletter-title">Never miss a mission.</h2>
@@ -4783,7 +4807,13 @@
       </div>
       <div class="modal-body">
         <div class="passport-header">
-          <div class="passport-avatar" id="passportAvatar"></div>
+          <div style="position:relative;display:inline-block">
+            <div class="passport-avatar" id="passportAvatar" style="position:relative;overflow:hidden"></div>
+            <img id="passportAvatarPhoto" src="" alt="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%" />
+            <label title="Upload display picture" style="position:absolute;bottom:0;right:0;background:var(--navy);color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,0.3)">
+              📷<input type="file" id="passportPhotoInput" accept="image/*" style="display:none" onchange="handlePassportPhotoUpload(event)">
+            </label>
+          </div>
           <div class="passport-name" id="passportName"></div>
           <div id="passportCivicRank" style="margin:4px 0"></div>
           <div class="passport-area" id="passportArea"></div>
@@ -5131,6 +5161,7 @@
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="newsletter" data-i18n="admin-tab-newsletter">Newsletter</button>
           <button class="admin-tab-btn master-admin-only" type="button" data-admin-tab="users" data-i18n="admin-tab-users">Users &amp; Delegation</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="aiqueue">🤖 AI Queue</button>
+          <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="botlogs">💬 Bot Logs</button>
         </div>
 
         <div class="admin-pane active" id="adminPaneOverview">
@@ -5767,6 +5798,21 @@
             <div id="aiQueueContent">
               <p style="color:var(--text-muted);font-size:13px">Loading…</p>
             </div>
+          </div>
+        </div>
+
+        <div class="admin-pane" id="adminPaneBotlogs">
+          <div class="panel-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+              <h3 style="margin:0">💬 Portal Assistant — Conversation Log</h3>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input id="botLogsPhoneFilter" type="tel" maxlength="10" placeholder="Filter by phone…" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;background:var(--surface-alt,#f8f9fa);color:var(--text);width:160px">
+                <button class="btn btn-soft" type="button" onclick="loadBotLogs(document.getElementById('botLogsPhoneFilter').value)">Search</button>
+                <button class="btn btn-soft" type="button" onclick="document.getElementById('botLogsPhoneFilter').value='';loadBotLogs()">↻ All</button>
+              </div>
+            </div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Every question asked to the AI Portal Assistant and the answer it gave. Rate-limited to 5 messages per phone per week. Most recent first.</p>
+            <div id="botLogsContent"><p style="color:var(--text-muted);font-size:13px">Click ↻ All to load logs.</p></div>
           </div>
         </div>
 
@@ -6640,6 +6686,9 @@
       "gallery-empty": { en: "No mission photos have been uploaded yet. Check back after the next activity!", hi: "अभी तक कोई अभियान फोटो अपलोड नहीं हुई है। अगली गतिविधि के बाद फिर देखें!" },
       "nav-incentives": { en: "JanPrayas Samman", hi: "जनप्रयास सम्मान" },
       "nav-volunteer": { en: "Volunteer", hi: "स्वयंसेवक" },
+      "nav-guide": { en: "Guide", hi: "मार्गदर्शिका" },
+      "guide-title": { en: "JanPrayas Portal Guide", hi: "जनप्रयास पोर्टल मार्गदर्शिका" },
+      "guide-subtitle": { en: "Everything you need to know about using the portal — step by step, in plain language.", hi: "पोर्टल का उपयोग करने से जुड़ी सभी जानकारी — सरल भाषा में, चरण दर चरण।" },
       "nav-admin": { en: "Admin", hi: "प्रशासक" },
       "nav-join": { en: "Join Now", hi: "अभी जुड़ें" },
       "hero-badge": { en: "District Administration Initiative", hi: "जिला प्रशासन पहल" },
@@ -11425,7 +11474,16 @@
         .slice(0, 100)
         .map((volunteer) => `
           <tr>
-            <td>${escapeHtml(volunteer.name)}</td>
+            <td>
+              ${(() => {
+                const colors = ["#7C3AED","#059669","#DC2626","#D97706","#0284C7","#9D174D","#065F46","#92400E"];
+                const initials = volunteer.name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+                const bg = colors[volunteer.id % colors.length];
+                return volunteer.profilePhoto
+                  ? `<img src="${escapeHtml(volunteer.profilePhoto)}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;border:1px solid var(--border)">`
+                  : `<span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:${bg};color:#fff;font-size:12px;font-weight:700;vertical-align:middle;margin-right:6px">${escapeHtml(initials)}</span>`;
+              })()}${escapeHtml(volunteer.name)}
+            </td>
             <td>${escapeHtml(volunteer.phone)}</td>
             <td>${escapeHtml(volunteer.area || "-")}${volunteer.civicOrgs ? `<br><span style="font-size:11px;color:var(--muted)">🏛 ${escapeHtml(volunteer.civicOrgs)}</span>` : ""}</td>
             <td>${escapeHtml(volunteer.skills.join(", ") || "-")}</td>
@@ -11856,6 +11914,11 @@
         <div class="message-card" style="margin-top:20px">
           <div class="message-name">🏁 ${hi ? "गतिविधि पूर्ण हो गई?" : "Is this activity finished?"}</div>
           <div class="message-text">${hi ? "आयोजक या कोई भी नागरिक इस अभियान को पूर्ण/बंद करने का अनुरोध कर सकता है। एडमिन इसकी पुष्टि करेगा।" : "The organiser or any citizen can request that this mission be marked completed or closed. An admin will confirm it."}</div>
+          ${(mission.photos || []).length < 2 ? `
+          <div style="background:#FEF3C7;color:#92400E;padding:10px 12px;border-radius:8px;margin:10px 0;font-size:13px">
+            📷 <strong>${hi ? "पहले कम से कम 2 फोटो अपलोड करें" : "Upload at least 2 activity photos first"}</strong><br>
+            <span style="font-size:12px">${hi ? `अभी ${(mission.photos||[]).length} फोटो हैं। नीचे "गतिविधि फोटो" सेक्शन से अपलोड करें, फिर यहाँ वापस आएं।` : `Currently ${(mission.photos||[]).length} photo(s) uploaded. Use the "Activity Photos" section below, then return here.`}</span>
+          </div>` : ""}
           <form id="missionCompletionForm" style="margin-top:10px">
             <div class="form-group">
               <label for="missionCompletionName">${hi ? "आपका नाम" : "Your Name"}</label>
@@ -11865,7 +11928,7 @@
               <label for="missionCompletionNote">${hi ? "टिप्पणी (वैकल्पिक)" : "Note (optional)"}</label>
               <textarea id="missionCompletionNote" maxlength="300" placeholder="${hi ? "जैसे: कार्यक्रम सफलतापूर्वक संपन्न हुआ" : "e.g. Event was successfully held on schedule"}"></textarea>
             </div>
-            <button class="btn btn-soft" type="submit" style="width:100%">${hi ? "पूर्णता/समापन का अनुरोध करें" : "Request Completion / Closure"}</button>
+            <button class="btn btn-soft" type="submit" style="width:100%" ${(mission.photos||[]).length < 2 ? "disabled title=\"Upload at least 2 photos first\"" : ""}>${hi ? "पूर्णता/समापन का अनुरोध करें" : "Request Completion / Closure"}</button>
           </form>
         </div>
       `;
@@ -11930,8 +11993,18 @@
       if (!leader) return;
       const attended = Array.isArray(leader.attended) ? leader.attended : [];
       const completedActivities = attended.filter((entry) => entry && entry.completed);
-      document.getElementById("passportAvatar").textContent = leader.initials;
-      document.getElementById("passportAvatar").style.background = leader.color;
+      const avatarEl = document.getElementById("passportAvatar");
+      const avatarPhotoEl = document.getElementById("passportAvatarPhoto");
+      if (leader.profilePhoto) {
+        avatarEl.textContent = "";
+        avatarEl.style.background = "transparent";
+        avatarPhotoEl.src = leader.profilePhoto;
+        avatarPhotoEl.style.display = "block";
+      } else {
+        avatarEl.textContent = leader.initials;
+        avatarEl.style.background = leader.color;
+        avatarPhotoEl.style.display = "none";
+      }
       document.getElementById("passportName").textContent = leader.name;
       document.getElementById("passportArea").textContent = leader.area;
       document.getElementById("passportPoints").textContent = leader.points;
@@ -12041,6 +12114,7 @@
       renderMissions();
       renderLocationCoverage();
       renderGallery();
+      initGuide();
       renderStories();
       renderOrganizations();
       renderLeaders();
@@ -13558,7 +13632,8 @@
         data: "adminPaneData",
         newsletter: "adminPaneNewsletter",
         users: "adminPaneUsers",
-        aiqueue: "adminPaneAiqueue"
+        aiqueue: "adminPaneAiqueue",
+        botlogs: "adminPaneBotlogs"
       };
       Object.values(map).forEach((id) => { const el = document.getElementById(id); if (el) el.classList.remove("active"); });
       const pane = document.getElementById(map[tab]);
@@ -13568,6 +13643,7 @@
       if (tab === "audit") loadAuditLog();
       if (tab === "users") { loadAdminUsersList(); toggleNewUserScopeField(); }
       if (tab === "aiqueue") loadAiQueue();
+      if (tab === "botlogs") loadBotLogs();
       if (tab === "poster") renderPosterMissionOptions();
       if (tab === "post") applyCoordinatorPostLock();
       if (tab === "missions") renderAdminMissionsList();
@@ -13912,6 +13988,280 @@
         resultEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(error?.message || "Not found.")}</span>`;
       }
     }
+
+    async function handlePassportPhotoUpload(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const leader = activePassportLeader();
+      if (!leader) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const photoData = e.target.result;
+        try {
+          await apiRequest("/api/volunteers/upload-photo", {
+            method: "POST",
+            body: JSON.stringify({ name: leader.name, phone: leader.phone, photo: photoData })
+          });
+          // Update UI immediately
+          const avatarEl = document.getElementById("passportAvatar");
+          const avatarPhotoEl = document.getElementById("passportAvatarPhoto");
+          avatarEl.textContent = "";
+          avatarEl.style.background = "transparent";
+          avatarPhotoEl.src = photoData;
+          avatarPhotoEl.style.display = "block";
+          showToast("Display picture updated!", "📷");
+          // Update state so list reloads with new photo
+          if (state.activeLeaderId) {
+            const vol = state.volunteers?.find(v => v.id === state.activeLeaderId);
+            if (vol) vol.profilePhoto = photoData;
+          }
+        } catch (err) {
+          showToast(err?.message || "Upload failed.", "❌");
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ── Bot / Portal Assistant ─────────────────────────────────────────────
+    let _botPhoneConfirmed = "";
+
+    function toggleBotPanel() {
+      const panel = document.getElementById("botPanel");
+      panel.hidden = !panel.hidden;
+      if (!panel.hidden && !_botPhoneConfirmed) {
+        setTimeout(() => document.getElementById("botPhone")?.focus(), 80);
+      } else if (!panel.hidden && _botPhoneConfirmed) {
+        setTimeout(() => document.getElementById("botQuestion")?.focus(), 80);
+      }
+    }
+
+    function botSetPhone() {
+      const raw = (document.getElementById("botPhone")?.value || "").replace(/\D/g, "").slice(-10);
+      const statusEl = document.getElementById("botStatus");
+      if (raw.length < 10) {
+        statusEl.style.color = "var(--danger)";
+        statusEl.textContent = "Please enter a valid 10-digit mobile number.";
+        return;
+      }
+      _botPhoneConfirmed = raw;
+      statusEl.textContent = "";
+      document.getElementById("botPhoneGate").style.display = "none";
+      const chatInput = document.getElementById("botChatInput");
+      chatInput.hidden = false;
+      _appendBotMessage("bot", "Hello! I'm your JanPrayas Portal Assistant. Ask me anything about using the portal — registering as a volunteer, joining missions, how points work, or anything else. You have 5 free messages this week.");
+      setTimeout(() => document.getElementById("botQuestion")?.focus(), 80);
+    }
+
+    function _appendBotMessage(role, text) {
+      const container = document.getElementById("botMessages");
+      const bubble = document.createElement("div");
+      bubble.style.cssText = role === "bot"
+        ? "background:var(--surface-alt,#f0f4f8);border-radius:10px 10px 10px 2px;padding:9px 12px;font-size:13px;line-height:1.5;max-width:90%"
+        : "background:var(--navy,#1B3A6B);color:#fff;border-radius:10px 10px 2px 10px;padding:9px 12px;font-size:13px;line-height:1.5;max-width:90%;align-self:flex-end;margin-left:auto";
+      bubble.textContent = text;
+      container.appendChild(bubble);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function submitBotQuestion() {
+      const questionInput = document.getElementById("botQuestion");
+      const statusEl = document.getElementById("botStatus");
+      const question = (questionInput?.value || "").trim();
+      if (!question) return;
+      if (!_botPhoneConfirmed) { statusEl.textContent = "Please enter your phone number first."; return; }
+      questionInput.value = "";
+      questionInput.disabled = true;
+      statusEl.textContent = "Thinking…";
+      _appendBotMessage("user", question);
+      try {
+        const data = await apiRequest("/api/bot/chat", {
+          method: "POST",
+          body: JSON.stringify({ phone: _botPhoneConfirmed, question })
+        });
+        _appendBotMessage("bot", data.answer || "Sorry, no response.");
+        const rem = typeof data.remaining === "number" ? data.remaining : "";
+        statusEl.style.color = rem <= 1 ? "var(--danger)" : "var(--muted)";
+        statusEl.textContent = rem >= 0 ? `${rem} message${rem !== 1 ? "s" : ""} remaining this week` : "";
+      } catch (err) {
+        const msg = err?.message || "Could not connect to assistant.";
+        _appendBotMessage("bot", "⚠️ " + msg);
+        statusEl.style.color = "var(--danger)";
+        statusEl.textContent = "";
+      } finally {
+        questionInput.disabled = false;
+        questionInput.focus();
+      }
+    }
+
+    async function loadBotLogs(filterPhone) {
+      const token = getAdminToken();
+      if (!token) return;
+      const container = document.getElementById("botLogsContent");
+      if (!container) return;
+      container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading…</p>';
+      try {
+        const params = new URLSearchParams({ limit: 200 });
+        if (filterPhone) params.set("phone", filterPhone.replace(/\D/g, "").slice(-10));
+        const data = await apiRequest(`/api/admin/bot-logs?${params}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const logs = data.logs || [];
+        if (!logs.length) {
+          container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No conversations yet.</p>';
+          return;
+        }
+        container.innerHTML = logs.map(r => `
+          <div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:12px;font-weight:600;color:var(--navy)">📱 ${escapeHtml(r.phone)}</span>
+              <span style="font-size:11px;color:var(--text-muted)">${r.created_at || ""} &nbsp;·&nbsp; Week ${escapeHtml(r.week_key || "")}</span>
+            </div>
+            <div style="font-size:13px;margin-bottom:4px"><strong>Q:</strong> ${escapeHtml(r.question)}</div>
+            <div style="font-size:13px;color:var(--text-muted)"><strong>A:</strong> ${escapeHtml(r.answer)}</div>
+          </div>`).join("");
+      } catch (err) {
+        container.innerHTML = `<p style="color:var(--danger);font-size:13px">${escapeHtml(err?.message || "Failed to load logs.")}</p>`;
+      }
+    }
+    // ── End Bot / Portal Assistant ─────────────────────────────────────────
+
+    // ── Portal Guide ───────────────────────────────────────────────────────
+    const GUIDE_TOPICS = [
+      {
+        id: "about",
+        en: { title: "What is the JanPrayas Portal?", body: "The JanPrayas Portal is an official civic-engagement platform run by the district administration. It connects citizens, organisations, and government bodies to plan and execute community missions together. Citizens can volunteer, donate items, host funded missions, and track public service contributions — all in one place." },
+        hi: { title: "जनप्रयास पोर्टल क्या है?", body: "जनप्रयास पोर्टल एक आधिकारिक नागरिक-जुड़ाव मंच है जिसे जिला प्रशासन द्वारा संचालित किया जाता है। यह नागरिकों, संगठनों और सरकारी निकायों को सामुदायिक अभियानों की योजना बनाने और उन्हें क्रियान्वित करने के लिए जोड़ता है। नागरिक स्वयंसेवक बन सकते हैं, वस्तुएँ दान कर सकते हैं, वित्त पोषित अभियान आयोजित कर सकते हैं और सार्वजनिक सेवा के योगदान को ट्रैक कर सकते हैं।" }
+      },
+      {
+        id: "volunteer",
+        en: { title: "How do I register as a volunteer?", body: "Click 'Join Now' or scroll to the 'Volunteer' section. Fill in your name, phone number, area, and optional details like skills or civic organisations you belong to. Submit the form — your registration is saved immediately. You can look up your profile any time using your name and phone number via 'My Passport & Certificate'." },
+        hi: { title: "स्वयंसेवक के रूप में कैसे पंजीकरण करें?", body: "'अभी जुड़ें' पर क्लिक करें या 'स्वयंसेवक' अनुभाग तक स्क्रॉल करें। अपना नाम, फोन नंबर, क्षेत्र और वैकल्पिक विवरण जैसे कौशल या संगठन भरें। फॉर्म सबमिट करें — पंजीकरण तुरंत सहेज लिया जाएगा। आप 'मेरा पासपोर्ट और प्रमाणपत्र' के माध्यम से नाम और फोन से कभी भी अपनी प्रोफ़ाइल देख सकते हैं।" }
+      },
+      {
+        id: "passport",
+        en: { title: "What is the Volunteer Passport?", body: "The Volunteer Passport is your personal service record. Open it from the hero section by entering your name and phone. It shows your missions participated in, check-in history, JanPrayas points, earned badges, and lets you download your participation certificate. You can also set a display picture from here." },
+        hi: { title: "स्वयंसेवक पासपोर्ट क्या है?", body: "स्वयंसेवक पासपोर्ट आपका व्यक्तिगत सेवा रिकॉर्ड है। हीरो सेक्शन में नाम और फोन डालकर इसे खोलें। इसमें आपके भाग लिए गए अभियान, चेक-इन इतिहास, जनप्रयास अंक, अर्जित बैज और भागीदारी प्रमाणपत्र डाउनलोड करने का विकल्प होता है। आप यहाँ से अपनी प्रोफ़ाइल फोटो भी सेट कर सकते हैं।" }
+      },
+      {
+        id: "missions",
+        en: { title: "How do I find and join a mission?", body: "Browse the 'Missions' section on the homepage. Each card shows the mission name, date, location, category, and how many volunteers are needed. Click 'Details' to read more. To participate, attend the mission on the ground — your coordinator will check you in using a QR code or walk-in registration. You do not need to pre-book online." },
+        hi: { title: "अभियान कैसे ढूंढें और उसमें कैसे शामिल हों?", body: "होमपेज पर 'अभियान' सेक्शन में जाएँ। प्रत्येक कार्ड पर अभियान का नाम, तारीख, स्थान, श्रेणी और आवश्यक स्वयंसेवकों की संख्या दिखती है। अधिक पढ़ने के लिए 'विवरण' पर क्लिक करें। भाग लेने के लिए मिशन स्थल पर जाएँ — समन्वयक QR कोड या वॉक-इन से आपको चेक-इन करेगा। ऑनलाइन पूर्व बुकिंग की जरूरत नहीं।" }
+      },
+      {
+        id: "checkin",
+        en: { title: "How does venue check-in work?", body: "At the mission venue the coordinator opens the 'Check In at Venue' tool. Volunteers scan the QR code displayed on the coordinator's screen, or the coordinator can search by name and manually check them in. A selfie is taken to confirm your presence. Your participation is recorded instantly." },
+        hi: { title: "स्थल चेक-इन कैसे काम करता है?", body: "मिशन स्थल पर समन्वयक 'स्थल पर चेक-इन' टूल खोलता है। स्वयंसेवक समन्वयक की स्क्रीन पर QR कोड स्कैन करते हैं, या समन्वयक नाम से खोजकर मैन्युअली चेक-इन कर सकता है। उपस्थिति की पुष्टि के लिए सेल्फी ली जाती है। भागीदारी तुरंत दर्ज हो जाती है।" }
+      },
+      {
+        id: "points",
+        en: { title: "How are JanPrayas points calculated?", body: "You earn points for each mission you attend. Base points depend on the mission category — typically 10–50 per attendance. Bonus multipliers apply for special roles (coordinator, skilled volunteer), consecutive participation streaks, and high-priority community missions. Points are shown in your passport and on the public leaderboard." },
+        hi: { title: "जनप्रयास अंक कैसे गिने जाते हैं?", body: "हर अभियान में भाग लेने पर अंक मिलते हैं। आधार अंक अभियान की श्रेणी पर निर्भर होते हैं — आमतौर पर प्रति उपस्थिति 10–50 अंक। विशेष भूमिकाओं (समन्वयक, कुशल स्वयंसेवक), लगातार भागीदारी और उच्च-प्राथमिकता अभियानों के लिए अतिरिक्त गुणक भी लागू होते हैं। अंक आपके पासपोर्ट और सार्वजनिक लीडरबोर्ड पर दिखाई देते हैं।" }
+      },
+      {
+        id: "certificate",
+        en: { title: "How do I download my certificate?", body: "Open your Volunteer Passport (enter name and phone in the hero section). On the Passport screen, click 'Download Certificate'. A PDF-ready certificate is generated with your name, missions attended, total points, and district seal. You can also download a Leader ID Card from the same screen." },
+        hi: { title: "प्रमाणपत्र कैसे डाउनलोड करें?", body: "स्वयंसेवक पासपोर्ट खोलें (हीरो सेक्शन में नाम और फोन डालें)। पासपोर्ट स्क्रीन पर 'प्रमाणपत्र डाउनलोड करें' पर क्लिक करें। आपके नाम, भाग लिए गए अभियानों, कुल अंकों और जिला मुहर के साथ PDF-तैयार प्रमाणपत्र तैयार होता है। उसी स्क्रीन से लीडर आईडी कार्ड भी डाउनलोड किया जा सकता है।" }
+      },
+      {
+        id: "org",
+        en: { title: "How do organisations use the portal?", body: "An organisation can register under 'Organization Registration' on the homepage. After admin approval, the org can log in, see their profile, list their missions, and track their civic contribution points. Organisations can also host missions by linking to the 'Host Mission' form. Use the 🏢 Org Login or 📝 Register Org buttons in the hero section for quick access." },
+        hi: { title: "संगठन पोर्टल का उपयोग कैसे करते हैं?", body: "एक संगठन होमपेज पर 'संगठन पंजीकरण' के तहत पंजीकरण कर सकता है। व्यवस्थापक की मंजूरी के बाद, संगठन लॉग इन कर सकता है, प्रोफ़ाइल देख सकता है, अपने अभियान सूचीबद्ध कर सकता है और अंकों को ट्रैक कर सकता है। संगठन 'अभियान आयोजित करें' फॉर्म से भी अभियान जोड़ सकते हैं। त्वरित पहुँच के लिए हीरो सेक्शन में 🏢 Org Login या 📝 Register Org बटन का उपयोग करें।" }
+      },
+      {
+        id: "orgpassword",
+        en: { title: "I forgot my organisation username or password", body: "On the Org Login form, click 'Forgot username?' and enter the registered email or phone to get your username. Click 'Forgot password?' and enter your username to receive the password hint you set at registration. If you still cannot log in, ask the district admin to reset your password from the admin panel." },
+        hi: { title: "मैं अपना संगठन का उपयोगकर्ता नाम या पासवर्ड भूल गया", body: "Org Login फॉर्म पर 'Forgot username?' पर क्लिक करें और पंजीकृत ईमेल या फोन दर्ज करें। 'Forgot password?' पर क्लिक करें और पंजीकरण के समय सेट किए गए पासवर्ड संकेत के लिए उपयोगकर्ता नाम दर्ज करें। अगर फिर भी लॉगिन न हो, जिला व्यवस्थापक से अपना पासवर्ड रीसेट करवाएँ।" }
+      },
+      {
+        id: "donate",
+        en: { title: "How do I donate items or resources?", body: "Scroll to the 'Donate' section and fill in what you'd like to contribute — clothes, stationery, books, food items, or other materials. Provide your contact details and a pickup address. The admin team will contact you within 48 hours to coordinate collection. Your donation is recorded and acknowledged publicly." },
+        hi: { title: "वस्तुएँ या संसाधन दान कैसे करें?", body: "'दान' सेक्शन पर स्क्रॉल करें और वह भरें जो आप योगदान करना चाहते हैं — कपड़े, स्टेशनरी, किताबें, खाने की चीजें या अन्य सामग्री। अपने संपर्क विवरण और पिकअप पते दर्ज करें। व्यवस्थापक टीम 48 घंटों के भीतर संग्रह के लिए संपर्क करेगी। आपका दान दर्ज और सार्वजनिक रूप से स्वीकृत किया जाता है।" }
+      },
+      {
+        id: "hostmission",
+        en: { title: "How do I request or host a mission?", body: "Scroll to 'Host Mission' or click the nav link. Fill in the mission idea form with a title, description, location, expected date, and your contact details. An organisation or admin will review your request and, if approved, publish it as an official mission on the portal. You'll be kept informed of the status." },
+        hi: { title: "अभियान का अनुरोध या आयोजन कैसे करें?", body: "'अभियान आयोजित करें' पर स्क्रॉल करें या नेव लिंक पर क्लिक करें। मिशन आइडिया फॉर्म में शीर्षक, विवरण, स्थान, अपेक्षित तारीख और संपर्क विवरण भरें। कोई संगठन या व्यवस्थापक आपके अनुरोध की समीक्षा करेगा और, यदि अनुमोदित हो, तो इसे पोर्टल पर आधिकारिक अभियान के रूप में प्रकाशित करेगा।" }
+      },
+      {
+        id: "janprayas",
+        en: { title: "What is the JanPrayas Samman programme?", body: "Jan Sewak (Dedicated Volunteer) is the highest recognition tier on the portal. Volunteers who reach the required point threshold are awarded the Jan Sewak title, a framed certificate, a personalised ID card, and priority invitations to special district events. The criteria are visible in the 'JanPrayas Samman' section on the homepage." },
+        hi: { title: "जनप्रयास सम्मान कार्यक्रम क्या है?", body: "जन सेवक (समर्पित स्वयंसेवक) पोर्टल पर सर्वोच्च मान्यता स्तर है। आवश्यक अंक सीमा तक पहुँचने वाले स्वयंसेवकों को जन सेवक उपाधि, फ्रेम किया हुआ प्रमाणपत्र, व्यक्तिगत आईडी कार्ड और जिले के विशेष कार्यक्रमों में प्राथमिकता आमंत्रण दिया जाता है। मानदंड होमपेज पर 'जनप्रयास सम्मान' सेक्शन में देखे जा सकते हैं।" }
+      },
+      {
+        id: "leaderboard",
+        en: { title: "How does the leaderboard work?", body: "The public leaderboard ranks all registered volunteers by total JanPrayas points. It updates live as check-ins are recorded. The top contributors each month are highlighted. Your rank is shown in your passport. The leaderboard can be viewed in the 'Leaders' section without logging in." },
+        hi: { title: "लीडरबोर्ड कैसे काम करता है?", body: "सार्वजनिक लीडरबोर्ड सभी पंजीकृत स्वयंसेवकों को उनके कुल जनप्रयास अंकों के आधार पर रैंक करता है। चेक-इन दर्ज होते ही यह लाइव अपडेट होता है। हर महीने के शीर्ष योगदानकर्ताओं को हाइलाइट किया जाता है। आपकी रैंक आपके पासपोर्ट में दिखती है।" }
+      },
+      {
+        id: "missionclosure",
+        en: { title: "How is a mission closed / completed?", body: "Once a mission is completed on the ground, the coordinator uploads at least 2 activity photos as evidence (from the mission details panel). Then the 'Request Closure' button becomes active. After submitting the request, the admin panel receives a notification and can officially mark the mission as closed. Photos are required before the request can be sent." },
+        hi: { title: "अभियान कैसे बंद/पूर्ण होता है?", body: "जमीन पर अभियान पूरा होने के बाद समन्वयक कम से कम 2 गतिविधि फोटो प्रमाण के रूप में अपलोड करता है (अभियान विवरण पैनल से)। तब 'बंद करने का अनुरोध' बटन सक्रिय होता है। अनुरोध सबमिट होने के बाद एडमिन पैनल को सूचना मिलती है और अभियान को आधिकारिक रूप से बंद कर सकता है।" }
+      },
+      {
+        id: "photos",
+        en: { title: "How do I upload photos for a mission?", body: "Open the mission from the admin or coordinator view and find the 'Upload Photos' option in the mission details panel. Click the camera icon, select an image from your device, add an optional caption, and submit. Photos are shown in the public Gallery section and count toward the 2-photo requirement for mission closure." },
+        hi: { title: "अभियान के लिए फोटो कैसे अपलोड करें?", body: "एडमिन या समन्वयक व्यू से अभियान खोलें और अभियान विवरण पैनल में 'फोटो अपलोड करें' विकल्प खोजें। कैमरा आइकन पर क्लिक करें, अपने डिवाइस से एक छवि चुनें, वैकल्पिक कैप्शन जोड़ें और सबमिट करें। फोटो सार्वजनिक गैलरी में दिखाई देती हैं और अभियान बंद करने की 2-फोटो आवश्यकता के लिए गिनी जाती हैं।" }
+      },
+      {
+        id: "bothelp",
+        en: { title: "How do I use the AI Portal Assistant?", body: "Click the 🤖 button at the bottom-left of any page to open the Portal Assistant. Enter your 10-digit mobile number to start. You get 5 free questions per week (tied to your phone number). The assistant answers only portal-related questions — how to register, points, missions, certificates, etc. The admin team can review all conversations in the Admin › Bot Logs panel." },
+        hi: { title: "AI पोर्टल सहायक का उपयोग कैसे करें?", body: "पोर्टल सहायक खोलने के लिए किसी भी पृष्ठ के नीचे-बाएँ 🤖 बटन पर क्लिक करें। शुरू करने के लिए अपना 10-अंकीय मोबाइल नंबर दर्ज करें। आपको प्रति सप्ताह 5 मुफ्त प्रश्न मिलते हैं (आपके फोन नंबर से जुड़े)। सहायक केवल पोर्टल संबंधित प्रश्नों का उत्तर देता है। व्यवस्थापक टीम Admin › Bot Logs पैनल में सभी बातचीत की समीक्षा कर सकती है।" }
+      },
+      {
+        id: "admin",
+        en: { title: "How does the Admin panel work?", body: "Click 'Admin' in the top navigation bar and log in with your credentials. The admin panel has tabs for: Overview (stats), Missions, Post Mission, Volunteers (with photos and check-ins), Organizations, Announcements, Analytics, Exports, Audit Log, AI Queue, Bot Logs, and more. Super-admin accounts can manage users, branding, locations, and all system settings." },
+        hi: { title: "एडमिन पैनल कैसे काम करता है?", body: "शीर्ष नेवबार में 'प्रशासक' पर क्लिक करें और अपने क्रेडेंशियल से लॉग इन करें। एडमिन पैनल में टैब हैं: अवलोकन (आँकड़े), अभियान, अभियान पोस्ट, स्वयंसेवक (फोटो और चेक-इन के साथ), संगठन, घोषणाएँ, विश्लेषण, निर्यात, ऑडिट लॉग, AI कतार, Bot Logs, और अधिक। सुपर-एडमिन खाते उपयोगकर्ताओं, ब्रांडिंग, स्थानों और सभी सिस्टम सेटिंग्स को प्रबंधित कर सकते हैं।" }
+      },
+      {
+        id: "privacy",
+        en: { title: "Is my data safe on the portal?", body: "The portal stores only the information you voluntarily provide: name, phone, area, and civic details. Phone numbers are used solely for identification and check-in purposes. No personal data is shared with third parties. Profile photos are stored securely. The admin can view volunteer records for operational purposes only." },
+        hi: { title: "क्या पोर्टल पर मेरा डेटा सुरक्षित है?", body: "पोर्टल केवल वही जानकारी संग्रहीत करता है जो आप स्वेच्छा से देते हैं: नाम, फोन, क्षेत्र और नागरिक विवरण। फोन नंबरों का उपयोग केवल पहचान और चेक-इन के लिए किया जाता है। कोई व्यक्तिगत डेटा तीसरे पक्ष के साथ साझा नहीं किया जाता। प्रोफाइल फोटो सुरक्षित रूप से संग्रहीत की जाती हैं। व्यवस्थापक केवल परिचालन उद्देश्यों के लिए स्वयंसेवक रिकॉर्ड देख सकता है।" }
+      }
+    ];
+
+    let _guideLang = "en";
+
+    function switchGuideLang(lang) {
+      _guideLang = lang;
+      document.getElementById("guideLangEn").style.background = lang === "en" ? "var(--navy,#1B3A6B)" : "transparent";
+      document.getElementById("guideLangEn").style.color = lang === "en" ? "#fff" : "var(--text)";
+      document.getElementById("guideLangHi").style.background = lang === "hi" ? "var(--navy,#1B3A6B)" : "transparent";
+      document.getElementById("guideLangHi").style.color = lang === "hi" ? "#fff" : "var(--text)";
+      filterGuide(document.getElementById("guideSearch")?.value || "");
+    }
+
+    function filterGuide(query) {
+      const q = (query || "").toLowerCase().trim();
+      const container = document.getElementById("guideContent");
+      const noResults = document.getElementById("guideNoResults");
+      if (!container) return;
+      const filtered = GUIDE_TOPICS.filter(t => {
+        const item = t[_guideLang];
+        return !q || item.title.toLowerCase().includes(q) || item.body.toLowerCase().includes(q);
+      });
+      noResults.hidden = filtered.length > 0;
+      container.innerHTML = filtered.map(t => {
+        const item = t[_guideLang];
+        const bodyHtml = q ? escapeHtml(item.body).replace(
+          new RegExp("(" + escapeHtml(q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi"),
+          '<mark style="background:rgba(255,193,7,0.4);border-radius:2px">$1</mark>'
+        ) : escapeHtml(item.body);
+        return `
+          <details class="guide-topic" style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden">
+            <summary style="padding:14px 16px;cursor:pointer;font-weight:600;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center;background:var(--card-bg,#fff);user-select:none">
+              ${escapeHtml(item.title)}
+              <span style="font-size:12px;color:var(--text-muted);margin-left:8px">▼</span>
+            </summary>
+            <div style="padding:14px 16px;font-size:14px;line-height:1.7;color:var(--text);background:var(--surface-alt,#f8f9fa);border-top:1px solid var(--border)">${bodyHtml}</div>
+          </details>`;
+      }).join("");
+      if (q) container.querySelectorAll("details").forEach(d => d.open = true);
+    }
+
+    function initGuide() {
+      filterGuide("");
+    }
+    // ── End Portal Guide ───────────────────────────────────────────────────
 
     async function submitOrgChangePassword() {
       const currentPassword = document.getElementById("orgCurrentPassword").value;
@@ -15391,6 +15741,39 @@
   <button id="floatingCheckIn" type="button" onclick="openModal('checkInModal')">
     ✅ <span id="floatingCheckInLabel">Check In</span>
   </button>
+
+  <!-- AI Portal Assistant -->
+  <div id="botWidget" style="position:fixed;bottom:24px;left:24px;z-index:1000;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+    <div id="botPanel" hidden style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);width:320px;max-height:480px;display:flex;flex-direction:column;overflow:hidden">
+      <div style="background:var(--navy,#1B3A6B);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:20px">🤖</span>
+          <div>
+            <div style="font-weight:700;font-size:14px">JanPrayas Assistant</div>
+            <div style="font-size:11px;opacity:0.75">Portal guide · 5 questions/week</div>
+          </div>
+        </div>
+        <button type="button" onclick="document.getElementById('botPanel').hidden=true" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1">✕</button>
+      </div>
+      <div id="botMessages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;min-height:160px">
+        <div style="background:var(--surface-alt,#f8f9fa);border-radius:10px;padding:10px 12px;font-size:13px">
+          👋 Hi! I can answer questions about registering, missions, check-ins, certificates, and other portal features. <strong>5 questions per week</strong> per mobile number.
+        </div>
+      </div>
+      <div style="padding:10px 12px;border-top:1px solid var(--border)">
+        <div id="botPhoneGate" style="display:flex;flex-direction:column;gap:6px">
+          <input id="botPhone" type="tel" maxlength="10" placeholder="Enter your mobile number to begin" style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;background:var(--surface-alt,#f8f9fa);color:var(--text);width:100%;box-sizing:border-box">
+          <button type="button" class="btn btn-primary" style="font-size:13px;width:100%" onclick="botSetPhone()">Start</button>
+        </div>
+        <div id="botChatInput" hidden style="display:flex;gap:6px">
+          <input id="botQuestion" type="text" maxlength="300" placeholder="Ask about the portal…" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;background:var(--surface-alt,#f8f9fa);color:var(--text)" onkeydown="if(event.key==='Enter')submitBotQuestion()">
+          <button type="button" class="btn btn-primary" style="padding:8px 12px;font-size:16px" onclick="submitBotQuestion()">➤</button>
+        </div>
+        <div id="botStatus" style="font-size:11px;color:var(--muted);margin-top:4px;text-align:center"></div>
+      </div>
+    </div>
+    <button type="button" onclick="toggleBotPanel()" style="background:var(--navy,#1B3A6B);color:#fff;border:none;border-radius:50%;width:52px;height:52px;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(27,58,107,0.45);display:flex;align-items:center;justify-content:center" title="Portal Assistant">🤖</button>
+  </div>
   <script>
     (function () {
       const btn = document.getElementById("floatingCheckIn");

@@ -270,7 +270,8 @@ function getMyPassport(body) {
       longestStreak: stats.longestStreak,
       position,
       totalVolunteers,
-      memberSince: profile.first_registered_at || ""
+      memberSince: profile.first_registered_at || "",
+      profilePhoto: profile.profile_photo || ""
     }
   };
 }
@@ -1048,6 +1049,19 @@ try { db.exec("ALTER TABLE admin_users ADD COLUMN can_export_data INTEGER NOT NU
 try { db.exec("ALTER TABLE volunteer_participations ADD COLUMN ai_flag TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try { db.exec("ALTER TABLE admin_users ADD COLUMN can_float_missions INTEGER NOT NULL DEFAULT 1"); } catch(e) {}
 try { db.exec("ALTER TABLE organizations ADD COLUMN password_hint TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try { db.exec("ALTER TABLE volunteer_profiles ADD COLUMN profile_photo TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS bot_conversations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL,
+      question TEXT NOT NULL,
+      answer TEXT NOT NULL,
+      week_key TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+} catch(e) {}
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
@@ -1580,6 +1594,21 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/volunteers/passport") {
       const body = await readJsonBody(req);
       return sendJson(res, 200, getMyPassport(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/volunteers/upload-photo") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, uploadVolunteerPhoto(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/bot/chat") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, await botChat(body));
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/admin/bot-logs") {
+      requireAdmin(req);
+      return sendJson(res, 200, getBotLogs(url.searchParams));
     }
 
     // Public certificate/ID-card verification — what the QR code on a
@@ -3319,6 +3348,7 @@ function buildBootstrapPayload(isAdmin = false) {
     skills: safeJsonArray(volunteer.skills_json),
     mission: "",
     points: volunteerStatsMap.get(volunteer.id)?.points || POINTS.register,
+    profilePhoto: volunteer.profile_photo || "",
     date: new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric" }).format(new Date(volunteer.last_active_at || volunteer.first_registered_at || new Date()))
   }));
 
@@ -4276,6 +4306,77 @@ function adminResetOrgPassword(organizationId, body, actor) {
     .run(hash, salt, isoNow(), organizationId);
   writeAuditLog("reset_org_password", "organization", organizationId, `Password reset for ${org.name} (@${org.username})`, actor);
   return { ok: true };
+}
+
+function uploadVolunteerPhoto(body) {
+  const name = String(body.name || "").trim();
+  const phone = String(body.phone || "").trim();
+  const photoData = String(body.photo || "");
+  if (!name || !phone) throw publicError(400, "Name and phone are required.");
+  if (!photoData.startsWith("data:image/")) throw publicError(400, "Invalid image format.");
+  if (photoData.length > 500000) throw publicError(400, "Photo is too large. Please use a smaller image (under 350 KB).");
+  const profile = db.prepare(
+    "SELECT * FROM volunteer_profiles WHERE normalized_name = ? AND normalized_phone = ? LIMIT 1"
+  ).get(normalizeVolunteerName(name), normalizeVolunteerPhone(phone));
+  if (!profile) throw publicError(404, "No volunteer found with that name and phone number.");
+  db.prepare("UPDATE volunteer_profiles SET profile_photo = ?, last_active_at = ? WHERE id = ?")
+    .run(photoData, isoNow(), profile.id);
+  return { ok: true };
+}
+
+function getISOWeekKey() {
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
+
+const BOT_WEEKLY_LIMIT = 5;
+
+async function botChat(body) {
+  const phone = String(body.phone || "").trim().replace(/\D/g, "").slice(-10);
+  const question = String(body.question || "").trim().slice(0, 500);
+  if (!phone || phone.length < 10) throw publicError(400, "Please enter a valid 10-digit phone number to use the assistant.");
+  if (!question) throw publicError(400, "Please enter a question.");
+  const weekKey = getISOWeekKey();
+  const usedThisWeek = db.prepare("SELECT COUNT(*) AS n FROM bot_conversations WHERE phone = ? AND week_key = ?").get(phone, weekKey).n;
+  if (usedThisWeek >= BOT_WEEKLY_LIMIT) {
+    throw publicError(429, `You have used all ${BOT_WEEKLY_LIMIT} free assistant messages for this week. Your limit resets on Monday.`);
+  }
+  const systemPrompt = `You are the JanPrayas Portal Assistant — a helpful, concise guide for the JanPrayas Citizen Engagement Portal (janprayas.in), a district-level civic action platform run by the district administration.
+
+You ONLY answer questions about the JanPrayas portal and its features:
+- How to register as a volunteer
+- How to check in to a mission using a QR code or walk-in
+- How to view a volunteer passport and download participation certificates or ID cards
+- How missions/activities work, categories, how to join or track
+- How organisations (NGOs, civic groups) can sign up, log in, post missions
+- What the points/ranks system (Nagarik Sevak, Prabhari Sevak, Jan Sewak, Lok Nayak) means
+- How the leaderboard works
+- How admin review / pending check-in works
+- Anything else visible on the portal
+
+STRICTLY REFUSE any question not related to the JanPrayas portal. Respond: "I can only help with questions about the JanPrayas portal. Please ask something about registering, missions, check-in, certificates, or other portal features."
+
+Keep answers short and practical (2-5 sentences). Respond in the same language the user writes in (Hindi or English).`;
+
+  const answer = await callGeminiRaw(systemPrompt, question, 400);
+  const finalAnswer = answer || "Sorry, I could not generate a response right now. Please try again shortly, or contact the district office directly.";
+  db.prepare("INSERT INTO bot_conversations (phone, question, answer, week_key, created_at) VALUES (?, ?, ?, ?, ?)").run(phone, question, finalAnswer, weekKey, isoNow());
+  const remaining = BOT_WEEKLY_LIMIT - usedThisWeek - 1;
+  return { ok: true, answer: finalAnswer, remaining };
+}
+
+function getBotLogs(params) {
+  const limit = Math.min(Number(params.get("limit") || 100), 500);
+  const phone = params.get("phone") || "";
+  const rows = phone
+    ? db.prepare("SELECT * FROM bot_conversations WHERE phone = ? ORDER BY id DESC LIMIT ?").all(phone, limit)
+    : db.prepare("SELECT * FROM bot_conversations ORDER BY id DESC LIMIT ?").all(limit);
+  return { logs: rows };
 }
 
 function getOrgProfile(orgPayload) {
@@ -5528,16 +5629,11 @@ function requestMissionCompletion(missionId, body) {
   const requestedBy = String(body.requestedBy || "").trim().slice(0, 100);
   const note = String(body.note || "").trim().slice(0, 300);
   if (!requestedBy) throw publicError(400, "Your name is required to request completion.");
-  // Anti-forgery check: a citizen- or NGO-hosted (i.e. non-admin-created)
-  // mission cannot request the "completed" state — the state that unlocks
-  // auto-generated certificates for its volunteers — without at least one
-  // photo from the activity already on record for the admin reviewer to see.
-  // Admin-created missions are exempt since an admin already vouches for them.
-  if (row.source_type === "community") {
-    const photoCount = db.prepare("SELECT COUNT(*) AS n FROM mission_photos WHERE mission_id = ?").get(missionId).n;
-    if (photoCount < 1) {
-      throw publicError(400, "Please upload at least one photo from the activity first, so the district administration can verify it before marking it complete.");
-    }
+  // Require at least 2 activity photos before any closure request can be submitted,
+  // so the admin reviewer always has visual evidence of the mission happening.
+  const photoCount = db.prepare("SELECT COUNT(*) AS n FROM mission_photos WHERE mission_id = ?").get(missionId).n;
+  if (photoCount < 2) {
+    throw publicError(400, `Please upload at least 2 photos from the completed activity first (${photoCount} uploaded so far). The district administration needs visual evidence before confirming closure.`);
   }
   db.prepare(`
     UPDATE missions SET completion_requested = 1, completion_requested_by = ?, completion_requested_note = ?
