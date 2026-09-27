@@ -3372,6 +3372,7 @@
 
       <nav>
         <ul class="nav-links">
+          <li><a href="#guide" data-i18n="nav-guide">JanPrayas Guide</a></li>
           <li><a href="#missions" data-i18n="nav-missions">Missions</a></li>
           <li><a href="#host-mission" data-i18n="nav-funding">Host Mission</a></li>
           <li><a href="#showcase" data-i18n="nav-showcase">Showcase</a></li>
@@ -3381,7 +3382,7 @@
           <li><a href="#incentives" data-i18n="nav-incentives">JanPrayas Samman</a></li>
           <li><a href="#volunteer" data-i18n="nav-volunteer">Volunteer</a></li>
           <li><a href="#donate" data-i18n="donate-badge">Donate</a></li>
-          <li><a href="#guide" data-i18n="nav-guide">Guide</a></li>
+          <li><a href="#feedback" data-i18n="nav-feedback">Feedback</a></li>
         </ul>
       </nav>
 
@@ -3396,6 +3397,7 @@
     </div>
 
     <div class="mobile-menu" id="mobileMenu">
+      <a href="#guide" data-i18n="nav-guide" onclick="closeMobileMenu()">JanPrayas Guide</a>
       <a href="#missions" data-i18n="nav-missions" onclick="closeMobileMenu()">Missions</a>
       <a href="#host-mission" data-i18n="nav-funding" onclick="closeMobileMenu()">Host Mission</a>
       <a href="#showcase" data-i18n="nav-showcase" onclick="closeMobileMenu()">Showcase</a>
@@ -3405,7 +3407,7 @@
       <a href="#incentives" data-i18n="nav-incentives" onclick="closeMobileMenu()">JanPrayas Samman</a>
       <a href="#volunteer" data-i18n="nav-volunteer" onclick="closeMobileMenu()">Volunteer</a>
       <a href="#donate" data-i18n="donate-badge" onclick="closeMobileMenu()">Donate</a>
-      <a href="#guide" data-i18n="nav-guide" onclick="closeMobileMenu()">Guide</a>
+      <a href="#feedback" data-i18n="nav-feedback" onclick="closeMobileMenu()">Feedback</a>
       <button type="button" onclick="openAdminLogin(); closeMobileMenu();" data-i18n="nav-admin">Admin</button>
     </div>
   </header>
@@ -4650,6 +4652,64 @@
       </div>
     </section>
 
+    <!-- ══ FEEDBACK ══ -->
+    <section class="section alt" id="feedback">
+      <div class="section-header">
+        <h2 data-i18n="feedback-title">Share Your Feedback</h2>
+        <p data-i18n="feedback-subtitle">Send us a comment, suggestion, complaint or appreciation. Your voice helps improve the portal and district services.</p>
+      </div>
+      <div style="max-width:640px;margin:0 auto">
+        <div class="panel-card" id="feedbackFormCard">
+          <div class="form-group">
+            <label for="fbName" data-i18n="feedback-name-label">Your Name *</label>
+            <input id="fbName" type="text" placeholder="Full name" maxlength="150">
+          </div>
+          <div class="form-group">
+            <label for="fbPhone" data-i18n="feedback-phone-label">Mobile Number *</label>
+            <input id="fbPhone" type="tel" maxlength="10" placeholder="10-digit number">
+          </div>
+          <div class="form-group">
+            <label for="fbType" data-i18n="feedback-type-label">Type of Feedback *</label>
+            <select id="fbType">
+              <option value="comment">💬 General Comment</option>
+              <option value="suggestion">💡 Suggestion / Idea</option>
+              <option value="complaint">⚠️ Complaint</option>
+              <option value="appreciation">🙏 Appreciation</option>
+              <option value="query">❓ Query / Question</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="fbMessage" data-i18n="feedback-message-label">Your Message *</label>
+            <textarea id="fbMessage" rows="4" maxlength="2000" placeholder="Describe your feedback in detail…"></textarea>
+          </div>
+          <div class="form-group">
+            <label data-i18n="feedback-photos-label">Attach Photos (optional, max 2 images)</label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:110px;height:90px;border:2px dashed var(--border);border-radius:10px;cursor:pointer;font-size:12px;color:var(--text-muted);text-align:center;gap:4px;background:var(--surface-alt,#f8f9fa)">
+                <span id="fbPhoto1Preview" style="font-size:28px">📷</span>
+                <span>Photo 1</span>
+                <input type="file" id="fbPhoto1" accept="image/*" style="display:none" onchange="previewFbPhoto(this,'fbPhoto1Preview')">
+              </label>
+              <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:110px;height:90px;border:2px dashed var(--border);border-radius:10px;cursor:pointer;font-size:12px;color:var(--text-muted);text-align:center;gap:4px;background:var(--surface-alt,#f8f9fa)">
+                <span id="fbPhoto2Preview" style="font-size:28px">📷</span>
+                <span>Photo 2</span>
+                <input type="file" id="fbPhoto2" accept="image/*" style="display:none" onchange="previewFbPhoto(this,'fbPhoto2Preview')">
+              </label>
+            </div>
+          </div>
+          <div id="feedbackStatus" style="font-size:13px;margin:6px 0"></div>
+          <button class="btn btn-primary" type="button" onclick="submitPublicFeedback()" style="width:100%" data-i18n="feedback-submit">Submit Feedback</button>
+        </div>
+        <div id="feedbackSuccess" hidden style="text-align:center;padding:40px 20px">
+          <div style="font-size:52px;margin-bottom:12px">🙏</div>
+          <h3 style="color:var(--navy);font-size:20px;font-weight:700;margin-bottom:8px" data-i18n="feedback-thanks-title">Thank you for your feedback!</h3>
+          <p style="color:var(--muted);font-size:14px;margin-bottom:20px" data-i18n="feedback-thanks-body">Your message has been received. The administration reviews all feedback and acts on valid suggestions and complaints.</p>
+          <button class="btn btn-soft" type="button" onclick="resetFeedbackForm()" data-i18n="feedback-another">Submit Another</button>
+        </div>
+      </div>
+    </section>
+    <!-- ══ END FEEDBACK ══ -->
+
     <!-- ══ PORTAL GUIDE ══ -->
     <section class="section" id="guide">
       <div class="section-header">
@@ -5162,6 +5222,7 @@
           <button class="admin-tab-btn master-admin-only" type="button" data-admin-tab="users" data-i18n="admin-tab-users">Users &amp; Delegation</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="aiqueue">🤖 AI Queue</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="botlogs">💬 Bot Logs</button>
+          <button class="admin-tab-btn" type="button" data-admin-tab="publicfeedback">📣 Public Feedback</button>
         </div>
 
         <div class="admin-pane active" id="adminPaneOverview">
@@ -5813,6 +5874,33 @@
             </div>
             <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Every question asked to the AI Portal Assistant and the answer it gave. Rate-limited to 5 messages per phone per week. Most recent first.</p>
             <div id="botLogsContent"><p style="color:var(--text-muted);font-size:13px">Click ↻ All to load logs.</p></div>
+          </div>
+        </div>
+
+        <div class="admin-pane" id="adminPanePublicfeedback">
+          <div class="panel-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+              <h3 style="margin:0">📣 Public Feedback</h3>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <select id="pfTypeFilter" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;background:var(--surface-alt,#f8f9fa);color:var(--text)">
+                  <option value="">All Types</option>
+                  <option value="comment">💬 Comment</option>
+                  <option value="suggestion">💡 Suggestion</option>
+                  <option value="complaint">⚠️ Complaint</option>
+                  <option value="appreciation">🙏 Appreciation</option>
+                  <option value="query">❓ Query</option>
+                </select>
+                <select id="pfStatusFilter" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;background:var(--surface-alt,#f8f9fa);color:var(--text)">
+                  <option value="">All Statuses</option>
+                  <option value="new">New</option>
+                  <option value="reviewed">Reviewed</option>
+                  <option value="resolved">Resolved</option>
+                </select>
+                <button class="btn btn-soft" type="button" onclick="loadAdminPublicFeedback(document.getElementById('pfTypeFilter').value,document.getElementById('pfStatusFilter').value)">↻ Load</button>
+              </div>
+            </div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Feedback submitted by citizens via the public Feedback section. New entries are marked in red. Use the dropdown to mark reviewed or resolved. Click a photo to enlarge.</p>
+            <div id="publicFeedbackContent"><p style="color:var(--text-muted);font-size:13px">Click ↻ Load to show feedback.</p></div>
           </div>
         </div>
 
@@ -6686,9 +6774,21 @@
       "gallery-empty": { en: "No mission photos have been uploaded yet. Check back after the next activity!", hi: "अभी तक कोई अभियान फोटो अपलोड नहीं हुई है। अगली गतिविधि के बाद फिर देखें!" },
       "nav-incentives": { en: "JanPrayas Samman", hi: "जनप्रयास सम्मान" },
       "nav-volunteer": { en: "Volunteer", hi: "स्वयंसेवक" },
-      "nav-guide": { en: "Guide", hi: "मार्गदर्शिका" },
+      "nav-guide": { en: "JanPrayas Guide", hi: "जनप्रयास मार्गदर्शिका" },
+      "nav-feedback": { en: "Feedback", hi: "सुझाव / शिकायत" },
       "guide-title": { en: "JanPrayas Portal Guide", hi: "जनप्रयास पोर्टल मार्गदर्शिका" },
       "guide-subtitle": { en: "Everything you need to know about using the portal — step by step, in plain language.", hi: "पोर्टल का उपयोग करने से जुड़ी सभी जानकारी — सरल भाषा में, चरण दर चरण।" },
+      "feedback-title": { en: "Share Your Feedback", hi: "अपना सुझाव / शिकायत दें" },
+      "feedback-subtitle": { en: "Send us a comment, suggestion, complaint or appreciation. Your voice helps improve the portal and district services.", hi: "हमें टिप्पणी, सुझाव, शिकायत या प्रशंसा भेजें। आपकी आवाज़ पोर्टल और जिला सेवाओं को बेहतर बनाने में मदद करती है।" },
+      "feedback-name-label": { en: "Your Name *", hi: "आपका नाम *" },
+      "feedback-phone-label": { en: "Mobile Number *", hi: "मोबाइल नंबर *" },
+      "feedback-type-label": { en: "Type of Feedback *", hi: "फ़ीडबैक का प्रकार *" },
+      "feedback-message-label": { en: "Your Message *", hi: "आपका संदेश *" },
+      "feedback-photos-label": { en: "Attach Photos (optional, max 2 images)", hi: "फ़ोटो संलग्न करें (वैकल्पिक, अधिकतम 2 चित्र)" },
+      "feedback-submit": { en: "Submit Feedback", hi: "फ़ीडबैक भेजें" },
+      "feedback-thanks-title": { en: "Thank you for your feedback!", hi: "आपकी प्रतिक्रिया के लिए धन्यवाद!" },
+      "feedback-thanks-body": { en: "Your message has been received. The administration reviews all feedback and acts on valid suggestions and complaints.", hi: "आपका संदेश प्राप्त हो गया है। प्रशासन सभी प्रतिक्रियाओं की समीक्षा करता है और वैध सुझावों और शिकायतों पर कार्रवाई करता है।" },
+      "feedback-another": { en: "Submit Another", hi: "और भेजें" },
       "nav-admin": { en: "Admin", hi: "प्रशासक" },
       "nav-join": { en: "Join Now", hi: "अभी जुड़ें" },
       "hero-badge": { en: "District Administration Initiative", hi: "जिला प्रशासन पहल" },
@@ -13633,7 +13733,8 @@
         newsletter: "adminPaneNewsletter",
         users: "adminPaneUsers",
         aiqueue: "adminPaneAiqueue",
-        botlogs: "adminPaneBotlogs"
+        botlogs: "adminPaneBotlogs",
+        publicfeedback: "adminPanePublicfeedback"
       };
       Object.values(map).forEach((id) => { const el = document.getElementById(id); if (el) el.classList.remove("active"); });
       const pane = document.getElementById(map[tab]);
@@ -13644,6 +13745,7 @@
       if (tab === "users") { loadAdminUsersList(); toggleNewUserScopeField(); }
       if (tab === "aiqueue") loadAiQueue();
       if (tab === "botlogs") loadBotLogs();
+      if (tab === "publicfeedback") loadAdminPublicFeedback();
       if (tab === "poster") renderPosterMissionOptions();
       if (tab === "post") applyCoordinatorPostLock();
       if (tab === "missions") renderAdminMissionsList();
@@ -14263,6 +14365,133 @@
       filterGuide("");
     }
     // ── End Portal Guide ───────────────────────────────────────────────────
+
+    // ── Public Feedback Form ───────────────────────────────────────────────
+    const _fbPhotos = { photo1: "", photo2: "" };
+
+    function previewFbPhoto(inputEl, previewId) {
+      const file = inputEl.files?.[0];
+      if (!file) return;
+      const previewEl = document.getElementById(previewId);
+      const key = inputEl.id === "fbPhoto1" ? "photo1" : "photo2";
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        _fbPhotos[key] = e.target.result;
+        if (previewEl) {
+          previewEl.innerHTML = `<img src="${e.target.result}" style="width:80px;height:70px;object-fit:cover;border-radius:6px">`;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function submitPublicFeedback() {
+      const name = document.getElementById("fbName")?.value.trim();
+      const phone = document.getElementById("fbPhone")?.value.replace(/\D/g, "").slice(-10);
+      const type = document.getElementById("fbType")?.value;
+      const message = document.getElementById("fbMessage")?.value.trim();
+      const statusEl = document.getElementById("feedbackStatus");
+      statusEl.textContent = "";
+      if (!name) { statusEl.style.color = "var(--danger)"; statusEl.textContent = "Please enter your name."; return; }
+      if (!phone || phone.length < 10) { statusEl.style.color = "var(--danger)"; statusEl.textContent = "Please enter a valid 10-digit mobile number."; return; }
+      if (!message) { statusEl.style.color = "var(--danger)"; statusEl.textContent = "Please write your message."; return; }
+      statusEl.style.color = "var(--muted)";
+      statusEl.textContent = "Submitting…";
+      try {
+        await apiRequest("/api/public-feedback", {
+          method: "POST",
+          body: JSON.stringify({ name, phone, type, message, photo1: _fbPhotos.photo1, photo2: _fbPhotos.photo2 })
+        });
+        document.getElementById("feedbackFormCard").hidden = true;
+        document.getElementById("feedbackSuccess").hidden = false;
+      } catch (err) {
+        statusEl.style.color = "var(--danger)";
+        statusEl.textContent = err?.message || "Submission failed. Please try again.";
+      }
+    }
+
+    function resetFeedbackForm() {
+      document.getElementById("fbName").value = "";
+      document.getElementById("fbPhone").value = "";
+      document.getElementById("fbType").value = "comment";
+      document.getElementById("fbMessage").value = "";
+      document.getElementById("fbPhoto1").value = "";
+      document.getElementById("fbPhoto2").value = "";
+      document.getElementById("fbPhoto1Preview").innerHTML = "📷";
+      document.getElementById("fbPhoto2Preview").innerHTML = "📷";
+      _fbPhotos.photo1 = "";
+      _fbPhotos.photo2 = "";
+      document.getElementById("feedbackStatus").textContent = "";
+      document.getElementById("feedbackFormCard").hidden = false;
+      document.getElementById("feedbackSuccess").hidden = true;
+    }
+
+    async function loadAdminPublicFeedback(filterType, filterStatus) {
+      const token = getAdminToken();
+      if (!token) return;
+      const container = document.getElementById("publicFeedbackContent");
+      if (!container) return;
+      container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading…</p>';
+      try {
+        const params = new URLSearchParams({ limit: 200 });
+        if (filterType) params.set("type", filterType);
+        if (filterStatus) params.set("status", filterStatus);
+        const data = await apiRequest(`/api/admin/public-feedback?${params}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const items = data.feedback || [];
+        if (!items.length) { container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No feedback yet.</p>'; return; }
+        const typeIcon = { comment: "💬", suggestion: "💡", complaint: "⚠️", appreciation: "🙏", query: "❓" };
+        const statusColor = { new: "var(--danger,#dc2626)", reviewed: "var(--amber,#d97706)", resolved: "var(--success,#166534)" };
+        container.innerHTML = items.map(f => `
+          <div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+              <div>
+                <span style="font-weight:700;font-size:14px">${escapeHtml(f.name)}</span>
+                <span style="font-size:12px;color:var(--text-muted);margin-left:8px">📱 ${escapeHtml(f.phone)}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="background:var(--surface-alt,#f0f4f8);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600">${typeIcon[f.type] || "💬"} ${f.type}</span>
+                <span style="font-size:11px;font-weight:600;color:${statusColor[f.status] || "var(--text-muted)"}">${f.status.toUpperCase()}</span>
+                <select onchange="setFeedbackStatus(${f.id},this.value)" style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:11px;background:var(--surface-alt,#f8f9fa);color:var(--text)">
+                  <option value="">Mark as…</option>
+                  <option value="reviewed">Reviewed</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="new">New</option>
+                </select>
+              </div>
+            </div>
+            <p style="font-size:13px;margin:0 0 8px;line-height:1.6">${escapeHtml(f.message)}</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${f.photo1 ? `<img src="${escapeHtml(f.photo1)}" style="height:80px;border-radius:8px;object-fit:cover;cursor:pointer" onclick="window.open(this.src)">` : ""}
+              ${f.photo2 ? `<img src="${escapeHtml(f.photo2)}" style="height:80px;border-radius:8px;object-fit:cover;cursor:pointer" onclick="window.open(this.src)">` : ""}
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px">${f.created_at || ""}</div>
+          </div>`).join("");
+      } catch (err) {
+        container.innerHTML = `<p style="color:var(--danger);font-size:13px">${escapeHtml(err?.message || "Failed to load.")}</p>`;
+      }
+    }
+
+    async function setFeedbackStatus(id, status) {
+      if (!status) return;
+      const token = getAdminToken();
+      if (!token) return;
+      try {
+        await apiRequest(`/api/admin/public-feedback/${id}/status`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ status })
+        });
+        showToast("Status updated.", "✅");
+        loadAdminPublicFeedback(
+          document.getElementById("pfTypeFilter")?.value,
+          document.getElementById("pfStatusFilter")?.value
+        );
+      } catch (err) {
+        showToast(err?.message || "Failed to update.", "❌");
+      }
+    }
+    // ── End Public Feedback Form ───────────────────────────────────────────
 
     async function submitOrgChangePassword() {
       const currentPassword = document.getElementById("orgCurrentPassword").value;

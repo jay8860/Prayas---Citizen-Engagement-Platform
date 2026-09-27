@@ -1052,6 +1052,21 @@ try { db.exec("ALTER TABLE organizations ADD COLUMN password_hint TEXT NOT NULL 
 try { db.exec("ALTER TABLE volunteer_profiles ADD COLUMN profile_photo TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS public_feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'comment',
+      message TEXT NOT NULL,
+      photo1 TEXT NOT NULL DEFAULT '',
+      photo2 TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'new',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+} catch(e) {}
+try {
+  db.exec(`
     CREATE TABLE IF NOT EXISTS bot_conversations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       phone TEXT NOT NULL,
@@ -1609,6 +1624,23 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/admin/bot-logs") {
       requireAdmin(req);
       return sendJson(res, 200, getBotLogs(url.searchParams));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/public-feedback") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, submitPublicFeedback(body));
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/admin/public-feedback") {
+      requireAdmin(req);
+      return sendJson(res, 200, getAdminPublicFeedback(url.searchParams));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/public-feedback\/\d+\/status$/.test(url.pathname)) {
+      const actor = requireAdmin(req);
+      const feedbackId = Number(url.pathname.split("/")[4]);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, updateFeedbackStatus(feedbackId, body, actor));
     }
 
     // Public certificate/ID-card verification — what the QR code on a
@@ -4378,6 +4410,58 @@ function getBotLogs(params) {
     : db.prepare("SELECT * FROM bot_conversations ORDER BY id DESC LIMIT ?").all(limit);
   return { logs: rows };
 }
+
+// ── Public Feedback (suggestions / complaints / comments) ─────────────────────
+const FEEDBACK_TYPES = ["comment", "suggestion", "complaint", "appreciation", "query"];
+
+function submitPublicFeedback(body) {
+  const name = stripHtml(String(body.name || "")).trim().slice(0, 150);
+  const phone = String(body.phone || "").replace(/\D/g, "").slice(-10);
+  const type = FEEDBACK_TYPES.includes(body.type) ? body.type : "comment";
+  const message = stripHtml(String(body.message || "")).trim().slice(0, 2000);
+  const photo1 = String(body.photo1 || "");
+  const photo2 = String(body.photo2 || "");
+
+  if (!name) throw publicError(400, "Name is required.");
+  if (phone.length < 10) throw publicError(400, "Please enter a valid 10-digit mobile number.");
+  if (!message) throw publicError(400, "Please write your feedback message.");
+  if (photo1 && !photo1.startsWith("data:image/")) throw publicError(400, "Invalid photo format for photo 1.");
+  if (photo2 && !photo2.startsWith("data:image/")) throw publicError(400, "Invalid photo format for photo 2.");
+  if (photo1.length > 500000) throw publicError(400, "Photo 1 is too large (max ~350 KB).");
+  if (photo2.length > 500000) throw publicError(400, "Photo 2 is too large (max ~350 KB).");
+
+  db.prepare(`
+    INSERT INTO public_feedback (name, phone, type, message, photo1, photo2, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, 'new', ?)
+  `).run(name, phone, type, message, photo1, photo2, isoNow());
+  return { ok: true };
+}
+
+function getAdminPublicFeedback(params) {
+  const limit = Math.min(Number(params.get("limit") || 100), 500);
+  const type = params.get("type") || "";
+  const status = params.get("status") || "";
+  let q = "SELECT id, name, phone, type, message, photo1, photo2, status, created_at FROM public_feedback";
+  const conditions = [];
+  const args = [];
+  if (type && FEEDBACK_TYPES.includes(type)) { conditions.push("type = ?"); args.push(type); }
+  if (status) { conditions.push("status = ?"); args.push(status); }
+  if (conditions.length) q += " WHERE " + conditions.join(" AND ");
+  q += " ORDER BY id DESC LIMIT ?";
+  args.push(limit);
+  return { feedback: db.prepare(q).all(...args) };
+}
+
+function updateFeedbackStatus(feedbackId, body, actor) {
+  const allowed = ["new", "reviewed", "resolved"];
+  const status = allowed.includes(body.status) ? body.status : "reviewed";
+  const row = db.prepare("SELECT id FROM public_feedback WHERE id = ?").get(feedbackId);
+  if (!row) throw publicError(404, "Feedback not found.");
+  db.prepare("UPDATE public_feedback SET status = ? WHERE id = ?").run(status, feedbackId);
+  writeAuditLog("update_feedback_status", "public_feedback", feedbackId, `Status set to '${status}' by ${actor.name}`);
+  return { ok: true };
+}
+// ── End Public Feedback ───────────────────────────────────────────────────────
 
 function getOrgProfile(orgPayload) {
   const org = db.prepare("SELECT * FROM organizations WHERE id = ?").get(orgPayload.oid);
