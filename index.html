@@ -5439,9 +5439,24 @@
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
             <input type="text" id="volunteerSearchQ" placeholder="Search name, phone, area…" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
             <input type="text" id="volunteerSearchWard" placeholder="Filter by area/ward" style="width:160px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+            <select id="volunteerSearchInterest" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+              <option value="">All Interests</option>
+              <option value="Environment">🌱 Environment</option>
+              <option value="Education">📚 Education</option>
+              <option value="Health">🏥 Health</option>
+              <option value="Cleanliness">🧹 Cleanliness</option>
+              <option value="Tree Plantation">🌳 Tree Plantation</option>
+              <option value="Women Empowerment">👩 Women Empowerment</option>
+              <option value="Youth">👦 Youth</option>
+              <option value="Sports">⚽ Sports</option>
+              <option value="Culture">🎭 Culture</option>
+              <option value="Disaster Relief">🆘 Disaster Relief</option>
+            </select>
             <select id="volunteerSearchSort" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
-              <option value="recent">Sort: Most Recent</option>
-              <option value="points">Sort: Top Contributors (Points)</option>
+              <option value="recent">Sort: Newest Registered</option>
+              <option value="oldest">Sort: Oldest Registered</option>
+              <option value="points">Sort: Points High→Low</option>
+              <option value="points_asc">Sort: Points Low→High</option>
             </select>
             <button class="btn btn-secondary" type="button" onclick="runVolunteerSearch()">Search</button>
             <button class="btn btn-secondary" type="button" onclick="clearVolunteerSearch()">Clear</button>
@@ -11438,18 +11453,32 @@
       card.style.display = requests.length ? "block" : "none";
       if (!requests.length) return;
       container.innerHTML = requests
-        .map((mission) => `
-          <div class="message-card">
-            <div class="message-name">${escapeHtml(mission.title)}</div>
-            <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.date)}</div>
-            <div class="message-text">Requested by: ${escapeHtml(mission.completionRequestedBy || "—")}</div>
-            ${mission.completionRequestedNote ? `<div class="message-text">"${escapeHtml(mission.completionRequestedNote)}"</div>` : ""}
-            <div class="message-actions">
-              <button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">Confirm &amp; Mark Completed</button>
-              <button class="btn btn-soft" type="button" onclick="dismissMissionCompletionRequest(${mission.id})">Dismiss</button>
-            </div>
-          </div>
-        `)
+        .map((mission) => {
+          const photos = mission.completionClosurePhotos || [];
+          const photoHtml = photos.length ? `
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">
+              ${photos.map((p, i) => `
+                <div style="text-align:center">
+                  <img src="${p.data}" alt="Closure photo ${i+1}" style="height:90px;width:90px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">
+                  ${p.caption ? `<div style="font-size:10px;color:var(--muted);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(p.caption)}">${escapeHtml(p.caption)}</div>` : ""}
+                </div>`).join("")}
+            </div>` : "";
+          return `
+            <div class="message-card">
+              <div class="message-name">${escapeHtml(mission.title)}</div>
+              <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.date)}</div>
+              <div class="message-text">📋 Requested by: <strong>${escapeHtml(mission.completionRequestedBy || "—")}</strong>
+                ${mission.completionRequestedPhone ? ` · 📞 ${escapeHtml(mission.completionRequestedPhone)}` : ""}</div>
+              ${mission.completionActivitySummary ? `<div class="message-text" style="background:var(--surface-2,#f8f9fa);padding:6px 10px;border-radius:6px;border-left:3px solid var(--primary)">"${escapeHtml(mission.completionActivitySummary)}"</div>` : ""}
+              ${mission.completionRequestedNote ? `<div class="message-text"><em>Note: ${escapeHtml(mission.completionRequestedNote)}</em></div>` : ""}
+              ${photoHtml}
+              <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${photos.length} verification photo${photos.length !== 1 ? "s" : ""} submitted</div>
+              <div class="message-actions">
+                <button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">Confirm &amp; Mark Completed</button>
+                <button class="btn btn-soft" type="button" onclick="dismissMissionCompletionRequest(${mission.id})">Dismiss</button>
+              </div>
+            </div>`;
+        })
         .join("");
     }
 
@@ -12052,24 +12081,72 @@
         <div class="message-card" style="margin-top:20px">
           <div class="message-name">🏁 ${hi ? "गतिविधि पूर्ण हो गई?" : "Is this activity finished?"}</div>
           <div class="message-text">${hi ? "आयोजक या कोई भी नागरिक इस अभियान को पूर्ण/बंद करने का अनुरोध कर सकता है। एडमिन इसकी पुष्टि करेगा।" : "The organiser or any citizen can request that this mission be marked completed or closed. An admin will confirm it."}</div>
-          ${(mission.photos || []).length < 2 ? `
           <div style="background:#FEF3C7;color:#92400E;padding:10px 12px;border-radius:8px;margin:10px 0;font-size:13px">
-            📷 <strong>${hi ? "पहले कम से कम 2 फोटो अपलोड करें" : "Upload at least 2 activity photos first"}</strong><br>
-            <span style="font-size:12px">${hi ? `अभी ${(mission.photos||[]).length} फोटो हैं। नीचे "गतिविधि फोटो" सेक्शन से अपलोड करें, फिर यहाँ वापस आएं।` : `Currently ${(mission.photos||[]).length} photo(s) uploaded. Use the "Activity Photos" section below, then return here.`}</span>
-          </div>` : ""}
+            📷 <strong>${hi ? "कम से कम 3 सत्यापन फोटो अनिवार्य हैं" : "At least 3 verification photos required"}</strong><br>
+            <span style="font-size:12px">${hi ? "गतिविधि, उपस्थित स्वयंसेवकों और कार्यक्रम की फोटो अपलोड करें। एडमिन इन्हें देखकर पुष्टि करेगा।" : "Upload photos showing the activity, volunteers present, and the event. The admin reviews these before confirming closure."}</span>
+          </div>
           <form id="missionCompletionForm" style="margin-top:10px">
             <div class="form-group">
-              <label for="missionCompletionName">${hi ? "आपका नाम" : "Your Name"}</label>
+              <label for="missionCompletionName">${hi ? "आपका नाम (अनिवार्य)" : "Your Name (required)"}</label>
               <input id="missionCompletionName" type="text" required maxlength="100" />
             </div>
             <div class="form-group">
-              <label for="missionCompletionNote">${hi ? "टिप्पणी (वैकल्पिक)" : "Note (optional)"}</label>
+              <label for="missionCompletionPhone">${hi ? "आपका मोबाइल नंबर (अनिवार्य)" : "Your Mobile Number (required)"}</label>
+              <input id="missionCompletionPhone" type="tel" required maxlength="15" placeholder="10-digit mobile number" />
+            </div>
+            <div class="form-group">
+              <label for="missionCompletionSummary">${hi ? "गतिविधि विवरण — क्या हुआ, कितने लोग उपस्थित थे? (अनिवार्य)" : "Activity Summary — what happened, how many people attended? (required)"}</label>
+              <textarea id="missionCompletionSummary" required maxlength="500" rows="3" placeholder="${hi ? "जैसे: पेड़-पौधे लगाए गए, 45 स्वयंसेवक उपस्थित थे, वार्ड 12 में 2 घंटे काम हुआ।" : "e.g. Tree plantation completed, 45 volunteers attended, 2 hours of work in Ward 12."}"></textarea>
+            </div>
+            <div class="form-group">
+              <label>${hi ? "सत्यापन फोटो — कम से कम 3 (अनिवार्य)" : "Verification Photos — minimum 3 (required)"}</label>
+              <div id="closurePhotoList" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>
+              <label class="btn btn-secondary" style="font-size:13px;cursor:pointer">
+                📷 ${hi ? "फोटो जोड़ें" : "Add Photo"}
+                <input type="file" accept="image/*" multiple style="display:none" onchange="addClosurePhotos(event)">
+              </label>
+              <div id="closurePhotoCount" style="font-size:12px;color:var(--muted);margin-top:4px">0 / 3 minimum photos added</div>
+            </div>
+            <div class="form-group">
+              <label for="missionCompletionNote">${hi ? "अतिरिक्त नोट (वैकल्पिक)" : "Additional Note (optional)"}</label>
               <textarea id="missionCompletionNote" maxlength="300" placeholder="${hi ? "जैसे: कार्यक्रम सफलतापूर्वक संपन्न हुआ" : "e.g. Event was successfully held on schedule"}"></textarea>
             </div>
-            <button class="btn btn-soft" type="submit" style="width:100%" ${(mission.photos||[]).length < 2 ? "disabled title=\"Upload at least 2 photos first\"" : ""}>${hi ? "पूर्णता/समापन का अनुरोध करें" : "Request Completion / Closure"}</button>
+            <button class="btn btn-soft" type="submit" style="width:100%">${hi ? "पूर्णता/समापन का अनुरोध करें" : "Request Completion / Closure"}</button>
           </form>
         </div>
       `;
+    }
+
+    let closurePhotoData = [];
+
+    function addClosurePhotos(event) {
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+      const remaining = 10 - closurePhotoData.length;
+      files.slice(0, remaining).forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          closurePhotoData.push({ data: e.target.result, caption: "" });
+          renderClosurePhotoList();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderClosurePhotoList() {
+      const container = document.getElementById("closurePhotoList");
+      const countEl = document.getElementById("closurePhotoCount");
+      if (!container) return;
+      container.innerHTML = closurePhotoData.map((p, i) => `
+        <div style="position:relative;text-align:center">
+          <img src="${p.data}" style="height:80px;width:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">
+          <input type="text" placeholder="Caption" maxlength="100" value="${escapeHtml(p.caption)}"
+            style="display:block;width:80px;font-size:10px;margin-top:2px;padding:2px 4px;border:1px solid var(--border);border-radius:4px"
+            oninput="closurePhotoData[${i}].caption=this.value">
+          <button type="button" style="position:absolute;top:2px;right:2px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:1"
+            onclick="closurePhotoData.splice(${i},1);renderClosurePhotoList()">✕</button>
+        </div>`).join("");
+      if (countEl) countEl.textContent = `${closurePhotoData.length} / 3 minimum photos added`;
     }
 
     async function submitMissionCompletionRequest(event) {
@@ -12077,12 +12154,23 @@
       const mission = state.missions.find((item) => item.id === state.activeMissionId);
       if (!mission) return;
       const requestedBy = (document.getElementById("missionCompletionName").value || "").trim();
+      const requestedPhone = (document.getElementById("missionCompletionPhone").value || "").trim();
+      const activitySummary = (document.getElementById("missionCompletionSummary").value || "").trim();
       const note = (document.getElementById("missionCompletionNote").value || "").trim();
+      if (!requestedBy || !requestedPhone || !activitySummary) {
+        showToast(state.lang === "hi" ? "नाम, मोबाइल नंबर और गतिविधि विवरण आवश्यक हैं।" : "Name, mobile number and activity summary are required.", "⚠️");
+        return;
+      }
+      if (closurePhotoData.length < 3) {
+        showToast(state.lang === "hi" ? "कम से कम 3 सत्यापन फोटो अपलोड करें।" : "Please upload at least 3 verification photos.", "⚠️");
+        return;
+      }
       try {
         await apiRequest(`/api/missions/${mission.id}/request-completion`, {
           method: "POST",
-          body: JSON.stringify({ requestedBy, note })
+          body: JSON.stringify({ requestedBy, requestedPhone, activitySummary, note, closurePhotos: closurePhotoData })
         });
+        closurePhotoData = [];
         showToast(state.lang === "hi" ? "अनुरोध भेजा गया। एडमिन जल्द पुष्टि करेगा।" : "Request sent. An admin will confirm it soon.", "✅");
         await refreshPortalData();
         renderAll();
@@ -14285,13 +14373,19 @@
         return;
       }
       try {
-        await orgApiRequest("/api/org/request-password-reset", {
+        const data = await orgApiRequest("/api/org/request-password-reset", {
           method: "POST",
           body: JSON.stringify({ email })
         });
-        if (resultEl) resultEl.innerHTML = `<div style="background:#D1FAE5;color:#065F46;padding:10px 12px;border-radius:8px">Reset code sent! Check your email and enter the code below.</div>`;
         const confirmPanel = document.getElementById("orgResetConfirmPanel");
         if (confirmPanel) confirmPanel.hidden = false;
+        if (data.emailSent === false) {
+          if (resultEl) resultEl.innerHTML = `<div style="background:#FEF3C7;color:#92400E;padding:10px 12px;border-radius:8px">
+            ⚠️ Email service is not configured on this portal. Your reset code was generated but could not be emailed.<br>
+            <strong>Please contact the JanPrayas administrator</strong> to get your reset code directly.</div>`;
+        } else {
+          if (resultEl) resultEl.innerHTML = `<div style="background:#D1FAE5;color:#065F46;padding:10px 12px;border-radius:8px">Reset code sent! Check your email and enter the code below.</div>`;
+        }
       } catch (error) {
         if (resultEl) resultEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(error?.message || "Failed to send reset email.")}</span>`;
       }
@@ -15285,10 +15379,11 @@
       const q = (document.getElementById("volunteerSearchQ").value || "").trim();
       const ward = (document.getElementById("volunteerSearchWard").value || "").trim();
       const sort = document.getElementById("volunteerSearchSort")?.value || "recent";
+      const skill = document.getElementById("volunteerSearchInterest")?.value || "";
       const token = getAdminToken();
       if (!token) return;
       try {
-        const params = new URLSearchParams({ q, ward, sort, page, limit: 50 });
+        const params = new URLSearchParams({ q, ward, sort, skill, page, limit: 50 });
         const data = await apiRequest(`/api/admin/volunteers/search?${params}`, {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` }
@@ -15304,7 +15399,7 @@
             <td>${escapeHtml(v.area || "-")}${v.civicOrgs ? `<br><span style="font-size:11px;color:var(--muted)">🏛 ${escapeHtml(v.civicOrgs)}</span>` : ""}</td>
             <td>${escapeHtml(v.skills.join(", ") || "-")}</td>
             <td>⚡ ${v.points || 0}</td>
-            <td>${escapeHtml(v.joinedDate)}</td>
+            <td title="${escapeHtml(v.registeredAt)}">${escapeHtml(v.joinedDate)}</td>
             <td style="white-space:nowrap">${volunteerRowActions(v.id)}</td>
           </tr>
         `).join("");
@@ -15321,6 +15416,8 @@
     function clearVolunteerSearch() {
       document.getElementById("volunteerSearchQ").value = "";
       document.getElementById("volunteerSearchWard").value = "";
+      const interestSelect = document.getElementById("volunteerSearchInterest");
+      if (interestSelect) interestSelect.value = "";
       const sortSelect = document.getElementById("volunteerSearchSort");
       if (sortSelect) sortSelect.value = "recent";
       document.getElementById("volunteerSearchStatus").textContent = "";

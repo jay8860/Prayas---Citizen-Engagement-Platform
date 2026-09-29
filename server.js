@@ -1083,6 +1083,9 @@ try { db.exec("ALTER TABLE missions ADD COLUMN date_start TEXT NOT NULL DEFAULT 
 try { db.exec("ALTER TABLE missions ADD COLUMN date_end TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try { db.exec("ALTER TABLE organizations ADD COLUMN reset_token TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try { db.exec("ALTER TABLE organizations ADD COLUMN reset_token_at TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try { db.exec("ALTER TABLE missions ADD COLUMN completion_requested_phone TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try { db.exec("ALTER TABLE missions ADD COLUMN completion_activity_summary TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try { db.exec("ALTER TABLE missions ADD COLUMN completion_closure_photos TEXT NOT NULL DEFAULT '[]'"); } catch(e) {}
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
@@ -1419,25 +1422,11 @@ function handleAiQueueAction(body, admin) {
   return { ok: true };
 }
 
-function autoExpireOldMissions() {
-  const now = new Date().toISOString();
-  const result = db.prepare(`
-    UPDATE missions SET status = 'closed'
-    WHERE status IN ('open','full','upcoming')
-    AND date_end != '' AND date_end < ?
-    AND archived_at IS NULL
-  `).run(now);
-  if (result.changes > 0) {
-    console.log(`[AUTO-EXPIRE] Closed ${result.changes} past-dated mission(s).`);
-  }
-}
-
 seedDatabase();
 migrateLegacyDemoRecords();
 migrateVolunteerRegistry();
 migrateCheckInCodes();
 seedAdminUsers();
-autoExpireOldMissions();
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
@@ -3331,7 +3320,10 @@ function buildBootstrapPayload(isAdmin = false) {
     checkInCode: isAdmin ? (mission.check_in_code || "") : "",
     completionRequested: Boolean(mission.completion_requested),
     completionRequestedBy: mission.completion_requested_by || "",
+    completionRequestedPhone: mission.completion_requested_phone || "",
     completionRequestedNote: mission.completion_requested_note || "",
+    completionActivitySummary: mission.completion_activity_summary || "",
+    completionClosurePhotos: safeJsonArray(mission.completion_closure_photos),
     hostType: mission.host_type || "individual",
     participantsPreview: participantsByMission.get(mission.id) || [],
     discussion: discussionStmt.all(mission.id).map((entry) => ({
@@ -4936,7 +4928,8 @@ function updateMissionStatus(missionId, body, admin) {
     db.prepare(`
       UPDATE missions
       SET status = ?, outcome_note = ?, actual_turnout = ?, photo_url = ?,
-          completion_requested = 0, completion_requested_by = '', completion_requested_note = ''
+          completion_requested = 0, completion_requested_by = '', completion_requested_phone = '',
+          completion_requested_note = '', completion_activity_summary = '', completion_closure_photos = '[]'
       WHERE id = ?
     `).run(status, outcomeNote, actualTurnout, photoUrl, missionId);
     flagAttendanceAsync(missionId);
@@ -5384,8 +5377,11 @@ function searchVolunteers(params) {
   }));
 
   withPoints.sort((a, b) => {
-    if (sort === "points") return b.points - a.points;
-    return new Date(b.row.last_active_at || 0) - new Date(a.row.last_active_at || 0) || (b.row.id - a.row.id);
+    if (sort === "points") return (b.points || 0) - (a.points || 0);
+    if (sort === "points_asc") return (a.points || 0) - (b.points || 0);
+    if (sort === "oldest") return new Date(a.row.first_registered_at || 0) - new Date(b.row.first_registered_at || 0);
+    // default: most recent first
+    return new Date(b.row.first_registered_at || 0) - new Date(a.row.first_registered_at || 0) || (b.row.id - a.row.id);
   });
 
   const total = withPoints.length;
@@ -5411,7 +5407,8 @@ function searchVolunteers(params) {
       civicOrgs: r.civic_orgs || "",
       skills: safeJsonArray(r.skills_json),
       points: pointsLookup.get(r.id)?.points || POINTS.register,
-      joinedDate: new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" })
+      registeredAt: r.first_registered_at || "",
+      joinedDate: new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true })
         .format(new Date(r.first_registered_at || isoNow()))
     }))
   };
@@ -5794,30 +5791,52 @@ function deleteMissionPhoto(photoId, admin) {
 // ── Citizen-requested mission completion ────────────────────────────────────────
 
 function requestMissionCompletion(missionId, body) {
-  const mission = ensureRowExists("missions", missionId, "Mission not found.");
-  const row = db.prepare("SELECT status, archived_at, source_type FROM missions WHERE id = ?").get(missionId);
+  ensureRowExists("missions", missionId, "Mission not found.");
+  const row = db.prepare("SELECT status, archived_at FROM missions WHERE id = ?").get(missionId);
   if (row.archived_at) throw publicError(400, "This mission has been archived.");
   if (row.status === "completed") throw publicError(400, "This mission is already marked completed.");
+
   const requestedBy = String(body.requestedBy || "").trim().slice(0, 100);
+  const requestedPhone = String(body.requestedPhone || "").trim().slice(0, 20);
   const note = String(body.note || "").trim().slice(0, 300);
+  const activitySummary = String(body.activitySummary || "").trim().slice(0, 500);
+  const closurePhotos = Array.isArray(body.closurePhotos) ? body.closurePhotos : [];
+
   if (!requestedBy) throw publicError(400, "Your name is required to request completion.");
-  // Require at least 2 activity photos before any closure request can be submitted,
-  // so the admin reviewer always has visual evidence of the mission happening.
-  const photoCount = db.prepare("SELECT COUNT(*) AS n FROM mission_photos WHERE mission_id = ?").get(missionId).n;
-  if (photoCount < 2) {
-    throw publicError(400, `Please upload at least 2 photos from the completed activity first (${photoCount} uploaded so far). The district administration needs visual evidence before confirming closure.`);
+  if (!requestedPhone) throw publicError(400, "Your mobile number is required to request completion.");
+  if (!activitySummary) throw publicError(400, "Please describe what happened during the mission (activity summary required).");
+  if (closurePhotos.length < 3) {
+    throw publicError(400, `Please upload at least 3 closure verification photos (showing activity, volunteers present, and event evidence). You have uploaded ${closurePhotos.length} so far.`);
   }
+
+  const validatedPhotos = closurePhotos.slice(0, 10).map((p) => ({
+    data: String(p.data || "").slice(0, 2000000),
+    caption: String(p.caption || "").trim().slice(0, 200)
+  })).filter((p) => p.data);
+
+  if (validatedPhotos.length < 3) {
+    throw publicError(400, "At least 3 valid closure photos are required.");
+  }
+
   db.prepare(`
-    UPDATE missions SET completion_requested = 1, completion_requested_by = ?, completion_requested_note = ?
+    UPDATE missions
+    SET completion_requested = 1,
+        completion_requested_by = ?,
+        completion_requested_phone = ?,
+        completion_requested_note = ?,
+        completion_activity_summary = ?,
+        completion_closure_photos = ?
     WHERE id = ?
-  `).run(requestedBy, note, missionId);
+  `).run(requestedBy, requestedPhone, note, activitySummary, JSON.stringify(validatedPhotos), missionId);
   return { ok: true };
 }
 
 function dismissCompletionRequest(missionId, admin) {
   ensureRowExists("missions", missionId, "Mission not found.");
   assertMissionScope(admin, missionId);
-  db.prepare("UPDATE missions SET completion_requested = 0, completion_requested_by = '', completion_requested_note = '' WHERE id = ?").run(missionId);
+  db.prepare(`UPDATE missions SET completion_requested = 0, completion_requested_by = '',
+    completion_requested_phone = '', completion_requested_note = '',
+    completion_activity_summary = '', completion_closure_photos = '[]' WHERE id = ?`).run(missionId);
   writeAuditLog("dismiss_completion_request", "mission", missionId, `Completion request dismissed by ${admin ? admin.name : "admin"}`);
   return { ok: true };
 }
