@@ -4121,15 +4121,31 @@
                       <input id="orgMissionLocation" type="text" maxlength="150" required />
                     </div>
                   </div>
+                  <div class="form-group">
+                    <label for="orgMissionDatePicker">Mission Date *</label>
+                    <input id="orgMissionDatePicker" type="date" required />
+                  </div>
                   <div class="form-row">
                     <div class="form-group">
-                      <label for="orgMissionDate">Mission Date *</label>
-                      <input id="orgMissionDate" type="date" required />
+                      <label>Start Time *</label>
+                      <div style="display:flex;gap:6px;align-items:center">
+                        <select id="orgMissionTimeStartHour" class="time-select"></select>
+                        <select id="orgMissionTimeStartMin" class="time-select"></select>
+                        <select id="orgMissionTimeStartPeriod" class="time-select period"><option>AM</option><option selected>AM</option></select>
+                      </div>
                     </div>
                     <div class="form-group">
-                      <label for="orgMissionDuration">Duration *</label>
-                      <input id="orgMissionDuration" type="text" placeholder="e.g. 3 hours" maxlength="40" required />
+                      <label>End Time *</label>
+                      <div style="display:flex;gap:6px;align-items:center">
+                        <select id="orgMissionTimeEndHour" class="time-select"></select>
+                        <select id="orgMissionTimeEndMin" class="time-select"></select>
+                        <select id="orgMissionTimeEndPeriod" class="time-select period"><option>AM</option><option selected>PM</option></select>
+                      </div>
                     </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="orgMissionDuration">Duration <span style="font-size:12px;font-weight:400;color:var(--muted)">(optional — auto-calculated if blank)</span></label>
+                    <input id="orgMissionDuration" type="text" placeholder="e.g. 3 hours" maxlength="40" />
                   </div>
                   <div class="form-row">
                     <div class="form-group">
@@ -8819,7 +8835,7 @@
     function initTimeSelects() {
       const hourOpts = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
       const minOpts = ["00","15","30","45"].map((m) => `<option value="${m}">${m}</option>`).join("");
-      ["pm", "hostMission"].forEach((pfx) => {
+      ["pm", "hostMission", "orgMission"].forEach((pfx) => {
         ["TimeStartHour","TimeEndHour"].forEach((id) => {
           const el = document.getElementById(`${pfx}${id}`);
           if (el) el.innerHTML = hourOpts;
@@ -8830,7 +8846,7 @@
         });
       });
       // Set sensible defaults: 9:00 AM → 12:00 PM
-      ["pm","hostMission"].forEach((pfx) => {
+      ["pm","hostMission","orgMission"].forEach((pfx) => {
         const sh = document.getElementById(`${pfx}TimeStartHour`);
         const eh = document.getElementById(`${pfx}TimeEndHour`);
         if (sh) sh.value = "9";
@@ -10810,6 +10826,13 @@
       btn.disabled = true;
       try {
         const photoUrl = await readFileAsDataUrl("orgMissionPhotoInput");
+        const { dateStart, dateEnd } = assembleMissionDateISO("orgMission");
+        if (!dateStart) {
+          showToast("Please select a mission date and time.", "⚠️");
+          btn.disabled = false;
+          btn.textContent = orig;
+          return;
+        }
         const result = await orgApiRequest("/api/organizations/me/missions", {
           method: "POST",
           body: JSON.stringify({
@@ -10817,7 +10840,8 @@
             category: document.getElementById("orgMissionCategory").value,
             ward: document.getElementById("orgMissionArea").value.trim(),
             location: document.getElementById("orgMissionLocation").value.trim(),
-            date: document.getElementById("orgMissionDate").value,
+            dateStart,
+            dateEnd,
             duration: document.getElementById("orgMissionDuration").value.trim(),
             total: Number(document.getElementById("orgMissionSlots").value),
             age: document.getElementById("orgMissionAge").value.trim(),

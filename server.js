@@ -4565,14 +4565,24 @@ function createOrgMission(orgPayload, body) {
   const ward = String(body.ward || "").trim();
   const title = String(body.title || "").trim();
   const desc = String(body.desc || "").trim();
-  const date = String(body.date || "").trim();
+  const dateStart = String(body.dateStart || "").trim();
+  const dateEnd = String(body.dateEnd || "").trim();
   const location = String(body.location || "").trim();
   const duration = String(body.duration || "").trim();
   const total = Number(body.total || 0);
 
-  if (!ward || !title || !desc || !date || !location || !duration || total <= 0) {
-    throw publicError(400, "Title, area, description, date, location, duration and volunteer slots are required.");
+  if (!ward || !title || !desc || !dateStart || !location || total <= 0) {
+    throw publicError(400, "Title, area, description, date & time, location and volunteer slots are required.");
   }
+
+  const date = formatMissionDateRange(dateStart, dateEnd);
+  const durationDisplay = duration || (() => {
+    if (dateStart && dateEnd) {
+      const mins = Math.round((new Date(dateEnd) - new Date(dateStart)) / 60000);
+      if (mins > 0) return mins >= 60 ? `${Math.floor(mins/60)}h ${mins%60 ? (mins%60)+"m" : ""}`.trim() : `${mins}m`;
+    }
+    return "TBD";
+  })();
 
   // Approved orgs bypass the review queue; others wait for admin action.
   const approvalStatus = org.status === "approved" ? "approved" : "pending";
@@ -4580,15 +4590,15 @@ function createOrgMission(orgPayload, body) {
 
   db.prepare(`
     INSERT INTO missions (
-      category, ward, emoji, bg, title, desc, date, location, volunteers, total, status,
+      category, ward, emoji, bg, title, desc, date, date_start, date_end, location, volunteers, total, status,
       source_type, approval_status, host_name, host_phone, host_email, nodal_department,
       is_demo, coordinator, duration, age, impact, created_at, host_type, org_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 'org', ?, ?, ?, ?, '', 0, ?, ?, ?, ?, ?, 'organization', ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 'org', ?, ?, ?, ?, '', 0, ?, ?, ?, ?, ?, 'organization', ?)
   `).run(
     category, ward, categoryEmoji(category), categoryGradient(category),
-    title, desc, date, location, total, missionStatus, approvalStatus,
+    title, desc, date, dateStart, dateEnd, location, total, missionStatus, approvalStatus,
     org.name, org.contact_phone || "", org.contact_email || "",
-    org.name, duration, String(body.age || "16+"),
+    org.name, durationDisplay, String(body.age || "16+"),
     approvalStatus === "approved" ? "Mission by " + org.name : "Awaiting district review",
     isoNow(), org.id
   );
@@ -4602,7 +4612,7 @@ function createOrgMission(orgPayload, body) {
       `<table style="border-collapse:collapse;width:100%;font-size:14px">
         <tr><td style="padding:6px 10px;color:#666;width:120px">Organization</td><td style="padding:6px 10px"><strong>${org.name}</strong></td></tr>
         <tr style="background:#f9f9f9"><td style="padding:6px 10px;color:#666">Mission</td><td style="padding:6px 10px">${title}</td></tr>
-        <tr><td style="padding:6px 10px;color:#666">Date</td><td style="padding:6px 10px">${date}</td></tr>
+        <tr><td style="padding:6px 10px;color:#666">Date</td><td style="padding:6px 10px">${date}${dateStart ? ` <span style="font-size:12px;color:#888">(${dateStart})</span>` : ""}</td></tr>
         <tr style="background:#f9f9f9"><td style="padding:6px 10px;color:#666">Location</td><td style="padding:6px 10px">${location}, ${ward}</td></tr>
         <tr><td style="padding:6px 10px;color:#666">Slots</td><td style="padding:6px 10px">${total} volunteers</td></tr>
       </table>
