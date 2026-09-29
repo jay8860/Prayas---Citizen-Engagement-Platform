@@ -95,8 +95,8 @@ function getCivicRank(points) {
 // Returns a Map: profileId -> { points, missionCount, streak, longestStreak, badges, attended }
 function computeAllVolunteerStats() {
   const allParticipations = db.prepare(`
-    SELECT vp.volunteer_profile_id, vp.created_at, vp.date_label, vp.mission_title,
-           vp.checkin_method, m.status, m.category
+    SELECT vp.volunteer_profile_id, vp.mission_id, vp.created_at, vp.date_label, vp.mission_title,
+           vp.checkin_method, vp.attended_at, m.status, m.category
     FROM volunteer_participations vp
     LEFT JOIN missions m ON m.id = vp.mission_id
     ORDER BY vp.volunteer_profile_id, vp.created_at ASC
@@ -159,9 +159,11 @@ function computeAllVolunteerStats() {
     const attended = rows
       .filter((r) => r.mission_title)
       .map((r) => ({
+        missionId: r.mission_id,
         title: r.mission_title,
         completed: r.status === "completed",
         pending: r.checkin_method === "qr_new",
+        checkedIn: !!r.attended_at,
         dateLabel: r.date_label || ""
       }));
 
@@ -1077,6 +1079,10 @@ try {
     )
   `);
 } catch(e) {}
+try { db.exec("ALTER TABLE missions ADD COLUMN date_start TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try { db.exec("ALTER TABLE missions ADD COLUMN date_end TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try { db.exec("ALTER TABLE organizations ADD COLUMN reset_token TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try { db.exec("ALTER TABLE organizations ADD COLUMN reset_token_at TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
@@ -1413,11 +1419,25 @@ function handleAiQueueAction(body, admin) {
   return { ok: true };
 }
 
+function autoExpireOldMissions() {
+  const now = new Date().toISOString();
+  const result = db.prepare(`
+    UPDATE missions SET status = 'closed'
+    WHERE status IN ('open','full','upcoming')
+    AND date_end != '' AND date_end < ?
+    AND archived_at IS NULL
+  `).run(now);
+  if (result.changes > 0) {
+    console.log(`[AUTO-EXPIRE] Closed ${result.changes} past-dated mission(s).`);
+  }
+}
+
 seedDatabase();
 migrateLegacyDemoRecords();
 migrateVolunteerRegistry();
 migrateCheckInCodes();
 seedAdminUsers();
+autoExpireOldMissions();
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
@@ -1614,6 +1634,31 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/volunteers/upload-photo") {
       const body = await readJsonBody(req);
       return sendJson(res, 200, uploadVolunteerPhoto(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/volunteers/cancel-rsvp") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, cancelVolunteerRsvp(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/volunteers/update-phone") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, updateVolunteerPhone(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/org/request-password-reset") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, await requestOrgPasswordReset(body));
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/org/confirm-password-reset") {
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, confirmOrgPasswordReset(body));
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/admin/today-summary") {
+      requireAdmin(req);
+      return sendJson(res, 200, getTodaySummary());
     }
 
     if (req.method === "POST" && url.pathname === "/api/bot/chat") {
@@ -2672,6 +2717,25 @@ function displayDate(value = isoNow()) {
   }).format(new Date(value));
 }
 
+function formatMissionDateRange(dateStart, dateEnd) {
+  try {
+    const opts = { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true };
+    const start = new Intl.DateTimeFormat("en-IN", opts).format(new Date(dateStart));
+    if (!dateEnd) return start;
+    const endDate = new Date(dateEnd);
+    const startDate = new Date(dateStart);
+    const sameDay = startDate.toDateString() === endDate.toDateString();
+    if (sameDay) {
+      const timeOpts = { hour: "numeric", minute: "2-digit", hour12: true };
+      const endTime = new Intl.DateTimeFormat("en-IN", timeOpts).format(endDate);
+      return `${start} – ${endTime}`;
+    }
+    return `${start} – ${new Intl.DateTimeFormat("en-IN", opts).format(endDate)}`;
+  } catch(e) {
+    return dateStart;
+  }
+}
+
 function getSetting(key, fallback = "") {
   const row = db.prepare("SELECT value FROM settings WHERE key = ?").get(key);
   return row ? row.value : fallback;
@@ -3240,6 +3304,8 @@ function buildBootstrapPayload(isAdmin = false) {
     title: mission.title,
     desc: mission.desc,
     date: mission.date,
+    dateStart: mission.date_start || "",
+    dateEnd: mission.date_end || "",
     location: mission.location,
     volunteers: mission.volunteers,
     total: mission.total,
@@ -4100,7 +4166,12 @@ function createMission(body, admin) {
     : String(body.ward || body.area || "").trim();
   const title = String(body.title || "").trim();
   const desc = String(body.desc || "").trim();
-  const date = String(body.date || "").trim();
+  const dateStart = String(body.dateStart || "").trim();
+  const dateEnd = String(body.dateEnd || "").trim();
+  // Build a human-readable date string from structured fields if provided
+  const date = dateStart
+    ? formatMissionDateRange(dateStart, dateEnd)
+    : String(body.date || "").trim();
   const location = String(body.location || "").trim();
   const coordinator = String(body.coordinator || "").trim();
   const duration = String(body.duration || "").trim();
@@ -4114,8 +4185,8 @@ function createMission(body, admin) {
 
   db.prepare(`
     INSERT INTO missions (
-      category, ward, emoji, bg, title, desc, date, location, volunteers, total, status, source_type, approval_status, host_name, host_phone, host_email, nodal_department, is_demo, coordinator, duration, age, impact, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', 'approved', '', '', '', ?, 0, ?, ?, ?, ?, ?)
+      category, ward, emoji, bg, title, desc, date, date_start, date_end, location, volunteers, total, status, source_type, approval_status, host_name, host_phone, host_email, nodal_department, is_demo, coordinator, duration, age, impact, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', 'approved', '', '', '', ?, 0, ?, ?, ?, ?, ?)
   `).run(
     category,
     ward,
@@ -4124,6 +4195,8 @@ function createMission(body, admin) {
     title,
     desc,
     date,
+    dateStart,
+    dateEnd,
     location,
     0,
     total,
@@ -4147,7 +4220,9 @@ function createCommunityMission(body) {
   const ward = String(body.ward || body.area || "").trim();
   const title = String(body.title || "").trim();
   const desc = String(body.desc || "").trim();
-  const date = String(body.date || "").trim();
+  const dateStart = String(body.dateStart || "").trim();
+  const dateEnd = String(body.dateEnd || "").trim();
+  const date = dateStart ? formatMissionDateRange(dateStart, dateEnd) : String(body.date || "").trim();
   const location = String(body.location || "").trim();
   const coordinator = String(body.coordinator || body.hostName || "").trim();
   const duration = String(body.duration || "").trim();
@@ -4163,8 +4238,8 @@ function createCommunityMission(body) {
 
   db.prepare(`
     INSERT INTO missions (
-      category, ward, emoji, bg, title, desc, date, location, volunteers, total, status, source_type, approval_status, host_name, host_phone, host_email, nodal_department, is_demo, coordinator, duration, age, impact, created_at, host_type
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', 'community', 'pending', ?, ?, ?, '', 0, ?, ?, ?, ?, ?, ?)
+      category, ward, emoji, bg, title, desc, date, date_start, date_end, location, volunteers, total, status, source_type, approval_status, host_name, host_phone, host_email, nodal_department, is_demo, coordinator, duration, age, impact, created_at, host_type
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', 'community', 'pending', ?, ?, ?, '', 0, ?, ?, ?, ?, ?, ?)
   `).run(
     category,
     ward,
@@ -4173,6 +4248,8 @@ function createCommunityMission(body) {
     title,
     desc,
     date,
+    dateStart,
+    dateEnd,
     location,
     0,
     total,
@@ -5672,7 +5749,18 @@ function addMissionPhoto(missionId, body) {
   const mission = ensureRowExists("missions", missionId, "Mission not found.");
   const photoData = String(body.photoData || "");
   const caption = String(body.caption || "").trim().slice(0, 200);
-  const uploadedBy = String(body.uploadedBy || "").trim().slice(0, 100) || "Anonymous";
+
+  // Require volunteer authentication — phone + name must match a registered profile
+  const uploaderName = String(body.uploaderName || "").trim();
+  const uploaderPhone = String(body.uploaderPhone || "").trim();
+  if (!uploaderName || !uploaderPhone) {
+    throw publicError(401, "Please enter your registered name and mobile number to upload photos.");
+  }
+  const volunteerProfile = findVolunteerProfile(uploaderName, uploaderPhone);
+  if (!volunteerProfile) {
+    throw publicError(401, "No volunteer account found with that name and phone. Please register as a volunteer first.");
+  }
+  const uploadedBy = volunteerProfile.name;
 
   if (!photoData.startsWith("data:image/")) {
     throw publicError(400, "Photo must be a valid image.");
@@ -5784,4 +5872,141 @@ function getMissionFeedback(missionId) {
     comment: r.comment,
     date: r.date_label
   }));
+}
+
+// ── Org self-serve password reset ─────────────────────────────────────────────
+
+function requestOrgPasswordReset(body) {
+  const email = String(body.email || "").trim().toLowerCase();
+  if (!email) throw publicError(400, "Please enter your registered email address.");
+  const org = db.prepare("SELECT id, name, username, contact_email FROM organizations WHERE LOWER(contact_email) = ?").get(email);
+  if (!org) throw publicError(404, "No organization account found with that email address.");
+
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let token = "";
+  for (let i = 0; i < 8; i++) token += chars[Math.floor(Math.random() * chars.length)];
+
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  db.prepare("UPDATE organizations SET reset_token=?, reset_token_at=? WHERE id=?").run(token, expiresAt, org.id);
+
+  const emailSent = sendEmail(org.contact_email,
+    `JanPrayas Password Reset — ${org.name}`,
+    `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#f9fafb;padding:24px;border-radius:10px">
+      <h2 style="color:#1B3A6B;margin-top:0">Password Reset</h2>
+      <p>Hello <strong>${org.name}</strong>,</p>
+      <p>Your password reset code is:</p>
+      <div style="background:#fff;border:2px solid #1B3A6B;border-radius:8px;padding:18px 24px;text-align:center;margin:20px 0">
+        <span style="font-size:28px;font-weight:800;letter-spacing:4px;color:#1B3A6B">${token}</span>
+      </div>
+      <p style="color:#555;font-size:13px">Enter this code on the portal's reset form within 1 hour. Your username is <strong>${org.username}</strong>.</p>
+      <p style="color:#999;font-size:12px">If you did not request this, ignore this email.</p>
+    </div>`
+  ).catch(() => {});
+
+  return { ok: true, emailSent: !!(GMAIL_USER) };
+}
+
+function confirmOrgPasswordReset(body) {
+  const username = String(body.username || "").trim().toLowerCase();
+  const token = String(body.token || "").trim().toUpperCase();
+  const newPassword = String(body.newPassword || "");
+  if (!username || !token || !newPassword) throw publicError(400, "Username, reset code, and new password are required.");
+  if (newPassword.length < 8) throw publicError(400, "New password must be at least 8 characters.");
+
+  const org = db.prepare("SELECT * FROM organizations WHERE username = ?").get(username);
+  if (!org) throw publicError(404, "Organization not found.");
+  if (!org.reset_token || org.reset_token !== token) throw publicError(401, "Invalid reset code.");
+  if (!org.reset_token_at || new Date(org.reset_token_at) < new Date()) throw publicError(401, "Reset code has expired. Please request a new one.");
+
+  const { hash, salt } = hashPassword(newPassword);
+  db.prepare("UPDATE organizations SET password_hash=?, password_salt=?, reset_token='', reset_token_at='', updated_at=? WHERE id=?")
+    .run(hash, salt, isoNow(), org.id);
+
+  return { ok: true };
+}
+
+// ── Volunteer self-service actions ────────────────────────────────────────────
+
+function cancelVolunteerRsvp(body) {
+  const name = String(body.name || "").trim();
+  const phone = String(body.phone || "").trim();
+  const missionId = Number(body.missionId || 0);
+  if (!name || !phone || !missionId) throw publicError(400, "Name, phone, and mission ID are required.");
+
+  const profile = findVolunteerProfile(name, phone);
+  if (!profile) throw publicError(404, "No volunteer account found with that name and phone.");
+
+  const participation = db.prepare(`
+    SELECT id, attended_at FROM volunteer_participations
+    WHERE volunteer_profile_id = ? AND mission_id = ? LIMIT 1
+  `).get(profile.id, missionId);
+  if (!participation) throw publicError(404, "You are not registered for this mission.");
+  if (participation.attended_at) throw publicError(400, "You have already checked in to this mission — RSVP cannot be cancelled after check-in.");
+
+  db.exec("BEGIN");
+  try {
+    db.prepare("DELETE FROM volunteer_participations WHERE id = ?").run(participation.id);
+    const mission = db.prepare("SELECT volunteers, total, status FROM missions WHERE id = ?").get(missionId);
+    if (mission) {
+      const newCount = Math.max(0, mission.volunteers - 1);
+      const newStatus = mission.status === "full" ? "open" : mission.status;
+      db.prepare("UPDATE missions SET volunteers = ?, status = ? WHERE id = ?").run(newCount, newStatus, missionId);
+    }
+    db.exec("COMMIT");
+  } catch(e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
+  return { ok: true };
+}
+
+function updateVolunteerPhone(body) {
+  const name = String(body.name || "").trim();
+  const oldPhone = String(body.oldPhone || "").trim();
+  const newPhone = String(body.newPhone || "").trim();
+  if (!name || !oldPhone || !newPhone) throw publicError(400, "Name, current phone, and new phone are required.");
+
+  const profile = findVolunteerProfile(name, oldPhone);
+  if (!profile) throw publicError(404, "No account found with that name and phone. Please check the details.");
+
+  const normalizedNew = normalizeVolunteerPhone(newPhone);
+  if (normalizedNew.length !== 10) throw publicError(400, "New phone must be a valid 10-digit mobile number.");
+
+  const conflict = db.prepare("SELECT id FROM volunteer_profiles WHERE normalized_phone = ? AND id != ? LIMIT 1").get(normalizedNew, profile.id);
+  if (conflict) throw publicError(409, "Another account is already registered with that phone number.");
+
+  db.prepare("UPDATE volunteer_profiles SET phone = ?, normalized_phone = ?, updated_at = ? WHERE id = ?")
+    .run(newPhone, normalizedNew, isoNow(), profile.id);
+  return { ok: true };
+}
+
+// ── Admin Today Summary ───────────────────────────────────────────────────────
+
+function getTodaySummary() {
+  const pendingCheckins = db.prepare("SELECT COUNT(*) AS n FROM volunteer_participations WHERE checkin_method='qr_new' AND attended_at IS NULL").get().n;
+  const pendingCommunityMissions = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE source_type='community' AND approval_status='pending' AND archived_at IS NULL").get().n;
+  const pendingOrgs = db.prepare("SELECT COUNT(*) AS n FROM organizations WHERE status='pending'").get().n;
+  const aiQueueItems = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE ai_flag IN ('flagged','rejected') AND archived_at IS NULL").get().n +
+    db.prepare("SELECT COUNT(*) AS n FROM story_comments WHERE ai_hidden=1").get().n +
+    db.prepare("SELECT COUNT(*) AS n FROM mission_discussions WHERE ai_hidden=1").get().n;
+  const newFeedback = db.prepare("SELECT COUNT(*) AS n FROM public_feedback WHERE status='new'").get().n;
+  const completionRequests = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE completion_requested=1 AND status!='completed' AND archived_at IS NULL").get().n;
+
+  const recentActivity = db.prepare(`
+    SELECT vp.volunteer_profile_id, vp.checkin_method, vp.created_at, m.title AS mission_title, m.ward
+    FROM volunteer_participations vp
+    JOIN missions m ON m.id = vp.mission_id
+    ORDER BY vp.created_at DESC LIMIT 8
+  `).all();
+
+  return {
+    pendingCheckins,
+    pendingCommunityMissions,
+    pendingOrgs,
+    aiQueueItems,
+    newFeedback,
+    completionRequests,
+    totalActionItems: pendingCheckins + pendingCommunityMissions + pendingOrgs + newFeedback + completionRequests,
+    recentActivity
+  };
 }
