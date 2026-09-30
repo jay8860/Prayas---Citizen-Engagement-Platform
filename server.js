@@ -1086,6 +1086,9 @@ try { db.exec("ALTER TABLE organizations ADD COLUMN reset_token_at TEXT NOT NULL
 try { db.exec("ALTER TABLE missions ADD COLUMN completion_requested_phone TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try { db.exec("ALTER TABLE missions ADD COLUMN completion_activity_summary TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try { db.exec("ALTER TABLE missions ADD COLUMN completion_closure_photos TEXT NOT NULL DEFAULT '[]'"); } catch(e) {}
+try { db.exec("ALTER TABLE missions ADD COLUMN completion_returned_comment TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try { db.exec("ALTER TABLE missions ADD COLUMN completion_returned_at TEXT NOT NULL DEFAULT ''"); } catch(e) {}
+try { db.exec("ALTER TABLE missions ADD COLUMN completion_returned_by TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
@@ -2278,6 +2281,13 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, dismissCompletionRequest(missionId, admin));
     }
 
+    if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/completion-request\/return$/.test(url.pathname)) {
+      const admin = requireAdmin(req);
+      const missionId = Number(url.pathname.split("/")[4]);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, returnCompletionRequest(missionId, body, admin));
+    }
+
     if (req.method === "GET" && /^\/api\/missions\/\d+\/feedback$/.test(url.pathname)) {
       const missionId = Number(url.pathname.split("/")[3]);
       return sendJson(res, 200, { feedback: getMissionFeedback(missionId) });
@@ -3324,6 +3334,9 @@ function buildBootstrapPayload(isAdmin = false) {
     completionRequestedNote: mission.completion_requested_note || "",
     completionActivitySummary: mission.completion_activity_summary || "",
     completionClosurePhotos: safeJsonArray(mission.completion_closure_photos),
+    completionReturnedComment: mission.completion_returned_comment || "",
+    completionReturnedAt: mission.completion_returned_at || "",
+    completionReturnedBy: mission.completion_returned_by || "",
     hostType: mission.host_type || "individual",
     participantsPreview: participantsByMission.get(mission.id) || [],
     discussion: discussionStmt.all(mission.id).map((entry) => ({
@@ -4627,7 +4640,10 @@ function listOrgMissions(orgPayload) {
   const rows = db.prepare(`
     SELECT id, title, category, ward, location, date, status, approval_status,
            volunteers, total, created_at, outcome_note, actual_turnout, poster_ai_tries,
-           check_in_code
+           check_in_code, completion_requested, completion_requested_by,
+           completion_requested_phone, completion_requested_note,
+           completion_activity_summary, completion_closure_photos,
+           completion_returned_comment, completion_returned_at, completion_returned_by
     FROM missions WHERE org_id = ? ORDER BY created_at DESC
   `).all(orgPayload.oid);
   return {
@@ -4635,7 +4651,18 @@ function listOrgMissions(orgPayload) {
       const walkinCount = db.prepare(
         `SELECT COUNT(*) AS n FROM volunteer_participations WHERE mission_id = ? AND checkin_method = 'walkin'`
       ).get(m.id).n;
-      return { ...m, checkInCode: m.check_in_code || "", walkinCount };
+      return {
+        ...m,
+        checkInCode: m.check_in_code || "",
+        walkinCount,
+        completionRequested: Boolean(m.completion_requested),
+        completionReturnedComment: m.completion_returned_comment || "",
+        completionReturnedAt: m.completion_returned_at || "",
+        completionReturnedBy: m.completion_returned_by || "",
+        completionRequestedBy: m.completion_requested_by || "",
+        completionActivitySummary: m.completion_activity_summary || "",
+        completionClosurePhotos: safeJsonArray(m.completion_closure_photos),
+      };
     })
   };
 }
@@ -4939,7 +4966,8 @@ function updateMissionStatus(missionId, body, admin) {
       UPDATE missions
       SET status = ?, outcome_note = ?, actual_turnout = ?, photo_url = ?,
           completion_requested = 0, completion_requested_by = '', completion_requested_phone = '',
-          completion_requested_note = '', completion_activity_summary = '', completion_closure_photos = '[]'
+          completion_requested_note = '', completion_activity_summary = '', completion_closure_photos = '[]',
+          completion_returned_comment = '', completion_returned_at = '', completion_returned_by = ''
       WHERE id = ?
     `).run(status, outcomeNote, actualTurnout, photoUrl, missionId);
     flagAttendanceAsync(missionId);
@@ -5835,9 +5863,29 @@ function requestMissionCompletion(missionId, body) {
         completion_requested_phone = ?,
         completion_requested_note = ?,
         completion_activity_summary = ?,
-        completion_closure_photos = ?
+        completion_closure_photos = ?,
+        completion_returned_comment = '',
+        completion_returned_at = '',
+        completion_returned_by = ''
     WHERE id = ?
   `).run(requestedBy, requestedPhone, note, activitySummary, JSON.stringify(validatedPhotos), missionId);
+  return { ok: true };
+}
+
+function returnCompletionRequest(missionId, body, admin) {
+  ensureRowExists("missions", missionId, "Mission not found.");
+  assertMissionScope(admin, missionId);
+  const row = db.prepare("SELECT completion_requested FROM missions WHERE id = ?").get(missionId);
+  if (!row.completion_requested) throw publicError(400, "No pending completion request to return.");
+  const comment = String(body.comment || "").trim().slice(0, 500);
+  if (!comment) throw publicError(400, "Please enter a message explaining what needs to be fixed or added.");
+  const adminName = admin ? admin.name : "Admin";
+  db.prepare(`
+    UPDATE missions SET completion_returned_comment = ?, completion_returned_at = ?, completion_returned_by = ?
+    WHERE id = ?
+  `).run(comment, isoNow(), adminName, missionId);
+  writeAuditLog("return_completion_request", "mission", missionId,
+    `Returned by ${adminName}: ${comment}`);
   return { ok: true };
 }
 
@@ -5846,7 +5894,9 @@ function dismissCompletionRequest(missionId, admin) {
   assertMissionScope(admin, missionId);
   db.prepare(`UPDATE missions SET completion_requested = 0, completion_requested_by = '',
     completion_requested_phone = '', completion_requested_note = '',
-    completion_activity_summary = '', completion_closure_photos = '[]' WHERE id = ?`).run(missionId);
+    completion_activity_summary = '', completion_closure_photos = '[]',
+    completion_returned_comment = '', completion_returned_at = '', completion_returned_by = ''
+    WHERE id = ?`).run(missionId);
   writeAuditLog("dismiss_completion_request", "mission", missionId, `Completion request dismissed by ${admin ? admin.name : "admin"}`);
   return { ok: true };
 }

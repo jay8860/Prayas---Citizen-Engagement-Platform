@@ -3987,7 +3987,7 @@
               <!-- Tab nav -->
               <div style="display:flex;gap:6px;margin-bottom:20px;border-bottom:2px solid var(--border);padding-bottom:0">
                 <button class="org-tab-btn active" type="button" data-tab="profile" onclick="switchOrgTab('profile')">👤 Profile</button>
-                <button class="org-tab-btn" type="button" data-tab="missions" onclick="switchOrgTab('missions')">📋 Missions</button>
+                <button class="org-tab-btn" type="button" data-tab="missions" id="orgMissionsTabBtn" onclick="switchOrgTab('missions')">📋 Missions <span id="orgReturnedBadge" hidden style="background:#EF4444;color:#fff;border-radius:50%;padding:1px 6px;font-size:11px;font-weight:700;margin-left:2px">!</span></button>
                 <button class="org-tab-btn" type="button" data-tab="points" onclick="switchOrgTab('points')">🏆 Points &amp; Rank</button>
               </div>
 
@@ -5106,6 +5106,52 @@
           </div>
           <div id="checkInStep3Error" style="color:var(--danger,#DC2626);font-size:13px;margin-top:10px"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Org resubmit modal (for returned completion requests) -->
+  <div class="modal-overlay" id="orgResubmitModal">
+    <div class="modal-shell narrow">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Update &amp; Resubmit Closure Request</h2>
+          <p class="modal-subtitle">The admin has returned your request. Update the details and photos below, then resubmit.</p>
+        </div>
+        <button class="modal-close" type="button" data-close-modal="orgResubmitModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Your Name *</label>
+          <input id="orgResubmitName" type="text" maxlength="100" required placeholder="Submitter name" />
+        </div>
+        <div class="form-group">
+          <label>Your Mobile Number *</label>
+          <input id="orgResubmitPhone" type="tel" maxlength="15" required placeholder="10-digit mobile" />
+        </div>
+        <div class="form-group">
+          <label>Activity Summary * <span style="font-size:12px;font-weight:400;color:var(--muted)">What happened, how many attended?</span></label>
+          <textarea id="orgResubmitSummary" rows="3" maxlength="500" required
+            placeholder="e.g. Tree plantation held on 30 Sep, 42 volunteers attended, 3 hours of work in Ward 5."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Verification Photos * <span style="font-size:12px;font-weight:400;color:var(--muted)">minimum 3 — activity, volunteers, event</span></label>
+          <div id="orgResubmitPhotoList" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>
+          <label class="btn btn-secondary" style="font-size:13px;cursor:pointer">
+            📷 Add Photos
+            <input type="file" accept="image/*" multiple style="display:none" onchange="addOrgResubmitPhotos(event)">
+          </label>
+          <div id="orgResubmitPhotoCount" style="font-size:12px;color:var(--muted);margin-top:4px">0 / 3 minimum</div>
+        </div>
+        <div class="form-group">
+          <label>Additional Note <span style="font-size:12px;font-weight:400;color:var(--muted)">(optional)</span></label>
+          <textarea id="orgResubmitNote" rows="2" maxlength="300"
+            placeholder="Any additional context for the admin."></textarea>
+        </div>
+        <div id="orgResubmitError" style="color:var(--danger);font-size:13px;margin-bottom:8px"></div>
+        <button class="btn btn-primary" type="button" style="width:100%" onclick="submitOrgResubmit()">
+          Resubmit Closure Request
+        </button>
       </div>
     </div>
   </div>
@@ -10467,6 +10513,14 @@
           listEl.innerHTML = `<p style="color:var(--text-muted);font-size:13px">No missions yet. Submit your first one above.</p>`;
           return;
         }
+        // Show/hide the red badge on the Missions tab
+        const returnedCount = missions.filter(m => m.completionReturnedComment && m.completionRequested).length;
+        const badge = document.getElementById("orgReturnedBadge");
+        if (badge) {
+          badge.hidden = returnedCount === 0;
+          badge.textContent = returnedCount > 9 ? "9+" : String(returnedCount);
+        }
+
         const hasApproved = missions.some(m => m.approval_status === "approved");
         const featureBanner = hasApproved ? `
           <div style="background:linear-gradient(135deg,#1E40AF,#0EA5E9);border-radius:14px;padding:16px 18px;margin-bottom:4px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
@@ -10531,7 +10585,30 @@
                 ${m.walkinCount > 0 ? `<div style="font-size:11px;color:#166534;margin-top:4px">👥 ${m.walkinCount} walk-in ${m.walkinCount === 1 ? "attendance" : "attendances"} recorded for this mission.</div>` : ""}
               </div>
             </div>` : "";
-          return `<div style="background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
+          // Build returned-request notification banner
+          const isReturned = m.completionReturnedComment && m.completionRequested;
+          const isPendingCompletion = m.completionRequested && !isReturned;
+          const returnedBanner = isReturned ? `
+            <div style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:10px;padding:12px 14px;margin-top:12px">
+              <div style="font-weight:700;font-size:13px;color:#92400E;margin-bottom:6px">
+                ⚠️ Action Required — Admin returned your completion request
+              </div>
+              <div style="font-size:13px;color:#78350F;background:#FFF8E1;padding:8px 10px;border-radius:6px;border-left:3px solid #F59E0B;margin-bottom:8px">
+                "${escapeHtml(m.completionReturnedComment)}"
+              </div>
+              <div style="font-size:11px;color:#92400E;margin-bottom:8px">
+                Returned by ${escapeHtml(m.completionReturnedBy || "Admin")}${m.completionReturnedAt ? " on " + new Date(m.completionReturnedAt).toLocaleDateString("en-IN", {day:"numeric",month:"short",year:"numeric"}) : ""}
+              </div>
+              <button type="button" class="btn btn-primary" style="font-size:13px"
+                onclick="openOrgResubmitModal(${m.id})">
+                📸 Update &amp; Resubmit Closure Request
+              </button>
+            </div>` : "";
+          const pendingBanner = isPendingCompletion ? `
+            <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;color:#1E40AF">
+              ⏳ <strong>Completion request pending admin review.</strong> The district administrator will review your submitted photos and summary.
+            </div>` : "";
+          return `<div style="background:var(--card-bg,#fff);border:${isReturned ? "2px solid #F59E0B" : "1px solid var(--border)"};border-radius:12px;padding:14px 16px">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
               <div style="font-weight:700;font-size:14px">${escapeHtml(m.title)}</div>
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${statusBadge}${mStatus}</div>
@@ -10542,6 +10619,8 @@
             <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
               👥 ${m.volunteers || 0} registered / ${m.total} slots &nbsp;|&nbsp; ✅ ${m.actual_turnout || 0} QR-verified &nbsp;|&nbsp; 🤝 ${m.walkinCount || 0} walk-in
             </div>
+            ${returnedBanner}
+            ${pendingBanner}
             ${posterSection}
             ${walkinSection}
           </div>`;
@@ -10860,6 +10939,88 @@
         btn.disabled = false;
         btn.textContent = orig;
       }
+    }
+
+    // ── Org: resubmit a returned completion request ─────────────────────────────
+
+    let orgResubmitMissionId = null;
+    let orgResubmitPhotos = [];
+
+    function openOrgResubmitModal(missionId) {
+      orgResubmitMissionId = missionId;
+      orgResubmitPhotos = [];
+      const modal = document.getElementById("orgResubmitModal");
+      if (!modal) return;
+      document.getElementById("orgResubmitSummary").value = "";
+      document.getElementById("orgResubmitPhone").value = "";
+      document.getElementById("orgResubmitName").value = "";
+      document.getElementById("orgResubmitNote").value = "";
+      document.getElementById("orgResubmitPhotoList").innerHTML = "";
+      document.getElementById("orgResubmitPhotoCount").textContent = "0 / 3 minimum";
+      document.getElementById("orgResubmitError").textContent = "";
+      openModal("orgResubmitModal");
+    }
+
+    function addOrgResubmitPhotos(event) {
+      const files = Array.from(event.target.files || []);
+      files.slice(0, 10 - orgResubmitPhotos.length).forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          orgResubmitPhotos.push({ data: e.target.result, caption: "" });
+          renderOrgResubmitPhotoList();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderOrgResubmitPhotoList() {
+      const container = document.getElementById("orgResubmitPhotoList");
+      const countEl = document.getElementById("orgResubmitPhotoCount");
+      if (!container) return;
+      container.innerHTML = orgResubmitPhotos.map((p, i) => `
+        <div style="position:relative;text-align:center">
+          <img src="${p.data}" style="height:80px;width:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">
+          <input type="text" placeholder="Caption" maxlength="100" value="${escapeHtml(p.caption)}"
+            style="display:block;width:80px;font-size:10px;margin-top:2px;padding:2px 4px;border:1px solid var(--border);border-radius:4px"
+            oninput="orgResubmitPhotos[${i}].caption=this.value">
+          <button type="button" style="position:absolute;top:2px;right:2px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:1"
+            onclick="orgResubmitPhotos.splice(${i},1);renderOrgResubmitPhotoList()">✕</button>
+        </div>`).join("");
+      if (countEl) countEl.textContent = `${orgResubmitPhotos.length} / 3 minimum photos`;
+    }
+
+    async function submitOrgResubmit() {
+      const missionId = orgResubmitMissionId;
+      if (!missionId) return;
+      const requestedBy = document.getElementById("orgResubmitName").value.trim();
+      const requestedPhone = document.getElementById("orgResubmitPhone").value.trim();
+      const activitySummary = document.getElementById("orgResubmitSummary").value.trim();
+      const note = document.getElementById("orgResubmitNote").value.trim();
+      const errorEl = document.getElementById("orgResubmitError");
+      errorEl.textContent = "";
+      if (!requestedBy || !requestedPhone || !activitySummary) {
+        errorEl.textContent = "Name, mobile number and activity summary are all required.";
+        return;
+      }
+      if (orgResubmitPhotos.length < 3) {
+        errorEl.textContent = "Please upload at least 3 verification photos.";
+        return;
+      }
+      try {
+        await apiRequest(`/api/missions/${missionId}/request-completion`, {
+          method: "POST",
+          body: JSON.stringify({
+            requestedBy, requestedPhone, activitySummary, note,
+            closurePhotos: orgResubmitPhotos
+          })
+        });
+        closeModal("orgResubmitModal");
+        orgResubmitPhotos = [];
+        showToast("Updated and resubmitted — the admin will review your updated request.", "✅");
+        await refreshPortalData();
+        renderAll();
+        loadOrgMissions();
+      } catch (error) { handleRequestError(error); }
     }
 
     function renderLeaders() {
@@ -11497,9 +11658,24 @@
               ${mission.completionRequestedNote ? `<div class="message-text"><em>Note: ${escapeHtml(mission.completionRequestedNote)}</em></div>` : ""}
               ${photoHtml}
               <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${photos.length} verification photo${photos.length !== 1 ? "s" : ""} submitted</div>
-              <div class="message-actions">
+              ${mission.completionReturnedComment ? `
+              <div style="background:#FEF3C7;color:#92400E;padding:8px 12px;border-radius:8px;border-left:3px solid #F59E0B;margin-bottom:6px;font-size:12px">
+                ↩️ <strong>Previously returned</strong> on ${mission.completionReturnedAt ? new Date(mission.completionReturnedAt).toLocaleDateString("en-IN") : "—"}<br>
+                <em>"${escapeHtml(mission.completionReturnedComment)}"</em> — Re-submitted with updates.
+              </div>` : ""}
+              <div class="message-actions" style="flex-wrap:wrap;gap:6px">
                 <button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">Confirm &amp; Mark Completed</button>
+                <button class="btn btn-soft" type="button" style="color:#B45309" onclick="toggleReturnForm(${mission.id})">↩️ Send Back</button>
                 <button class="btn btn-soft" type="button" onclick="dismissMissionCompletionRequest(${mission.id})">Dismiss</button>
+              </div>
+              <div id="returnForm-${mission.id}" hidden style="margin-top:10px;padding:10px 12px;background:var(--surface,#F9FAFB);border-radius:8px;border:1px solid var(--border)">
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">Message to submitter — what needs to be fixed or added:</label>
+                <textarea id="returnComment-${mission.id}" rows="3" maxlength="500" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;resize:vertical"
+                  placeholder="e.g. Please upload clearer photos showing all volunteers. The activity summary needs more detail about how many people attended."></textarea>
+                <div style="display:flex;gap:8px;margin-top:8px">
+                  <button class="btn btn-primary" type="button" style="font-size:12px" onclick="sendCompletionRequestBack(${mission.id})">Send Back with Message</button>
+                  <button class="btn btn-soft" type="button" style="font-size:12px" onclick="toggleReturnForm(${mission.id})">Cancel</button>
+                </div>
               </div>
             </div>`;
         })
@@ -12087,6 +12263,27 @@
       if (mission.status === "completed") return "";
       const hi = state.lang === "hi";
       if (mission.completionRequested) {
+        const isReturned = !!mission.completionReturnedComment;
+        if (isReturned) {
+          return `
+            <div class="message-card" style="margin-top:20px;border:2px solid #F59E0B">
+              <div class="message-name" style="color:#92400E">⚠️ ${hi ? "एडमिन ने अनुरोध वापस किया — कार्रवाई आवश्यक" : "Admin returned your request — action required"}</div>
+              <div class="message-text" style="background:#FFF8E1;padding:8px 10px;border-radius:6px;border-left:3px solid #F59E0B">
+                "${escapeHtml(mission.completionReturnedComment)}"
+              </div>
+              <div class="message-text" style="font-size:12px;color:var(--muted)">
+                ${hi ? "द्वारा" : "By"} ${escapeHtml(mission.completionReturnedBy || "Admin")}
+                ${mission.completionReturnedAt ? " · " + new Date(mission.completionReturnedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}) : ""}
+              </div>
+              <div class="message-text" style="font-size:12px">${hi ? "कृपया नीचे दिए गए फॉर्म से अपडेट करके दोबारा अनुरोध करें।" : "Please update your photos/summary below and resubmit the request."}</div>
+              ${state.adminLoggedIn ? `
+              <div class="message-actions">
+                <button class="btn btn-primary" type="button" onclick="closeModal('missionModal'); openCompletionSummaryModal(${mission.id})">${hi ? "पुष्टि करें और पूर्ण करें" : "Confirm & Mark Completed"}</button>
+                <button class="btn btn-soft" type="button" onclick="dismissMissionCompletionRequest(${mission.id})">${hi ? "अनुरोध खारिज करें" : "Dismiss"}</button>
+              </div>` : ""}
+            </div>
+          `;
+        }
         return `
           <div class="message-card" style="margin-top:20px;border-left:3px solid var(--saffron,#FF9933)">
             <div class="message-name">⏳ ${hi ? "पूर्णता अनुरोध लंबित है" : "Completion request pending"}</div>
@@ -12205,6 +12402,29 @@
       try {
         await apiRequest(`/api/admin/missions/${missionId}/completion-request/dismiss`, { method: "POST" });
         showToast(state.lang === "hi" ? "अनुरोध खारिज किया गया।" : "Request dismissed.", "✅");
+        await refreshPortalData();
+        renderAll();
+      } catch (error) { handleRequestError(error); }
+    }
+
+    function toggleReturnForm(missionId) {
+      const el = document.getElementById(`returnForm-${missionId}`);
+      if (el) el.hidden = !el.hidden;
+    }
+
+    async function sendCompletionRequestBack(missionId) {
+      const commentEl = document.getElementById(`returnComment-${missionId}`);
+      const comment = commentEl?.value?.trim();
+      if (!comment) {
+        showToast("Please enter a message explaining what needs to be fixed.", "⚠️");
+        return;
+      }
+      try {
+        await apiRequest(`/api/admin/missions/${missionId}/completion-request/return`, {
+          method: "POST",
+          body: JSON.stringify({ comment })
+        });
+        showToast("Request sent back to the submitter with your comments.", "↩️");
         await refreshPortalData();
         renderAll();
       } catch (error) { handleRequestError(error); }
