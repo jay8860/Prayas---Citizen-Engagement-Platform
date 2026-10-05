@@ -2455,7 +2455,7 @@ ${notFound ? `
     `}
   </div>
 </div>
-<p class="footer-note">JanPrayas — District ${escapeHtml(districtName)}, Chhattisgarh &nbsp;|&nbsp; janprayas.dhamtari.gov.in</p>
+<p class="footer-note">JanPrayas — District ${escapeHtml(districtName)}, Chhattisgarh &nbsp;|&nbsp; janprayas.in</p>
 `}
 <script>
 const MISSION_ID = ${mission ? mission.id : 0};
@@ -2588,7 +2588,7 @@ body{font-family:Inter,sans-serif;background:#F0F4F8;min-height:100vh;display:fl
   </div>
   <div class="footer">
     <a href="/">← Return to JanPrayas Portal</a><br>
-    <span style="margin-top:4px;display:block">${escapeHtml(districtName)} District · janprayas.dhamtari.gov.in</span>
+    <span style="margin-top:4px;display:block">${escapeHtml(districtName)} District · janprayas.in</span>
   </div>
 </div>
 </body></html>`;

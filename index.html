@@ -8581,7 +8581,7 @@
           ftTextX, ftMidY - 28
         );
         ctx.fillStyle = "rgba(255,255,255,0.75)"; ctx.font = "400 16px Inter";
-        ctx.fillText("janprayas.dhamtari.gov.in", ftTextX, ftMidY);
+        ctx.fillText("janprayas.in", ftTextX, ftMidY);
         ctx.fillStyle = "rgba(255,255,255,0.60)"; ctx.font = "400 14px Inter";
         ctx.fillText(lang === "hi" ? "पंजीकरण के लिए QR स्कैन करें" : "Scan QR to register for this mission", ftTextX, ftMidY + 22);
 
@@ -10989,7 +10989,7 @@
         ctx.fillStyle="#FFFFFF"; ctx.font="bold 24px Georgia,serif"; ctx.textAlign="left"; ctx.fillText(lang==="hi"?`जिला ${state.districtName||"धमतरी"} · ${state.stateName||"छत्तीसगढ़"}`:`District ${state.districtName||"Dhamtari"} · ${state.stateName||"Chhattisgarh"}`,56,ftMidY-28);
         if(orgName){ctx.fillStyle="rgba(255,255,255,0.80)";ctx.font="600 16px Inter";ctx.fillText((lang==="hi"?"आयोजक: ":"By: ")+orgName,56,ftMidY);}
         if(orgPhone){ctx.fillStyle="rgba(255,255,255,0.70)";ctx.font="600 15px Inter";ctx.fillText("📞 "+orgPhone,56,ftMidY+(orgName?22:0));}
-        ctx.fillStyle="rgba(255,255,255,0.50)"; ctx.font="400 13px Inter"; ctx.fillText("janprayas.dhamtari.gov.in",56,ftMidY+(orgName?22:0)+(orgPhone?20:0));
+        ctx.fillStyle="rgba(255,255,255,0.50)"; ctx.font="400 13px Inter"; ctx.fillText("janprayas.in",56,ftMidY+(orgName?22:0)+(orgPhone?20:0));
         // Org disclaimer
         const disc=lang==="hi"?"⚠️ यह आयोजन एक पंजीकृत संस्था द्वारा है। विस्तार हेतु आयोजक से संपर्क करें।":"⚠️ Event organized by a registered civic organization on JanPrayas. Contact organizer for details.";
         ctx.fillStyle="rgba(255,255,255,0.45)"; ctx.font="400 12px Inter"; ctx.textAlign="center"; wrapCanvasText(ctx,disc,W/2,H-44,W-80,16,2);
@@ -11536,10 +11536,16 @@
           const img = new Image();
           img.onload = () => {
             ctx.save();
+            const cx = x + size / 2, cy = y + size / 2, r = size / 2;
+            // White circle background with slight border
             ctx.beginPath();
+            ctx.arc(cx, cy, r + 5, 0, Math.PI * 2);
             ctx.fillStyle = "#FFFFFF";
-            ctx.arc(x + size / 2, y + size / 2, size / 2 + 4, 0, Math.PI * 2);
             ctx.fill();
+            // Clip to circle then draw image (prevents logo overflow)
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.clip();
             ctx.drawImage(img, x, y, size, size);
             ctx.restore();
           };
