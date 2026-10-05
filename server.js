@@ -4490,6 +4490,76 @@ function getISOWeekKey() {
 
 const BOT_WEEKLY_LIMIT = 5;
 
+// Rule-based FAQ fallback — always works, no API key needed.
+// Returns a matching answer string, or null if no rule matches.
+function faqAnswer(q) {
+  const t = q.toLowerCase().trim();
+  const has = (...words) => words.some(w => t.includes(w));
+  const hi = /[ऀ-ॿ]/.test(q); // detect Hindi script
+
+  if (has("register", "sign up", "signup", "join as volunteer", "volunteer ban", "स्वयंसेवक", "पंजीकरण", "रजिस्टर")) {
+    return hi
+      ? "स्वयंसेवक बनने के लिए पोर्टल पर 'स्वयंसेवक' सेक्शन में जाएं, अपना नाम, मोबाइल नंबर, वार्ड और रुचि के क्षेत्र भरें और 'Register' बटन दबाएं। मोबाइल नंबर आपकी पहचान है — इसे याद रखें।"
+      : "To register as a volunteer, go to the 'Volunteer' section on the portal, fill in your name, mobile number, ward/area, and interests, then click Register. Your mobile number is your identity on the portal — keep it handy.";
+  }
+  if (has("qr", "check in", "check-in", "checkin", "scan", "attend", "क्यूआर", "चेक इन", "उपस्थिति")) {
+    return hi
+      ? "मिशन में उपस्थिति दर्ज करने के लिए आयोजक द्वारा दिखाए गए QR कोड को स्कैन करें। यदि QR उपलब्ध नहीं है तो आयोजक आपको 'Walk-in' के रूप में दर्ज कर सकता है। QR चेक-इन के बाद एडमिन द्वारा समीक्षा हो सकती है।"
+      : "At the mission venue, scan the QR code shown by the coordinator using your phone camera. If no QR is available, the coordinator can mark you as a Walk-in. QR check-ins may go through a brief admin review before they appear confirmed.";
+  }
+  if (has("certificate", "participation", "प्रमाण पत्र", "सर्टिफिकेट", "download")) {
+    return hi
+      ? "प्रमाण पत्र डाउनलोड करने के लिए 'मेरे मिशन' सेक्शन में जाएं, अपना नाम और मोबाइल नंबर दर्ज करें, और किसी पूर्ण मिशन के सामने 'Certificate' बटन दबाएं। प्रमाण पत्र PDF के रूप में डाउनलोड होगा।"
+      : "To download your participation certificate, go to 'My Missions', enter your name and mobile number, and click the Certificate button next to any completed mission. Certificates are only generated after the admin marks the mission as completed.";
+  }
+  if (has("id card", "id-card", "identity card", "आईडी कार्ड", "पहचान पत्र")) {
+    return hi
+      ? "वालंटियर ID कार्ड 'वालंटियर पासपोर्ट' सेक्शन से डाउनलोड किया जा सकता है। इसमें आपका नाम, QR कोड, वार्ड और अंक दिखते हैं।"
+      : "Your volunteer ID card can be downloaded from the Volunteer Passport section. Enter your name and mobile number — the card shows your name, ward, points, and a unique QR code.";
+  }
+  if (has("passport", "पासपोर्ट")) {
+    return hi
+      ? "वालंटियर पासपोर्ट एक डिजिटल दस्तावेज़ है जो आपकी सभी मिशन भागीदारी, अंक और रैंक दिखाता है। इसे नेविगेशन में 'पासपोर्ट' पर क्लिक करके देखें।"
+      : "The Volunteer Passport is a digital record showing all your mission participations, earned points, rank, and badges. Click 'Passport' in the navigation and enter your name and mobile to view it.";
+  }
+  if (has("point", "rank", "rank", "nagarik", "prabhari", "jan sewak", "lok nayak", "अंक", "रैंक", "नागरिक सेवक", "प्रभारी", "जन सेवक", "लोक नायक")) {
+    return hi
+      ? "पोर्टल पर 4 रैंक हैं: नागरिक सेवक (शुरुआत), प्रभारी सेवक, जन सेवक, और लोक नायक (सर्वोच्च)। प्रत्येक मिशन में भाग लेने पर अंक मिलते हैं — जितने ज़्यादा मिशन, उतने ज़्यादा अंक और ऊंची रैंक।"
+      : "There are 4 volunteer ranks: Nagarik Sewak (starter), Prabhari Sewak, Jan Sewak, and Lok Nayak (highest). You earn points by joining and attending missions. The more missions you complete, the higher your rank and the more badges you unlock.";
+  }
+  if (has("leaderboard", "top volunteer", "लीडरबोर्ड", "शीर्ष")) {
+    return hi
+      ? "लीडरबोर्ड पोर्टल के मुख्य पेज पर दिखता है। यह वार्ड के शीर्ष स्वयंसेवकों को उनके अंकों के आधार पर सूचीबद्ध करता है।"
+      : "The leaderboard is shown on the main portal page and lists top volunteers by their earned points. You can view it by ward to see who is leading in your area.";
+  }
+  if (has("mission", "activity", "abhiyan", "अभियान", "मिशन", "गतिविधि", "join", "how to join", "kaise join")) {
+    return hi
+      ? "पोर्टल पर 'अभियान' सेक्शन में जाएं, किसी मिशन पर क्लिक करें और 'RSVP / Join' बटन दबाएं। अपना नाम और मोबाइल नंबर दर्ज करें। मिशन के दिन QR स्कैन करके उपस्थिति दर्ज करें।"
+      : "Go to the 'Missions' section, click on any mission, and press RSVP / Join. Enter your name and mobile number to register. On the day of the mission, scan the QR code at the venue to mark your attendance.";
+  }
+  if (has("organisation", "organization", "ngo", "org", "संगठन", "एनजीओ", "org login", "org signup", "org register")) {
+    return hi
+      ? "संगठन पंजीकरण के लिए पोर्टल पर 'Register as Organization' बटन दबाएं। मंज़ूरी के बाद आप मिशन पोस्ट कर सकते हैं, QR कोड से उपस्थिति ले सकते हैं और पूर्णता अनुरोध जमा कर सकते हैं।"
+      : "Click 'Register as Organization' on the portal homepage. After admin approval, your org can post missions, use QR check-in at events, mark walk-in attendance, and submit closure requests with photos for admin verification.";
+  }
+  if (has("completion", "close mission", "mark complete", "पूर्ण", "बंद", "समापन")) {
+    return hi
+      ? "मिशन पूर्ण होने पर, किसी भी स्वयंसेवक या आयोजक को मिशन कार्ड पर 'Request Completion' भरना होगा — कम से कम 3 फोटो और गतिविधि विवरण अनिवार्य हैं। एडमिन समीक्षा के बाद मिशन बंद होगा और प्रमाण पत्र जारी होंगे।"
+      : "When a mission is over, any organiser or participant can submit a Completion Request from the mission card — at least 3 verification photos and an activity summary are required. The admin reviews them before marking it complete and issuing certificates.";
+  }
+  if (has("password", "forgot", "reset", "पासवर्ड", "भूल गए")) {
+    return hi
+      ? "संगठन पासवर्ड रीसेट के लिए 'Organization Login' पेज पर 'Forgot Password' लिंक दबाएं और अपना पंजीकृत ईमेल दर्ज करें।"
+      : "To reset your organisation password, click 'Forgot Password' on the Organization Login page and enter your registered email address.";
+  }
+  if (has("contact", "help", "support", "admin", "district", "संपर्क", "मदद", "सहायता")) {
+    return hi
+      ? "किसी भी समस्या के लिए जिला प्रशासन कार्यालय से संपर्क करें। पोर्टल से जुड़ी तकनीकी समस्याओं के लिए 'Feedback' बटन का उपयोग करें।"
+      : "For any issue, contact the district administration office directly. For technical problems with the portal, use the Feedback button on the main page to send a message to the team.";
+  }
+  return null;
+}
+
 async function botChat(body) {
   const phone = String(body.phone || "").trim().replace(/\D/g, "").slice(-10);
   const question = String(body.question || "").trim().slice(0, 500);
@@ -4500,32 +4570,38 @@ async function botChat(body) {
   if (usedThisWeek >= BOT_WEEKLY_LIMIT) {
     throw publicError(429, `You have used all ${BOT_WEEKLY_LIMIT} free assistant messages for this week. Your limit resets on Monday.`);
   }
-  const systemPrompt = `You are the JanPrayas Portal Assistant — a helpful, concise guide for the JanPrayas Citizen Engagement Portal (janprayas.in), a district-level civic action platform run by the district administration.
 
-You ONLY answer questions about the JanPrayas portal and its features:
-- How to register as a volunteer
-- How to check in to a mission using a QR code or walk-in
-- How to view a volunteer passport and download participation certificates or ID cards
-- How missions/activities work, categories, how to join or track
-- How organisations (NGOs, civic groups) can sign up, log in, post missions
-- What the points/ranks system (Nagarik Sevak, Prabhari Sevak, Jan Sewak, Lok Nayak) means
-- How the leaderboard works
-- How admin review / pending check-in works
-- Anything else visible on the portal
+  let answer = null;
 
-STRICTLY REFUSE any question not related to the JanPrayas portal. Respond: "I can only help with questions about the JanPrayas portal. Please ask something about registering, missions, check-in, certificates, or other portal features."
+  // Try Gemini first if the API key is configured
+  if (process.env.GOOGLE_API_KEY) {
+    const systemPrompt = `You are the JanPrayas Portal Assistant — a helpful, concise guide for the JanPrayas Citizen Engagement Portal, a district-level civic action platform.
 
-Keep answers short and practical (2-5 sentences). Respond in the same language the user writes in (Hindi or English).`;
+Answer ONLY questions about the JanPrayas portal:
+- Volunteer registration (name, mobile, ward, interests)
+- Mission check-in via QR code or walk-in at the venue
+- Volunteer passport, participation certificates (PDF), and volunteer ID cards
+- How missions/activities work: joining, RSVP, categories
+- Organisations signing up, logging in, posting missions, QR check-in
+- Points and ranks: Nagarik Sewak → Prabhari Sewak → Jan Sewak → Lok Nayak
+- Leaderboard, badges, completion requests, admin review
 
-  if (!process.env.GOOGLE_API_KEY) {
-    console.warn("[Bot] GOOGLE_API_KEY not set — assistant disabled");
-    throw publicError(503, "The portal assistant is not configured yet. Please contact the district office directly.");
+STRICTLY REFUSE unrelated questions. Keep answers short (2–4 sentences). Respond in the same language the user writes in.`;
+    answer = await callGeminiRaw(systemPrompt, question, 350);
   }
-  const answer = await callGeminiRaw(systemPrompt, question, 400);
-  const finalAnswer = answer || "Sorry, I could not generate a response right now. Please try again shortly, or contact the district office directly.";
-  db.prepare("INSERT INTO bot_conversations (phone, question, answer, week_key, created_at) VALUES (?, ?, ?, ?, ?)").run(phone, question, finalAnswer, weekKey, isoNow());
+
+  // Always fall back to FAQ rules if Gemini failed or key not set
+  if (!answer) {
+    answer = faqAnswer(question);
+  }
+
+  if (!answer) {
+    answer = "I can only help with questions about the JanPrayas portal — registering as a volunteer, joining missions, QR check-in, certificates, points, or organisation signup. Please try rephrasing your question.";
+  }
+
+  db.prepare("INSERT INTO bot_conversations (phone, question, answer, week_key, created_at) VALUES (?, ?, ?, ?, ?)").run(phone, question, answer, weekKey, isoNow());
   const remaining = BOT_WEEKLY_LIMIT - usedThisWeek - 1;
-  return { ok: true, answer: finalAnswer, remaining };
+  return { ok: true, answer, remaining };
 }
 
 function getBotLogs(params) {
