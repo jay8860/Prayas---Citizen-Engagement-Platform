@@ -3572,8 +3572,18 @@
             </div>
             <div class="form-group">
               <label data-i18n="host-date-label">Date / Time <span class="req">*</span></label>
-              <div class="datetime-row">
-                <input id="hostMissionDatePicker" type="date" required />
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+                <div style="flex:1;min-width:140px">
+                  <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:3px">Start Date</div>
+                  <input id="hostMissionDateStartPicker" type="date" required style="width:100%" onchange="syncEndDate('hostMission')" />
+                </div>
+                <div style="font-size:16px;color:var(--muted);padding-top:18px">→</div>
+                <div style="flex:1;min-width:140px">
+                  <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:3px">End Date</div>
+                  <input id="hostMissionDateEndPicker" type="date" required style="width:100%" />
+                </div>
+              </div>
+              <div class="datetime-row" style="margin-top:0">
                 <div class="time-group">
                   <span class="time-label">From</span>
                   <select id="hostMissionTimeStartHour" class="time-select"></select>
@@ -4123,8 +4133,18 @@
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="orgMissionDatePicker">Mission Date *</label>
-                    <input id="orgMissionDatePicker" type="date" required />
+                    <label>Mission Date Range *</label>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                      <div style="flex:1;min-width:130px">
+                        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:3px">Start Date</div>
+                        <input id="orgMissionDateStartPicker" type="date" required style="width:100%" onchange="syncEndDate('orgMission')" />
+                      </div>
+                      <div style="font-size:16px;color:var(--muted);padding-top:18px">→</div>
+                      <div style="flex:1;min-width:130px">
+                        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:3px">End Date</div>
+                        <input id="orgMissionDateEndPicker" type="date" required style="width:100%" />
+                      </div>
+                    </div>
                   </div>
                   <div class="form-row">
                     <div class="form-group">
@@ -5432,8 +5452,18 @@
             </div>
             <div class="form-group">
               <label data-i18n="pm-date-label">Date / Schedule <span class="req">*</span></label>
-              <div class="datetime-row">
-                <input id="pmDatePicker" type="date" required />
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+                <div style="flex:1;min-width:140px">
+                  <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:3px">Start Date</div>
+                  <input id="pmDateStartPicker" type="date" required style="width:100%" onchange="syncEndDate('pm')" />
+                </div>
+                <div style="font-size:16px;color:var(--muted);padding-top:18px">→</div>
+                <div style="flex:1;min-width:140px">
+                  <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:3px">End Date</div>
+                  <input id="pmDateEndPicker" type="date" required style="width:100%" />
+                </div>
+              </div>
+              <div class="datetime-row" style="margin-top:0">
                 <div class="time-group">
                   <span class="time-label">From</span>
                   <select id="pmTimeStartHour" class="time-select"></select>
@@ -8924,24 +8954,42 @@
       });
     }
 
+    function syncEndDate(pfx) {
+      const startEl = document.getElementById(`${pfx}DateStartPicker`);
+      const endEl = document.getElementById(`${pfx}DateEndPicker`);
+      if (!startEl || !endEl) return;
+      endEl.min = startEl.value;
+      if (!endEl.value || endEl.value < startEl.value) endEl.value = startEl.value;
+    }
+
     function assembleMissionDate(pfx) {
-      const picker = document.getElementById(`${pfx}DatePicker`);
-      if (!picker || !picker.value) return "";
-      const d = new Date(picker.value + "T00:00:00");
-      const dateStr = `${d.getDate()} ${MONTHS_EN[d.getMonth()]} ${d.getFullYear()}`;
+      const startPicker = document.getElementById(`${pfx}DateStartPicker`);
+      if (!startPicker || !startPicker.value) return "";
+      const endPicker = document.getElementById(`${pfx}DateEndPicker`);
+      function fmtDate(val) {
+        const d = new Date(val + "T00:00:00");
+        return `${d.getDate()} ${MONTHS_EN[d.getMonth()]} ${d.getFullYear()}`;
+      }
+      const startDateStr = fmtDate(startPicker.value);
+      const endDateVal = endPicker?.value || startPicker.value;
       const sh = document.getElementById(`${pfx}TimeStartHour`)?.value || "9";
       const sm = document.getElementById(`${pfx}TimeStartMin`)?.value || "00";
       const sp = document.getElementById(`${pfx}TimeStartPeriod`)?.value || "AM";
       const eh = document.getElementById(`${pfx}TimeEndHour`)?.value || "12";
       const em = document.getElementById(`${pfx}TimeEndMin`)?.value || "00";
       const ep = document.getElementById(`${pfx}TimeEndPeriod`)?.value || "PM";
-      return `${dateStr}, ${sh}:${sm} ${sp} – ${eh}:${em} ${ep}`;
+      if (startPicker.value === endDateVal) {
+        return `${startDateStr}, ${sh}:${sm} ${sp} – ${eh}:${em} ${ep}`;
+      }
+      return `${startDateStr}, ${sh}:${sm} ${sp} – ${fmtDate(endDateVal)}, ${eh}:${em} ${ep}`;
     }
 
     function assembleMissionDateISO(pfx) {
-      const picker = document.getElementById(`${pfx}DatePicker`);
-      if (!picker || !picker.value) return { dateStart: "", dateEnd: "" };
-      const dateVal = picker.value;
+      const startPicker = document.getElementById(`${pfx}DateStartPicker`);
+      if (!startPicker || !startPicker.value) return { dateStart: "", dateEnd: "" };
+      const endPicker = document.getElementById(`${pfx}DateEndPicker`);
+      const startDateVal = startPicker.value;
+      const endDateVal = endPicker?.value || startDateVal;
       const sh = document.getElementById(`${pfx}TimeStartHour`)?.value || "9";
       const sm = document.getElementById(`${pfx}TimeStartMin`)?.value || "00";
       const sp = document.getElementById(`${pfx}TimeStartPeriod`)?.value || "AM";
@@ -8954,8 +9002,8 @@
         return `${String(hr).padStart(2,"0")}:${m}`;
       }
       return {
-        dateStart: `${dateVal}T${to24(sh, sm, sp)}:00`,
-        dateEnd: `${dateVal}T${to24(eh, em, ep)}:00`
+        dateStart: `${startDateVal}T${to24(sh, sm, sp)}:00`,
+        dateEnd: `${endDateVal}T${to24(eh, em, ep)}:00`
       };
     }
 
@@ -8975,19 +9023,26 @@
     // (community-submitted missions occasionally have looser text).
     function parseMissionDateRange(dateStr) {
       if (!dateStr) return null;
+      const to24 = (h, period) => { h = Number(h) % 12; if (/pm/i.test(period)) h += 12; return h; };
+      // Multi-day: "12 April 2025, 9:00 AM – 14 April 2025, 5:00 PM"
+      const multi = String(dateStr).match(/^(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)[^0-9]*(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)/i);
+      if (multi) {
+        const sm = MONTHS_EN.indexOf(multi[2]);
+        const em = MONTHS_EN.indexOf(multi[8]);
+        if (sm !== -1 && em !== -1) {
+          const start = new Date(Number(multi[3]), sm, Number(multi[1]), to24(multi[4], multi[6]), Number(multi[5]));
+          const end   = new Date(Number(multi[9]), em, Number(multi[7]), to24(multi[10], multi[12]), Number(multi[11]));
+          return { start, end, day: Number(multi[1]), monthIdx: sm, year: Number(multi[3]) };
+        }
+      }
+      // Single-day: "12 April 2025, 9:00 AM – 12:00 PM"
       const m = String(dateStr).match(/^(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)[^0-9]*(\d{1,2}):(\d{2}) (AM|PM)/i);
       if (!m) return null;
       const monthIdx = MONTHS_EN.indexOf(m[2]);
       if (monthIdx === -1) return null;
-      const day = Number(m[1]);
-      const year = Number(m[3]);
-      const to24 = (h, period) => {
-        h = Number(h) % 12;
-        if (/pm/i.test(period)) h += 12;
-        return h;
-      };
+      const day = Number(m[1]), year = Number(m[3]);
       const start = new Date(year, monthIdx, day, to24(m[4], m[6]), Number(m[5]));
-      const end = new Date(year, monthIdx, day, to24(m[7], m[9]), Number(m[8]));
+      const end   = new Date(year, monthIdx, day, to24(m[7], m[9]), Number(m[8]));
       return { start, end, day, monthIdx, year };
     }
 
@@ -9016,29 +9071,51 @@
     }
 
     function parseMissionDateToFields(dateStr, pfx) {
-      // Try to match: "12 April 2025, 9:00 AM – 12:00 PM"
-      const m = dateStr.match(/^(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)[^0-9]*(\d{1,2}):(\d{2}) (AM|PM)/i);
-      if (m) {
-        const monthIdx = MONTHS_EN.indexOf(m[2]);
-        if (monthIdx !== -1) {
-          const iso = `${m[3]}-${String(monthIdx + 1).padStart(2, "0")}-${m[1].padStart(2, "0")}`;
-          const picker = document.getElementById(`${pfx}DatePicker`);
-          if (picker) picker.value = iso;
-          const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-          set(`${pfx}TimeStartHour`, String(Number(m[4])));
-          set(`${pfx}TimeStartMin`, m[5]);
-          set(`${pfx}TimeStartPeriod`, m[6].toUpperCase());
-          set(`${pfx}TimeEndHour`, String(Number(m[7])));
-          set(`${pfx}TimeEndMin`, m[8]);
-          set(`${pfx}TimeEndPeriod`, m[9].toUpperCase());
+      const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+      function toIso(day, month, year) {
+        const idx = MONTHS_EN.indexOf(month);
+        if (idx === -1) return null;
+        return `${year}-${String(idx + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      }
+      // Multi-day: "12 April 2025, 9:00 AM – 14 April 2025, 5:00 PM"
+      const multi = dateStr.match(/^(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)[^0-9]*(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)/i);
+      if (multi) {
+        const startIso = toIso(multi[1], multi[2], multi[3]);
+        const endIso = toIso(multi[7], multi[8], multi[9]);
+        if (startIso) {
+          set(`${pfx}DateStartPicker`, startIso);
+          set(`${pfx}DateEndPicker`, endIso || startIso);
+          set(`${pfx}TimeStartHour`, String(Number(multi[4])));
+          set(`${pfx}TimeStartMin`, multi[5]);
+          set(`${pfx}TimeStartPeriod`, multi[6].toUpperCase());
+          set(`${pfx}TimeEndHour`, String(Number(multi[10])));
+          set(`${pfx}TimeEndMin`, multi[11]);
+          set(`${pfx}TimeEndPeriod`, multi[12].toUpperCase());
           return;
         }
       }
-      // Fallback: try native Date parse for ISO or simple dates
+      // Single-day: "12 April 2025, 9:00 AM – 12:00 PM"
+      const single = dateStr.match(/^(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)[^0-9]*(\d{1,2}):(\d{2}) (AM|PM)/i);
+      if (single) {
+        const iso = toIso(single[1], single[2], single[3]);
+        if (iso) {
+          set(`${pfx}DateStartPicker`, iso);
+          set(`${pfx}DateEndPicker`, iso);
+          set(`${pfx}TimeStartHour`, String(Number(single[4])));
+          set(`${pfx}TimeStartMin`, single[5]);
+          set(`${pfx}TimeStartPeriod`, single[6].toUpperCase());
+          set(`${pfx}TimeEndHour`, String(Number(single[7])));
+          set(`${pfx}TimeEndMin`, single[8]);
+          set(`${pfx}TimeEndPeriod`, single[9].toUpperCase());
+          return;
+        }
+      }
+      // Fallback: native Date parse
       const d = new Date(dateStr);
-      const picker = document.getElementById(`${pfx}DatePicker`);
-      if (!isNaN(d.getTime()) && picker) {
-        picker.value = d.toISOString().slice(0, 10);
+      if (!isNaN(d.getTime())) {
+        const iso = d.toISOString().slice(0, 10);
+        set(`${pfx}DateStartPicker`, iso);
+        set(`${pfx}DateEndPicker`, iso);
       }
     }
 
