@@ -1667,6 +1667,31 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, getBotLogs(url.searchParams));
     }
 
+    if (req.method === "GET" && url.pathname === "/api/admin/test-gemini") {
+      requireAdmin(req);
+      const apiKey = process.env.GOOGLE_API_KEY;
+      if (!apiKey) return sendJson(res, 200, { ok: false, error: "GOOGLE_API_KEY env var is not set" });
+      try {
+        const testRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: "Reply with just: OK" }] }],
+              generationConfig: { maxOutputTokens: 10 }
+            })
+          }
+        );
+        const body = await testRes.json();
+        if (!testRes.ok) return sendJson(res, 200, { ok: false, httpStatus: testRes.status, error: JSON.stringify(body).slice(0, 500) });
+        const text = body.candidates?.[0]?.content?.parts?.[0]?.text || "(no text in response)";
+        return sendJson(res, 200, { ok: true, httpStatus: testRes.status, reply: text });
+      } catch (e) {
+        return sendJson(res, 200, { ok: false, error: e.message });
+      }
+    }
+
     if (req.method === "POST" && url.pathname === "/api/public-feedback") {
       const body = await readJsonBody(req);
       return sendJson(res, 200, submitPublicFeedback(body));
