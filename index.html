@@ -12379,21 +12379,71 @@
         const isReturned = !!mission.completionReturnedComment;
         if (isReturned) {
           return `
-            <div class="message-card" style="margin-top:20px;border:2px solid #F59E0B">
-              <div class="message-name" style="color:#92400E">⚠️ ${hi ? "एडमिन ने अनुरोध वापस किया — कार्रवाई आवश्यक" : "Admin returned your request — action required"}</div>
-              <div class="message-text" style="background:#FFF8E1;padding:8px 10px;border-radius:6px;border-left:3px solid #F59E0B">
-                "${escapeHtml(mission.completionReturnedComment)}"
+            <div style="margin-top:20px">
+              <!-- Returned warning banner -->
+              <div style="background:#FEF3C7;border:2px solid #F59E0B;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+                <div style="font-weight:700;font-size:13px;color:#92400E;margin-bottom:6px">
+                  ⚠️ ${hi ? "एडमिन ने अनुरोध वापस किया — कार्रवाई आवश्यक" : "Admin returned your request — action required"}
+                </div>
+                <div style="font-size:13px;color:#78350F;background:#FFF8E1;padding:8px 10px;border-radius:6px;border-left:3px solid #F59E0B;margin-bottom:6px">
+                  "${escapeHtml(mission.completionReturnedComment)}"
+                </div>
+                <div style="font-size:11px;color:#92400E">
+                  ${hi ? "द्वारा" : "By"} ${escapeHtml(mission.completionReturnedBy || "Admin")}
+                  ${mission.completionReturnedAt ? " · " + new Date(mission.completionReturnedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}) : ""}
+                </div>
               </div>
-              <div class="message-text" style="font-size:12px;color:var(--muted)">
-                ${hi ? "द्वारा" : "By"} ${escapeHtml(mission.completionReturnedBy || "Admin")}
-                ${mission.completionReturnedAt ? " · " + new Date(mission.completionReturnedAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}) : ""}
-              </div>
-              <div class="message-text" style="font-size:12px">${hi ? "कृपया नीचे दिए गए फॉर्म से अपडेट करके दोबारा अनुरोध करें।" : "Please update your photos/summary below and resubmit the request."}</div>
               ${state.adminLoggedIn ? `
-              <div class="message-actions">
+              <div style="display:flex;gap:8px;margin-bottom:12px">
                 <button class="btn btn-primary" type="button" onclick="closeModal('missionModal'); openCompletionSummaryModal(${mission.id})">${hi ? "पुष्टि करें और पूर्ण करें" : "Confirm & Mark Completed"}</button>
                 <button class="btn btn-soft" type="button" onclick="dismissMissionCompletionRequest(${mission.id})">${hi ? "अनुरोध खारिज करें" : "Dismiss"}</button>
               </div>` : ""}
+              <!-- Resubmit form for the original submitter -->
+              <div style="background:var(--surface,#f9fafb);border:1px solid var(--border);border-radius:10px;padding:14px">
+                <div style="font-weight:700;font-size:13px;margin-bottom:10px">📸 ${hi ? "अपडेट करें और दोबारा अनुरोध करें" : "Update & Resubmit Closure Request"}</div>
+                <form id="missionCompletionForm" style="margin:0" data-mission-id="${mission.id}">
+                  <div id="closureQrBanner" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;display:flex;gap:12px;align-items:center">
+                    <div style="text-align:center">
+                      <div style="font-size:20px;font-weight:700;color:#16a34a" id="closureQrVerified">…</div>
+                      <div style="color:#166534">QR-Verified</div>
+                    </div>
+                    <div style="text-align:center">
+                      <div style="font-size:20px;font-weight:700;color:#d97706" id="closureWalkin">…</div>
+                      <div style="color:#92400e">Walk-in</div>
+                    </div>
+                    <div style="flex:1;color:#374151">${hi ? "सिस्टम में अभी तक रिकॉर्ड।" : "Recorded in system so far."}</div>
+                  </div>
+                  <div class="form-group">
+                    <label for="missionCompletionName">${hi ? "आपका नाम (अनिवार्य)" : "Your Name (required)"}</label>
+                    <input id="missionCompletionName" type="text" required maxlength="100" value="${escapeHtml(mission.completionRequestedBy || "")}" />
+                  </div>
+                  <div class="form-group">
+                    <label for="missionCompletionPhone">${hi ? "आपका मोबाइल नंबर (अनिवार्य)" : "Your Mobile Number (required)"}</label>
+                    <input id="missionCompletionPhone" type="tel" required maxlength="15" placeholder="10-digit mobile number" value="${escapeHtml(mission.completionRequestedPhone || "")}" />
+                  </div>
+                  <div class="form-group">
+                    <label for="missionCompletionSummary">${hi ? "गतिविधि विवरण (अनिवार्य)" : "Activity Summary (required)"}</label>
+                    <textarea id="missionCompletionSummary" required maxlength="500" rows="3"
+                      placeholder="${hi ? "जैसे: 45 स्वयंसेवक उपस्थित थे, 2 घंटे काम हुआ।" : "e.g. 45 volunteers attended, 2 hours of work."}">${escapeHtml(mission.completionActivitySummary || "")}</textarea>
+                  </div>
+                  <div class="form-group">
+                    <label>${hi ? "सत्यापन फोटो — कम से कम 3 (अनिवार्य)" : "Verification Photos — minimum 3 (required)"}</label>
+                    <div id="closurePhotoList" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>
+                    <label class="btn btn-secondary" style="font-size:13px;cursor:pointer">
+                      📷 ${hi ? "फोटो जोड़ें" : "Add Photos"}
+                      <input type="file" accept="image/*" multiple style="display:none" onchange="addClosurePhotos(event)">
+                    </label>
+                    <div id="closurePhotoCount" style="font-size:12px;color:var(--muted);margin-top:4px">0 / 3 minimum photos added</div>
+                  </div>
+                  <div class="form-group">
+                    <label for="missionCompletionNote">${hi ? "अतिरिक्त नोट (वैकल्पिक)" : "Additional Note (optional)"}</label>
+                    <textarea id="missionCompletionNote" maxlength="300" placeholder="${hi ? "कोई अतिरिक्त जानकारी" : "Any extra info"}"></textarea>
+                  </div>
+                  <button class="btn btn-primary" type="submit" style="width:100%">
+                    📤 ${hi ? "अपडेट करके दोबारा जमा करें" : "Update & Resubmit"}
+                  </button>
+                </form>
+              </div>
             </div>
           `;
         }
