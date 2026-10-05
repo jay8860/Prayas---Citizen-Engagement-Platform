@@ -5157,30 +5157,53 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="completionSummaryModal">
+  <div class="modal-overlay" id="completionSummaryModal" style="z-index:2100">
     <div class="modal-shell narrow">
       <div class="modal-header">
         <div>
-          <h2 class="modal-title" data-i18n="completion-modal-title">Mark Mission Completed</h2>
-          <p class="modal-subtitle" data-i18n="completion-modal-subtitle">Add a summary before closing this activity.</p>
+          <h2 class="modal-title">Mark Mission Completed</h2>
+          <p class="modal-subtitle" id="completionModalSubtitle">Review attendance data, then save to close this activity.</p>
         </div>
         <button class="modal-close" type="button" data-close-modal="completionSummaryModal">✕</button>
       </div>
       <div class="modal-body">
+        <!-- Attendance summary cards (loaded dynamically) -->
+        <div id="completionAttendanceSummary" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+          <div class="stat-card" style="text-align:center;padding:12px 8px;background:var(--surface-2,#f0fdf4);border-radius:10px;border:1px solid var(--border)">
+            <div style="font-size:22px;font-weight:700;color:#16a34a" id="completionQrCount">—</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">QR-Verified</div>
+          </div>
+          <div class="stat-card" style="text-align:center;padding:12px 8px;background:var(--surface-2,#fff7ed);border-radius:10px;border:1px solid var(--border)">
+            <div style="font-size:22px;font-weight:700;color:#d97706" id="completionWalkinCount">—</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Walk-in / Other</div>
+          </div>
+        </div>
+        <!-- Self-reported note from org/volunteer -->
+        <div id="completionSelfReportedBlock" hidden style="background:var(--surface-2,#f8faff);border-left:3px solid var(--primary);padding:8px 12px;border-radius:6px;margin-bottom:14px;font-size:13px">
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Submitter's Report</div>
+          <div id="completionSelfReportedText"></div>
+          <div id="completionSelfReportedBy" style="font-size:11px;color:var(--muted);margin-top:3px"></div>
+        </div>
+        <!-- Certificate info -->
+        <div id="completionCertBlock" style="font-size:12px;color:var(--muted);margin-bottom:14px;padding:6px 10px;background:var(--surface-2,#fafafa);border-radius:6px;border:1px solid var(--border)">
+          <span id="completionCertText">Loading attendance data…</span>
+        </div>
+        <!-- QR volunteers list (collapsible) -->
+        <details id="completionVolunteerListWrap" style="margin-bottom:14px;font-size:12px" hidden>
+          <summary style="cursor:pointer;font-weight:600;color:var(--primary)">View QR-verified volunteer list</summary>
+          <div id="completionVolunteerList" style="margin-top:6px;max-height:160px;overflow-y:auto;padding:6px;background:var(--surface,#f9f9f9);border-radius:6px;border:1px solid var(--border)"></div>
+        </details>
         <form id="completionSummaryForm">
           <div class="form-group">
-            <label for="completionTurnout" data-i18n="completion-turnout-label">Actual Volunteers Who Showed Up</label>
+            <label for="completionTurnout">Actual Volunteers Who Showed Up</label>
             <input id="completionTurnout" type="number" min="0" placeholder="0" />
+            <div style="font-size:11px;color:var(--muted);margin-top:3px" id="completionTurnoutHint">Enter the real total, including QR-verified and walk-ins.</div>
           </div>
           <div class="form-group">
-            <label for="completionNote" data-i18n="completion-note-label">Outcome Note</label>
-            <textarea id="completionNote" data-i18n-placeholder="completion-note-placeholder" placeholder="Brief summary of what was accomplished…"></textarea>
+            <label for="completionNote">Outcome Note</label>
+            <textarea id="completionNote" placeholder="Brief summary of what was accomplished…"></textarea>
           </div>
-          <div class="form-group">
-            <label for="completionPhoto" data-i18n="completion-photo-label">Photo URL (Optional)</label>
-            <input id="completionPhoto" type="url" data-i18n-placeholder="completion-photo-placeholder" placeholder="https://… (link to mission photo)" />
-          </div>
-          <button class="btn btn-primary" type="submit" style="width:100%" data-i18n="completion-submit">Save &amp; Mark Completed</button>
+          <button class="btn btn-primary" type="submit" style="width:100%">Save &amp; Mark Completed</button>
         </form>
       </div>
     </div>
@@ -10618,7 +10641,7 @@
               📅 ${escapeHtml(m.date)} &nbsp;|&nbsp; 📍 ${escapeHtml(m.location)}, ${escapeHtml(m.ward)}
             </div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
-              👥 ${m.volunteers || 0} registered / ${m.total} slots &nbsp;|&nbsp; ✅ ${m.actual_turnout || 0} QR-verified &nbsp;|&nbsp; 🤝 ${m.walkinCount || 0} walk-in
+              👥 ${m.volunteers || 0} registered / ${m.total} slots &nbsp;|&nbsp; ✅ ${m.qrVerifiedCount || 0} QR-verified &nbsp;|&nbsp; 🤝 ${m.walkinCount || 0} walk-in
             </div>
             ${returnedBanner}
             ${pendingBanner}
@@ -12072,7 +12095,19 @@
       const photoForm = document.getElementById("missionPhotoUploadForm");
       if (photoForm) photoForm.addEventListener("submit", submitMissionPhotoUpload);
       const completionForm = document.getElementById("missionCompletionForm");
-      if (completionForm) completionForm.addEventListener("submit", submitMissionCompletionRequest);
+      if (completionForm) {
+        completionForm.addEventListener("submit", submitMissionCompletionRequest);
+        // Fetch and populate QR attendance counts
+        const cMissionId = completionForm.dataset.missionId;
+        if (cMissionId) {
+          apiRequest(`/api/missions/${cMissionId}/attendance-summary`).then(d => {
+            const qrEl = document.getElementById("closureQrVerified");
+            const wiEl = document.getElementById("closureWalkin");
+            if (qrEl) qrEl.textContent = d.qrVerifiedCount ?? 0;
+            if (wiEl) wiEl.textContent = d.walkinCount ?? 0;
+          }).catch(() => {});
+        }
+      }
     }
 
     // ── Mission photo gallery (public upload, admin moderation) ────────────────
@@ -12307,7 +12342,19 @@
             📷 <strong>${hi ? "कम से कम 3 सत्यापन फोटो अनिवार्य हैं" : "At least 3 verification photos required"}</strong><br>
             <span style="font-size:12px">${hi ? "गतिविधि, उपस्थित स्वयंसेवकों और कार्यक्रम की फोटो अपलोड करें। एडमिन इन्हें देखकर पुष्टि करेगा।" : "Upload photos showing the activity, volunteers present, and the event. The admin reviews these before confirming closure."}</span>
           </div>
-          <form id="missionCompletionForm" style="margin-top:10px">
+          <form id="missionCompletionForm" style="margin-top:10px" data-mission-id="${mission.id}">
+            <!-- QR attendance info — auto-populated on render -->
+            <div id="closureQrBanner" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;display:flex;gap:12px;align-items:center">
+              <div style="text-align:center">
+                <div style="font-size:20px;font-weight:700;color:#16a34a" id="closureQrVerified">…</div>
+                <div style="color:#166534">QR-Verified</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:20px;font-weight:700;color:#d97706" id="closureWalkin">…</div>
+                <div style="color:#92400e">Walk-in</div>
+              </div>
+              <div style="flex:1;color:#374151">${hi ? "अभी तक सिस्टम में रिकॉर्ड है। आपकी रिपोर्ट में कुल उपस्थिति बताएं।" : "Recorded in system so far. Report your total attendance below."}</div>
+            </div>
             <div class="form-group">
               <label for="missionCompletionName">${hi ? "आपका नाम (अनिवार्य)" : "Your Name (required)"}</label>
               <input id="missionCompletionName" type="text" required maxlength="100" />
@@ -13823,12 +13870,63 @@
       }
     }
 
-    function openCompletionSummaryModal(missionId) {
+    async function openCompletionSummaryModal(missionId) {
       state.pendingCompletionMissionId = missionId;
       document.getElementById("completionTurnout").value = "";
       document.getElementById("completionNote").value = "";
-      document.getElementById("completionPhoto").value = "";
+      document.getElementById("completionQrCount").textContent = "…";
+      document.getElementById("completionWalkinCount").textContent = "…";
+      document.getElementById("completionCertText").textContent = "Loading attendance data…";
+      document.getElementById("completionVolunteerListWrap").hidden = true;
+      document.getElementById("completionSelfReportedBlock").hidden = true;
       openModal("completionSummaryModal");
+
+      try {
+        const isAdmin = state.adminLoggedIn;
+        let detail;
+        if (isAdmin) {
+          detail = await apiRequest(`/api/admin/missions/${missionId}/completion-detail`);
+        } else {
+          detail = await apiRequest(`/api/missions/${missionId}/attendance-summary`);
+        }
+        const qr = detail.qrVerifiedCount ?? 0;
+        const wi = detail.walkinCount ?? 0;
+        const cert = detail.certEligibleCount ?? (qr + wi);
+        document.getElementById("completionQrCount").textContent = qr;
+        document.getElementById("completionWalkinCount").textContent = wi;
+        document.getElementById("completionCertText").textContent =
+          cert > 0
+            ? `🎓 ${cert} volunteer${cert !== 1 ? "s" : ""} will receive a certificate (${qr} QR-verified + ${wi} walk-in).`
+            : "No verified attendees recorded yet. Certificates will be generated for all QR-checked volunteers after marking complete.";
+        if (cert === 0 && detail.totalRsvp > 0) {
+          document.getElementById("completionCertText").textContent +=
+            ` (${detail.totalRsvp} volunteer${detail.totalRsvp !== 1 ? "s" : ""} are registered.)`;
+        }
+        // Pre-fill turnout with total verified
+        if (!document.getElementById("completionTurnout").value && (qr + wi) > 0) {
+          document.getElementById("completionTurnout").value = qr + wi;
+        }
+        // Show submitter's self-reported note (admin only)
+        if (isAdmin && detail.selfReportedNote) {
+          document.getElementById("completionSelfReportedText").textContent = detail.selfReportedNote;
+          document.getElementById("completionSelfReportedBy").textContent =
+            `— ${detail.selfReportedBy || "submitter"}${detail.selfReportedPhone ? " · " + detail.selfReportedPhone : ""}`;
+          document.getElementById("completionSelfReportedBlock").hidden = false;
+        }
+        // QR volunteer list
+        if (isAdmin && detail.qrVolunteers && detail.qrVolunteers.length > 0) {
+          const listEl = document.getElementById("completionVolunteerList");
+          listEl.innerHTML = detail.qrVolunteers.map(v =>
+            `<div style="padding:3px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+              <span>${escapeHtml(v.name)}</span>
+              <span style="font-size:10px;color:var(--muted)">${v.pending ? "⏳ pending" : "✅ verified"}</span>
+            </div>`
+          ).join("");
+          document.getElementById("completionVolunteerListWrap").hidden = false;
+        }
+      } catch (err) {
+        document.getElementById("completionCertText").textContent = "Could not load attendance data.";
+      }
     }
 
     async function updateMissionStatus(missionId, status, extra = {}) {
@@ -15422,7 +15520,6 @@
           await updateMissionStatus(missionId, "completed", {
             outcomeNote: document.getElementById("completionNote").value.trim(),
             actualTurnout: Number(document.getElementById("completionTurnout").value || 0),
-            photoUrl: document.getElementById("completionPhoto").value.trim()
           });
           closeModal("completionSummaryModal");
           if (state.adminLoggedIn) openMediaStoryModal(missionId);

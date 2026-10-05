@@ -2288,6 +2288,17 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, returnCompletionRequest(missionId, body, admin));
     }
 
+    if (req.method === "GET" && /^\/api\/admin\/missions\/\d+\/completion-detail$/.test(url.pathname)) {
+      requireAdmin(req);
+      const missionId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, getMissionCompletionDetail(missionId));
+    }
+
+    if (req.method === "GET" && /^\/api\/missions\/\d+\/attendance-summary$/.test(url.pathname)) {
+      const missionId = Number(url.pathname.split("/")[3]);
+      return sendJson(res, 200, getMissionAttendanceSummary(missionId));
+    }
+
     if (req.method === "GET" && /^\/api\/missions\/\d+\/feedback$/.test(url.pathname)) {
       const missionId = Number(url.pathname.split("/")[3]);
       return sendJson(res, 200, { feedback: getMissionFeedback(missionId) });
@@ -4651,10 +4662,14 @@ function listOrgMissions(orgPayload) {
       const walkinCount = db.prepare(
         `SELECT COUNT(*) AS n FROM volunteer_participations WHERE mission_id = ? AND checkin_method = 'walkin'`
       ).get(m.id).n;
+      const qrVerifiedCount = db.prepare(
+        `SELECT COUNT(*) AS n FROM volunteer_participations WHERE mission_id = ? AND checkin_method IN ('qr','qr_new')`
+      ).get(m.id).n;
       return {
         ...m,
         checkInCode: m.check_in_code || "",
         walkinCount,
+        qrVerifiedCount,
         completionRequested: Boolean(m.completion_requested),
         completionReturnedComment: m.completion_returned_comment || "",
         completionReturnedAt: m.completion_returned_at || "",
@@ -5899,6 +5914,61 @@ function dismissCompletionRequest(missionId, admin) {
     WHERE id = ?`).run(missionId);
   writeAuditLog("dismiss_completion_request", "mission", missionId, `Completion request dismissed by ${admin ? admin.name : "admin"}`);
   return { ok: true };
+}
+
+// ── Completion detail (admin + org/volunteer views) ───────────────────────────
+
+function getMissionCompletionDetail(missionId) {
+  ensureRowExists("missions", missionId, "Mission not found.");
+  const mission = db.prepare(`SELECT id, title, completion_requested_note,
+    completion_activity_summary, completion_closure_photos,
+    completion_requested_by, completion_requested_phone, completion_returned_comment
+    FROM missions WHERE id = ?`).get(missionId);
+
+  const qrVolunteers = db.prepare(`
+    SELECT p.name, vp.attended_at, vp.checkin_method
+    FROM volunteer_participations vp
+    JOIN volunteer_profiles p ON p.id = vp.volunteer_profile_id
+    WHERE vp.mission_id = ? AND vp.checkin_method IN ('qr', 'qr_new')
+    ORDER BY vp.attended_at ASC
+  `).all(missionId);
+
+  const walkinVolunteers = db.prepare(`
+    SELECT p.name, vp.attended_at
+    FROM volunteer_participations vp
+    JOIN volunteer_profiles p ON p.id = vp.volunteer_profile_id
+    WHERE vp.mission_id = ? AND vp.checkin_method = 'walkin'
+    ORDER BY vp.attended_at ASC
+  `).all(missionId);
+
+  const totalRsvp = db.prepare(`
+    SELECT COUNT(*) AS n FROM volunteer_participations WHERE mission_id = ?
+  `).get(missionId).n;
+
+  const certEligible = qrVolunteers.length + walkinVolunteers.length;
+  return {
+    missionId,
+    missionTitle: mission.title,
+    selfReportedNote: mission.completion_activity_summary || "",
+    selfReportedBy: mission.completion_requested_by || "",
+    selfReportedPhone: mission.completion_requested_phone || "",
+    closurePhotos: safeJsonArray(mission.completion_closure_photos),
+    returnedComment: mission.completion_returned_comment || "",
+    qrVerifiedCount: qrVolunteers.length,
+    qrVolunteers: qrVolunteers.map(v => ({ name: v.name, attendedAt: v.attended_at, pending: v.checkin_method === "qr_new" })),
+    walkinCount: walkinVolunteers.length,
+    walkinVolunteers: walkinVolunteers.map(v => ({ name: v.name, attendedAt: v.attended_at })),
+    totalRsvp,
+    certEligibleCount: certEligible,
+  };
+}
+
+function getMissionAttendanceSummary(missionId) {
+  ensureRowExists("missions", missionId, "Mission not found.");
+  const qrCount = db.prepare(`SELECT COUNT(*) AS n FROM volunteer_participations WHERE mission_id = ? AND checkin_method IN ('qr','qr_new')`).get(missionId).n;
+  const walkinCount = db.prepare(`SELECT COUNT(*) AS n FROM volunteer_participations WHERE mission_id = ? AND checkin_method = 'walkin'`).get(missionId).n;
+  const totalRsvp = db.prepare(`SELECT COUNT(*) AS n FROM volunteer_participations WHERE mission_id = ?`).get(missionId).n;
+  return { qrVerifiedCount: qrCount, walkinCount, totalRsvp };
 }
 
 // ── Post-mission feedback ─────────────────────────────────────────────────────
