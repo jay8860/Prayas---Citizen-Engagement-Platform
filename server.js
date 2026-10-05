@@ -1186,7 +1186,11 @@ async function callGeminiRaw(system, user, maxTokens = 300) {
         })
       }
     );
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => "");
+      console.error(`[AI] callGeminiRaw HTTP ${res.status}:`, errBody.slice(0, 300));
+      return null;
+    }
     const data = await res.json();
     return (data.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
   } catch (e) {
@@ -4488,6 +4492,10 @@ STRICTLY REFUSE any question not related to the JanPrayas portal. Respond: "I ca
 
 Keep answers short and practical (2-5 sentences). Respond in the same language the user writes in (Hindi or English).`;
 
+  if (!process.env.GOOGLE_API_KEY) {
+    console.warn("[Bot] GOOGLE_API_KEY not set — assistant disabled");
+    throw publicError(503, "The portal assistant is not configured yet. Please contact the district office directly.");
+  }
   const answer = await callGeminiRaw(systemPrompt, question, 400);
   const finalAnswer = answer || "Sorry, I could not generate a response right now. Please try again shortly, or contact the district office directly.";
   db.prepare("INSERT INTO bot_conversations (phone, question, answer, week_key, created_at) VALUES (?, ?, ?, ?, ?)").run(phone, question, finalAnswer, weekKey, isoNow());
