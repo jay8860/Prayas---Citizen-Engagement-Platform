@@ -4908,6 +4908,7 @@
         <button class="modal-close" type="button" data-close-modal="passportModal">✕</button>
       </div>
       <div class="modal-body">
+        <div id="passportNotifBanner" hidden style="margin-bottom:12px"></div>
         <div class="passport-header">
           <div style="position:relative;display:inline-block">
             <div class="passport-avatar" id="passportAvatar" style="position:relative;overflow:hidden"></div>
@@ -11776,7 +11777,10 @@
               ${mission.completionReturnedComment ? `
               <div style="background:#FEF3C7;color:#92400E;padding:8px 12px;border-radius:8px;border-left:3px solid #F59E0B;margin-bottom:6px;font-size:12px">
                 ↩️ <strong>Previously returned</strong> on ${mission.completionReturnedAt ? new Date(mission.completionReturnedAt).toLocaleDateString("en-IN") : "—"}<br>
-                <em>"${escapeHtml(mission.completionReturnedComment)}"</em> — Re-submitted with updates.
+                <em>"${escapeHtml(mission.completionReturnedComment)}"</em>
+              </div>
+              <div style="background:#DCFCE7;color:#166534;padding:6px 12px;border-radius:8px;border-left:3px solid #22C55E;margin-bottom:6px;font-size:12px">
+                ⏳ <strong>Volunteer has re-submitted</strong> — awaiting your review &amp; decision.
               </div>` : ""}
               <div class="message-actions" style="flex-wrap:wrap;gap:6px">
                 <button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">Confirm &amp; Mark Completed</button>
@@ -12049,7 +12053,13 @@
         container.innerHTML = `<div class="message-card"><div class="message-text">${state.lang === "hi" ? "अभी तक कोई स्वयंसेवक पंजीकृत नहीं हुआ है।" : "No volunteer registrations yet."}</div></div>`;
         return;
       }
-      container.innerHTML = state.volunteerEvents
+      const seen = new Set();
+      const unique = state.volunteerEvents.filter(v => {
+        const key = v.phone || v.name;
+        if (seen.has(key)) return false;
+        seen.add(key); return true;
+      });
+      container.innerHTML = unique
         .slice(0, 6)
         .map((volunteer) => `
           <div class="message-card">
@@ -13592,6 +13602,24 @@
         closeModal("myPassportModal");
         renderPassportModal();
         openModal("passportModal");
+        // Load and show any pending notifications for this volunteer
+        try {
+          const nData = await apiRequest(`/api/volunteer/notifications?phone=${encodeURIComponent(phone)}`);
+          const unread = (nData.notifications || []).filter(n => !n.read);
+          if (unread.length) {
+            const nb = document.getElementById("passportNotifBanner");
+            if (nb) {
+              nb.innerHTML = unread.map(n => `
+                <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:10px;padding:12px 14px;margin-bottom:8px">
+                  <div style="font-weight:700;font-size:13px;color:#92400E">🔔 ${escapeHtml(n.title)}</div>
+                  <div style="font-size:12px;color:#78350F;margin-top:4px">${escapeHtml(n.message)}</div>
+                  <div style="font-size:10px;color:#92400E;margin-top:4px">${new Date(n.created_at).toLocaleDateString("en-IN")}</div>
+                </div>`).join("");
+              nb.hidden = false;
+              apiRequest("/api/volunteer/notifications/read", { method: "POST", body: JSON.stringify({ phone }) }).catch(() => {});
+            }
+          }
+        } catch(e) {}
       } catch (error) {
         errorEl.textContent = error?.message || (state.lang === "hi" ? "कुछ गलत हो गया।" : "Something went wrong. Please try again.");
       }
@@ -14054,15 +14082,26 @@
             `— ${detail.selfReportedBy || "submitter"}${detail.selfReportedPhone ? " · " + detail.selfReportedPhone : ""}`;
           document.getElementById("completionSelfReportedBlock").hidden = false;
         }
-        // QR volunteer list
+        // QR volunteer list with selfie photos and AI flags
         if (isAdmin && detail.qrVolunteers && detail.qrVolunteers.length > 0) {
           const listEl = document.getElementById("completionVolunteerList");
-          listEl.innerHTML = detail.qrVolunteers.map(v =>
-            `<div style="padding:3px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-              <span>${escapeHtml(v.name)}</span>
-              <span style="font-size:10px;color:var(--muted)">${v.pending ? "⏳ pending" : "✅ verified"}</span>
-            </div>`
-          ).join("");
+          const aiFlagLabel = { ok: "✅ OK", dark: "🌑 Dark photo", no_face: "👤 No face", suspicious: "⚠️ Suspicious", high_frequency: "🔴 High frequency", "": "" };
+          const aiFlagColor = { ok: "#166534", dark: "#92400E", no_face: "#92400E", suspicious: "#991B1B", high_frequency: "#991B1B", "": "" };
+          listEl.innerHTML = detail.qrVolunteers.map(v => {
+            const flag = v.aiFlag || "";
+            const flagHtml = flag ? `<span style="font-size:10px;font-weight:600;color:${aiFlagColor[flag]||'#555'}">${aiFlagLabel[flag]||flag}</span>` : "";
+            const selfieHtml = v.selfiePhoto
+              ? `<img src="${v.selfiePhoto}" alt="selfie" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:2px solid ${flag && flag!=='ok' ? '#ef4444' : '#d1d5db'};cursor:pointer" onclick="this.style.width=this.style.width==='48px'?'200px':'48px'">`
+              : `<div style="width:48px;height:48px;background:#f3f4f6;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px">📷</div>`;
+            return `<div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+              ${selfieHtml}
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:13px">${escapeHtml(v.name)}</div>
+                <div style="font-size:10px;color:var(--muted)">${v.pending ? "⏳ Pending admin approval" : "✅ Verified QR"}</div>
+                ${flagHtml}
+              </div>
+            </div>`;
+          }).join("");
           document.getElementById("completionVolunteerListWrap").hidden = false;
         }
       } catch (err) {

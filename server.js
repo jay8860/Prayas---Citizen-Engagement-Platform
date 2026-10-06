@@ -1091,6 +1091,21 @@ try { db.exec("ALTER TABLE missions ADD COLUMN completion_returned_at TEXT NOT N
 try { db.exec("ALTER TABLE missions ADD COLUMN completion_returned_by TEXT NOT NULL DEFAULT ''"); } catch(e) {}
 try {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      recipient_type TEXT NOT NULL DEFAULT 'volunteer',
+      recipient_phone TEXT NOT NULL DEFAULT '',
+      type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      mission_id INTEGER,
+      read INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    )
+  `);
+} catch(e) {}
+try {
+  db.exec(`
     CREATE TABLE IF NOT EXISTS organizations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -1635,6 +1650,23 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/volunteers/cancel-rsvp") {
       const body = await readJsonBody(req);
       return sendJson(res, 200, cancelVolunteerRsvp(body));
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/volunteer/notifications") {
+      const phone = (url.searchParams.get("phone") || "").trim();
+      if (!phone) return sendJson(res, 200, { notifications: [] });
+      const rows = db.prepare(
+        "SELECT id, type, title, message, mission_id, read, created_at FROM notifications WHERE recipient_phone = ? ORDER BY created_at DESC LIMIT 20"
+      ).all(phone);
+      return sendJson(res, 200, { notifications: rows });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/volunteer/notifications/read") {
+      const body = await readJsonBody(req);
+      const phone = String(body.phone || "").trim();
+      if (!phone) return sendJson(res, 200, { ok: true });
+      db.prepare("UPDATE notifications SET read = 1 WHERE recipient_phone = ?").run(phone);
+      return sendJson(res, 200, { ok: true });
     }
 
     if (req.method === "POST" && url.pathname === "/api/volunteers/update-phone") {
@@ -6000,10 +6032,17 @@ function requestMissionCompletion(missionId, body) {
   return { ok: true };
 }
 
+function createNotification(recipientPhone, type, title, message, missionId) {
+  try {
+    db.prepare(`INSERT INTO notifications (recipient_type, recipient_phone, type, title, message, mission_id)
+      VALUES ('volunteer', ?, ?, ?, ?, ?)`).run(recipientPhone, type, title, message, missionId || null);
+  } catch(e) {}
+}
+
 function returnCompletionRequest(missionId, body, admin) {
   ensureRowExists("missions", missionId, "Mission not found.");
   assertMissionScope(admin, missionId);
-  const row = db.prepare("SELECT completion_requested FROM missions WHERE id = ?").get(missionId);
+  const row = db.prepare("SELECT completion_requested, title, completion_requested_phone FROM missions WHERE id = ?").get(missionId);
   if (!row.completion_requested) throw publicError(400, "No pending completion request to return.");
   const comment = String(body.comment || "").trim().slice(0, 500);
   if (!comment) throw publicError(400, "Please enter a message explaining what needs to be fixed or added.");
@@ -6014,6 +6053,15 @@ function returnCompletionRequest(missionId, body, admin) {
   `).run(comment, isoNow(), adminName, missionId);
   writeAuditLog("return_completion_request", "mission", missionId,
     `Returned by ${adminName}: ${comment}`);
+  if (row.completion_requested_phone) {
+    createNotification(
+      row.completion_requested_phone,
+      "completion_returned",
+      `Action needed: "${row.title}"`,
+      `Your completion request was sent back: "${comment}" — Please resubmit with the requested updates.`,
+      missionId
+    );
+  }
   return { ok: true };
 }
 
@@ -6039,7 +6087,7 @@ function getMissionCompletionDetail(missionId) {
     FROM missions WHERE id = ?`).get(missionId);
 
   const qrVolunteers = db.prepare(`
-    SELECT p.name, vp.attended_at, vp.checkin_method
+    SELECT p.name, vp.attended_at, vp.checkin_method, vp.selfie_photo, vp.ai_flag
     FROM volunteer_participations vp
     JOIN volunteer_profiles p ON p.id = vp.volunteer_profile_id
     WHERE vp.mission_id = ? AND vp.checkin_method IN ('qr', 'qr_new')
@@ -6068,7 +6116,7 @@ function getMissionCompletionDetail(missionId) {
     closurePhotos: safeJsonArray(mission.completion_closure_photos),
     returnedComment: mission.completion_returned_comment || "",
     qrVerifiedCount: qrVolunteers.length,
-    qrVolunteers: qrVolunteers.map(v => ({ name: v.name, attendedAt: v.attended_at, pending: v.checkin_method === "qr_new" })),
+    qrVolunteers: qrVolunteers.map(v => ({ name: v.name, attendedAt: v.attended_at, pending: v.checkin_method === "qr_new", selfiePhoto: v.selfie_photo || "", aiFlag: v.ai_flag || "" })),
     walkinCount: walkinVolunteers.length,
     walkinVolunteers: walkinVolunteers.map(v => ({ name: v.name, attendedAt: v.attended_at })),
     totalRsvp,
