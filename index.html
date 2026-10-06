@@ -11479,11 +11479,17 @@
             </div>
             <button class="btn btn-soft" type="button" onclick="downloadCheckinPoster(${mission.id})" style="margin-bottom:8px">📄 ${state.lang === "hi" ? "चेक-इन पोस्टर डाउनलोड करें" : "Download Check-in Poster"}</button>` : ""}
             <div class="message-actions">
-              <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
-              ${mission.status !== "completed" ? `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>` : `<button class="btn btn-soft" type="button" onclick="confirmUnmarkCompleted(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्न हटाएं" : "Unmark Completed"}</button>`}
-              ${mission.status === "completed" ? `<button class="btn btn-soft" type="button" onclick="openMediaStoryModal(${mission.id})">📰 ${state.lang === "hi" ? "मीडिया स्टोरी बनाएं" : "Generate Media Story"}</button>` : ""}
-              ${mission.status !== "closed" ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'closed')">${state.lang === "hi" ? "अस्थायी बंद" : "Close Temporarily"}</button>` : `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>`}
-              <button class="btn btn-soft" type="button" onclick="archiveMission(${mission.id})">${state.lang === "hi" ? "संग्रहीत करें" : "Archive"}</button>
+              <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})" title="Edit mission details, date, location or slots">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
+              ${mission.status === "completed"
+                ? `<button class="btn btn-soft" type="button" onclick="confirmUnmarkCompleted(${mission.id})" title="Revert to Open status — certificates are not yet revoked">${state.lang === "hi" ? "पूर्ण चिह्न हटाएं" : "Unmark Completed"}</button>
+                   <button class="btn btn-soft" type="button" onclick="openMediaStoryModal(${mission.id})" title="Generate a press-ready media summary for this completed activity">📰 ${state.lang === "hi" ? "मीडिया स्टोरी" : "Media Story"}</button>`
+                : `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})" title="Mark this activity as done and issue participation certificates">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>`}
+              ${mission.status === "closed"
+                ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')" title="Reopen registrations — volunteers can join again">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>`
+                : mission.status !== "completed"
+                  ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'closed')" title="Temporarily stop new volunteer registrations (mission is not deleted)">${state.lang === "hi" ? "पंजीकरण रोकें" : "Pause Registrations"}</button>`
+                  : ""}
+              <button class="btn btn-soft" type="button" onclick="archiveMission(${mission.id})" title="Move to archive — hidden from public but data is kept">${state.lang === "hi" ? "संग्रहीत करें" : "Archive"}</button>
             </div>
           </div>
         `)
@@ -11681,12 +11687,18 @@
             <div class="message-text">${escapeHtml(wardLabel(missionArea(mission)))} · ${escapeHtml(mission.date)} · ${escapeHtml(categoryLabel(mission.category))}${mission.nodalDepartment ? ` · ${escapeHtml(mission.nodalDepartment)}` : ""}</div>
             <div class="message-time">${escapeHtml(statusLabel(mission.status))} · ${mission.volunteers || 0}/${mission.total || 0} ${state.lang === "hi" ? "पंजीकृत" : "registered"}</div>
             <div class="message-actions">
-              <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
-              ${mission.status !== "completed" ? `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>` : `<button class="btn btn-soft" type="button" onclick="confirmUnmarkCompleted(${mission.id})">${state.lang === "hi" ? "पूर्ण चिह्न हटाएं" : "Unmark Completed"}</button>`}
-              ${mission.status === "completed" ? `<button class="btn btn-soft" type="button" onclick="openMediaStoryModal(${mission.id})">📰 ${state.lang === "hi" ? "मीडिया स्टोरी बनाएं" : "Generate Media Story"}</button>` : ""}
-              ${mission.status !== "closed" ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'closed')">${state.lang === "hi" ? "अस्थायी बंद" : "Close"}</button>` : `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>`}
-              <button class="btn btn-soft" type="button" onclick="archiveMission(${mission.id})">${state.lang === "hi" ? "संग्रहीत करें" : "Archive"}</button>
-              <button class="btn btn-danger" type="button" onclick="confirmDeleteMission(${mission.id})">${state.lang === "hi" ? "हटाएं" : "Delete"}</button>
+              <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})" title="Edit mission details, date, location or slots">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
+              ${mission.status === "completed"
+                ? `<button class="btn btn-soft" type="button" onclick="confirmUnmarkCompleted(${mission.id})" title="Revert to Open status — data is kept">${state.lang === "hi" ? "पूर्ण चिह्न हटाएं" : "Unmark Completed"}</button>
+                   <button class="btn btn-soft" type="button" onclick="openMediaStoryModal(${mission.id})" title="Generate a press-ready media summary">📰 ${state.lang === "hi" ? "मीडिया स्टोरी" : "Media Story"}</button>`
+                : `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})" title="Mark this activity as done and issue participation certificates">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>`}
+              ${mission.status === "closed"
+                ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')" title="Reopen registrations — volunteers can join again">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>`
+                : mission.status !== "completed"
+                  ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'closed')" title="Temporarily stop new volunteer registrations (mission is not deleted)">${state.lang === "hi" ? "पंजीकरण रोकें" : "Pause Registrations"}</button>`
+                  : ""}
+              <button class="btn btn-soft" type="button" onclick="archiveMission(${mission.id})" title="Move to archive — hidden from public but data is kept">${state.lang === "hi" ? "संग्रहीत करें" : "Archive"}</button>
+              <button class="btn btn-danger" type="button" onclick="confirmDeleteMission(${mission.id})" title="Permanently delete this mission and all registration data">${state.lang === "hi" ? "हटाएं" : "Delete"}</button>
             </div>
           </div>
         `)
@@ -14113,18 +14125,32 @@
 
     async function updateMissionStatus(missionId, status, extra = {}) {
       try {
+        // Optimistically update local state so UI responds immediately
+        const mission = state.missions.find((m) => m.id === missionId);
+        if (mission) {
+          mission.status = status;
+          if (extra.completionNote != null) mission.completionNote = extra.completionNote;
+          if (extra.outcomeNote != null) mission.outcomeNote = extra.outcomeNote;
+          if (extra.actualTurnout != null) mission.actualTurnout = extra.actualTurnout;
+          renderAll();
+        }
+        const hi = state.lang === "hi";
+        const toastMsg = {
+          completed: hi ? "गतिविधि पूर्ण चिह्नित कर दी गई।" : "Activity marked completed.",
+          open:      hi ? "गतिविधि फिर से खोल दी गई।"       : "Activity reopened.",
+          closed:    hi ? "गतिविधि अस्थायी रूप से बंद कर दी गई।" : "Registrations paused for this activity.",
+          full:      hi ? "गतिविधि पूर्ण भर चुकी है।"        : "Activity marked as full."
+        }[status] || (hi ? "स्थिति अपडेट हो गई।" : "Status updated.");
         await apiRequest(`/api/admin/missions/${missionId}/status`, {
           method: "POST",
           body: JSON.stringify({ status, ...extra })
         });
-        await refreshPortalData();
-        showToast(
-          state.lang === "hi"
-            ? (status === "completed" ? "गतिविधि पूर्ण चिह्नित कर दी गई।" : "गतिविधि फिर से खोल दी गई।")
-            : (status === "completed" ? "Activity marked completed." : "Activity reopened."),
-          "🗂️"
-        );
+        showToast(toastMsg, "🗂️");
+        // Background refresh to sync any server-side computed fields
+        refreshPortalData().catch(() => {});
       } catch (error) {
+        // Revert optimistic update on failure
+        refreshPortalData().catch(() => {});
         handleRequestError(error);
       }
     }
@@ -14232,10 +14258,13 @@
 
     async function deleteMission(missionId) {
       try {
+        state.missions = state.missions.filter((m) => m.id !== missionId);
+        renderAll();
         await apiRequest(`/api/admin/missions/${missionId}/delete`, { method: "POST" });
-        await refreshPortalData();
         showToast(state.lang === "hi" ? "अभियान हटा दिया गया।" : "Mission deleted.", "🗑️");
+        refreshPortalData().catch(() => {});
       } catch (error) {
+        refreshPortalData().catch(() => {});
         handleRequestError(error);
       }
     }
@@ -16282,14 +16311,19 @@
         confirmLabel: "Archive",
         onConfirm: async () => {
           try {
+            // Remove from local state immediately for instant feedback
+            state.missions = state.missions.filter((m) => m.id !== missionId);
+            renderAll();
             await apiRequest(`/api/admin/missions/${missionId}/archive`, {
               method: "POST",
               headers: { Authorization: `Bearer ${getAdminToken()}` }
             });
             showToast("Mission archived.", "📦");
-            await refreshPortalData();
-            renderAll();
-          } catch (e) { handleRequestError(e); }
+            refreshPortalData().catch(() => {});
+          } catch (e) {
+            refreshPortalData().catch(() => {});
+            handleRequestError(e);
+          }
         }
       });
     }
