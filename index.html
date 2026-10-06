@@ -4956,7 +4956,7 @@
           </div>
           <div class="passport-stat">
             <div class="passport-stat-value" id="passportMissions"></div>
-            <div class="passport-stat-label" data-i18n="passport-missions">Missions</div>
+            <div class="passport-stat-label" data-i18n="passport-missions">Verified</div>
           </div>
           <div class="passport-stat">
             <div class="passport-stat-value" id="passportStreak">—</div>
@@ -11453,15 +11453,12 @@
       const completedMissions = state.missions.filter((mission) => mission.status === "completed").length;
       const pendingRequests = state.missions.filter((mission) => mission.sourceType === "community" && mission.approvalStatus === "pending").length;
       const subsLabel = state.lang === "hi" ? "ग्राहक" : "Subscribers";
-      const subsNote = state.newsletterSubsBase > 0
-        ? ` <span style="font-size:10px;color:var(--text-muted);display:block;margin-top:2px">(${state.newsletterSubsActual} online + ${state.newsletterSubsBase} base)</span>`
-        : "";
       const items = [
         { label: state.lang === "hi" ? "पंजीकृत स्वयंसेवक" : "Registered Volunteers", value: state.volunteers.length },
         { label: state.lang === "hi" ? "अभियान" : "Missions", value: state.missions.length },
         { label: state.lang === "hi" ? "लंबित अनुरोध" : "Pending Requests", value: pendingRequests },
         { label: state.lang === "hi" ? "पूर्ण गतिविधियाँ" : "Completed Activities", value: completedMissions },
-        { label: subsLabel, value: state.newsletterSubs, note: subsNote },
+        { label: subsLabel, value: state.newsletterSubsActual },
         { label: state.lang === "hi" ? "डेटा मोड" : "Data Mode", value: state.dataMode === "demo" ? "Demo" : "Real" }
       ];
       document.getElementById("adminStatsGrid").innerHTML = items
@@ -12713,7 +12710,7 @@
       document.getElementById("passportName").textContent = leader.name;
       document.getElementById("passportArea").textContent = leader.area;
       document.getElementById("passportPoints").textContent = leader.points;
-      document.getElementById("passportMissions").textContent = leader.missions;
+      document.getElementById("passportMissions").textContent = leader.verifiedCount ?? leader.missions;
       // Civic rank badge
       const rankLabel = state.lang === "hi" ? (leader.civicRankHi || leader.civicRankEn || "") : (leader.civicRankEn || "");
       const rankEl = document.getElementById("passportCivicRank");
@@ -12740,16 +12737,23 @@
       document.getElementById("passportBadges").innerHTML = (leader.badges || []).map((badge) => `<span class="badge-emoji">${badge}</span>`).join("");
       const pendingActivities = attended.filter((entry) => entry && entry.pending);
       const hi = state.lang === "hi";
-      document.getElementById("passportTimeline").innerHTML = attended.length
-        ? attended
-            .map((entry) => {
-              let suffix = "";
-              if (entry.pending) suffix = ` · <span style="color:#d97706;font-weight:600">${hi ? "⏳ एडमिन समीक्षा लंबित" : "⏳ Pending admin review"}</span>`;
-              else if (entry.completed) suffix = ` · <span style="color:var(--green)">${hi ? "✅ पूर्ण" : "✅ completed"}</span>`;
-              return `<div class="timeline-item">${escapeHtml(entry.title)}${entry.dateLabel ? ` · ${escapeHtml(entry.dateLabel)}` : ""}${suffix}</div>`;
-            })
-            .join("")
-        : `<div class="timeline-item">${hi ? "अभी तक कोई अभियान दर्ज नहीं है।" : "No missions recorded yet."}</div>`;
+      // Split attended into 3 groups
+      const verifiedEntries = attended.filter((e) => e && ((e.checkinMethod === "qr" && e.checkedIn) || e.checkinMethod === "walkin"));
+      const pendingEntries  = attended.filter((e) => e && e.pending);
+      const rsvpOnlyEntries = attended.filter((e) => e && !e.pending && !((e.checkinMethod === "qr" && e.checkedIn) || e.checkinMethod === "walkin"));
+      function timelineGroup(entries, icon, label, color) {
+        if (!entries.length) return "";
+        return `<div style="margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:${color};margin-bottom:4px">${icon} ${label} (${entries.length})</div>
+          ${entries.map((entry) => `<div class="timeline-item">${escapeHtml(entry.title)}${entry.dateLabel ? ` · ${escapeHtml(entry.dateLabel)}` : ""}</div>`).join("")}
+        </div>`;
+      }
+      const timelineHtml = verifiedEntries.length + pendingEntries.length + rsvpOnlyEntries.length === 0
+        ? `<div class="timeline-item">${hi ? "अभी तक कोई अभियान दर्ज नहीं है।" : "No missions recorded yet."}</div>`
+        : timelineGroup(verifiedEntries, "✅", hi ? "सत्यापित उपस्थिति" : "Verified Attendance", "var(--green)")
+          + timelineGroup(pendingEntries,  "⏳", hi ? "एडमिन समीक्षा लंबित" : "Pending Admin Review", "#d97706")
+          + timelineGroup(rsvpOnlyEntries, "📋", hi ? "केवल पंजीकृत" : "Registered Only", "var(--muted)");
+      document.getElementById("passportTimeline").innerHTML = timelineHtml;
 
       // Show pending notice above eligibility text
       const pendingNoticeEl = document.getElementById("passportPendingNotice");
@@ -12780,27 +12784,37 @@
           ? "प्रमाणपत्र तभी खुलेगा जब एडमिन किसी पूर्ण की गई गतिविधि को completed चिह्नित करेगा।"
           : "Certificates unlock only after an admin marks at least one attended activity as completed.";
       document.getElementById("downloadCertificateBtn").disabled = !completedActivities.length;
-      // Point breakdown panel
+      // Point breakdown panel — uses new attendance-based formula
       const bdEl = document.getElementById("passportPointBreakdown");
-      if (bdEl && leader.missions != null) {
+      if (bdEl) {
         const hi = state.lang === "hi";
-        const m = leader.missions;
-        const completed = completedActivities.length;
-        const base = 10 + m * 25 + completed * 50;
-        const milestone = m >= 10 ? 200 : m >= 5 ? 100 : 0;
-        const nextMilestone = m < 5 ? 5 : m < 10 ? 10 : null;
-        const ptsToNext = nextMilestone ? `+${nextMilestone >= 10 ? 200 : 100} ${hi ? "बोनस" : "bonus"} at ${nextMilestone} ${hi ? "अभियान" : "missions"}` : "";
+        const qrV = leader.qrVerifiedCount ?? 0;
+        const wlk = leader.walkinCount ?? 0;
+        const totalV = leader.verifiedCount ?? (qrV + wlk);
+        const milestone = totalV >= 10 ? 200 : totalV >= 5 ? 100 : 0;
+        const nextMilestone = totalV < 5 ? 5 : totalV < 10 ? 10 : null;
+        const ptsToNext = nextMilestone
+          ? `+${nextMilestone >= 10 ? 200 : 100} ${hi ? "बोनस" : "bonus"} at ${nextMilestone} ${hi ? "सत्यापित उपस्थिति" : "verified attendances"}`
+          : "";
         bdEl.innerHTML = `
           <div class="message-card" style="padding:14px 16px">
             <div class="message-name" style="margin-bottom:8px">${hi ? "अंक विवरण" : "Point Breakdown"}</div>
             <div style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)">
               <div style="display:flex;justify-content:space-between"><span>${hi ? "पंजीकरण" : "Registration"}</span><span style="color:var(--text);font-weight:600">+10</span></div>
-              <div style="display:flex;justify-content:space-between"><span>${m} ${hi ? "अभियान में भागीदारी" : "mission join" + (m !== 1 ? "s" : "")} × 25</span><span style="color:var(--text);font-weight:600">+${m * 25}</span></div>
-              <div style="display:flex;justify-content:space-between"><span>${completed} ${hi ? "पूर्ण अभियान" : "completed mission" + (completed !== 1 ? "s" : "")} × 50</span><span style="color:var(--text);font-weight:600">+${completed * 50}</span></div>
-              ${milestone ? `<div style="display:flex;justify-content:space-between"><span>${hi ? "माइलस्टोन बोनस" : "Milestone bonus"}</span><span style="color:var(--green);font-weight:600">+${milestone}</span></div>` : ""}
+              ${qrV > 0 ? `<div style="display:flex;justify-content:space-between"><span>${qrV} QR ${hi ? "सत्यापित उपस्थिति" : "verified attendance" + (qrV !== 1 ? "s" : "")} × 40</span><span style="color:var(--text);font-weight:600">+${qrV * 40}</span></div>` : ""}
+              ${wlk > 0 ? `<div style="display:flex;justify-content:space-between"><span>${wlk} ${hi ? "वॉक-इन उपस्थिति" : "walk-in attendance" + (wlk !== 1 ? "s" : "")} × 15</span><span style="color:var(--text);font-weight:600">+${wlk * 15}</span></div>` : ""}
+              ${milestone ? `<div style="display:flex;justify-content:space-between"><span>${hi ? "माइलस्टोन बोनस" : "Milestone bonus"} (${totalV >= 10 ? "10+" : "5+"} ${hi ? "सत्यापित" : "verified"})</span><span style="color:var(--green);font-weight:600">+${milestone}</span></div>` : ""}
               <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span style="font-weight:700;color:var(--text)">${hi ? "कुल" : "Total"}</span><span style="font-weight:800;color:var(--navy)">⚡ ${leader.points}</span></div>
             </div>
             ${ptsToNext ? `<div style="margin-top:8px;font-size:12px;color:var(--saffron-dark);font-weight:600">🎯 ${ptsToNext}</div>` : ""}
+            <details style="margin-top:10px">
+              <summary style="font-size:12px;color:var(--muted);cursor:pointer">ℹ️ ${hi ? "नई पॉइंट प्रणाली के बारे में" : "About the new point system"}</summary>
+              <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5">
+                ${hi
+                  ? "अप्रैल 2025 से, अंक केवल <strong>वास्तविक उपस्थिति</strong> से मिलते हैं — सिर्फ ऑनलाइन जुड़ने से नहीं। QR स्कैन (एडमिन अनुमोदित) = 40 अंक। वॉक-इन = 15 अंक। 5+ सत्यापित उपस्थिति पर +100 बोनस, 10+ पर +200 बोनस।"
+                  : "From April 2025, points are earned only for <strong>real attendance</strong> — not just online registration. QR scan (admin-approved) = 40 pts. Walk-in = 15 pts. Bonus: +100 at 5+ verified, +200 at 10+ verified attendances."}
+              </div>
+            </details>
           </div>`;
       }
 

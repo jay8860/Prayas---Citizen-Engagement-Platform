@@ -176,6 +176,7 @@ function computeAllVolunteerStats() {
         completed: r.status === "completed",
         pending: r.checkin_method === "qr_new",
         checkedIn: !!r.attended_at,
+        checkinMethod: r.checkin_method || "rsvp",
         dateLabel: r.date_label || ""
       }));
 
@@ -274,6 +275,9 @@ function getMyPassport(body) {
       points: stats.points,
       missions: stats.missionCount,
       completedCount: stats.completedCount,
+      verifiedCount: stats.verifiedCount ?? 0,
+      qrVerifiedCount: stats.qrVerifiedCount ?? 0,
+      walkinCount: stats.walkinCount ?? 0,
       rank: position === 1 ? "🥇" : position === 2 ? "🥈" : position === 3 ? "🥉" : String(position),
       cls: position === 1 ? "gold" : position === 2 ? "silver" : position === 3 ? "bronze" : "",
       badges: stats.badges,
@@ -3581,7 +3585,7 @@ function buildBootstrapPayload(isAdmin = false) {
     date: subscriber.date_label
   }));
 
-  const baseSubscribers = Number(getSetting("newsletter_subscriber_base", "0")) || 0;
+  const baseSubscribers = 0; // base was seeded dummy data — always use real signups only
 
   return {
     dataMode,
@@ -3622,9 +3626,9 @@ function buildBootstrapPayload(isAdmin = false) {
     volunteerEvents,
     sponsorLeads,
     donations,
-    newsletterSubs: baseSubscribers + newsletterSignups.length,
+    newsletterSubs: newsletterSignups.length,
     newsletterSubsActual: newsletterSignups.length,
-    newsletterSubsBase: baseSubscribers,
+    newsletterSubsBase: 0,
     newsletterSignups,
     newsletterDraft: {
       subject: getSetting("newsletter_draft_subject", "District Update"),
