@@ -12694,7 +12694,12 @@
       const leader = activePassportLeader();
       if (!leader) return;
       const attended = Array.isArray(leader.attended) ? leader.attended : [];
-      const completedActivities = attended.filter((entry) => entry && entry.completed);
+      // "Completed" for certificate purposes = admin-verified attendance (QR approved or walk-in marked).
+      // Merely being RSVPd to a mission that was later closed/completed does NOT count — the volunteer
+      // must have been physically verified present. Use the same rule as the points system.
+      const completedActivities = attended.filter(
+        (e) => e && ((e.checkinMethod === "qr" && e.checkedIn) || e.checkinMethod === "walkin")
+      );
       const avatarEl = document.getElementById("passportAvatar");
       const avatarPhotoEl = document.getElementById("passportAvatarPhoto");
       if (leader.profilePhoto) {
@@ -12778,11 +12783,11 @@
 
       document.getElementById("passportEligibilityText").textContent = completedActivities.length
         ? hi
-          ? `${completedActivities.length} पूर्ण गतिविधि सत्यापित है। प्रमाणपत्र डाउनलोड सक्षम है।`
-          : `${completedActivities.length} completed activity verified. Certificate download is enabled.`
+          ? `${completedActivities.length} सत्यापित उपस्थिति दर्ज है। प्रमाणपत्र डाउनलोड सक्षम है।`
+          : `${completedActivities.length} verified attendance${completedActivities.length !== 1 ? "s" : ""} on record. Certificate download is enabled.`
         : hi
-          ? "प्रमाणपत्र तभी खुलेगा जब एडमिन किसी पूर्ण की गई गतिविधि को completed चिह्नित करेगा।"
-          : "Certificates unlock only after an admin marks at least one attended activity as completed.";
+          ? "प्रमाणपत्र तभी मिलेगा जब एडमिन आपकी उपस्थिति QR स्कैन या वॉक-इन के रूप में सत्यापित करें।"
+          : "Certificate unlocks only after admin verifies your attendance (QR scan approval or walk-in mark).";
       document.getElementById("downloadCertificateBtn").disabled = !completedActivities.length;
       // Point breakdown panel — uses new attendance-based formula
       const bdEl = document.getElementById("passportPointBreakdown");
@@ -13727,9 +13732,11 @@
       const leader = activePassportLeader();
       if (!leader) return;
       const attended = Array.isArray(leader.attended) ? leader.attended : [];
-      const completedActivities = attended.filter((entry) => entry && entry.completed);
+      const completedActivities = attended.filter(
+        (e) => e && ((e.checkinMethod === "qr" && e.checkedIn) || e.checkinMethod === "walkin")
+      );
       if (!completedActivities.length) {
-        showToast(state.lang === "hi" ? "प्रमाणपत्र केवल पूर्ण गतिविधि के बाद उपलब्ध होगा।" : "Certificates unlock only after a completed activity is verified.", "ℹ️");
+        showToast(state.lang === "hi" ? "प्रमाणपत्र केवल सत्यापित उपस्थिति के बाद उपलब्ध होगा।" : "Certificate requires at least one admin-verified attendance (QR scan or walk-in).", "ℹ️");
         return;
       }
       const hi = state.lang === "hi";
@@ -13747,8 +13754,8 @@
       const shownActivities = completedActivities.slice(0, 4);
       const moreCount = completedActivities.length - shownActivities.length;
       const bodyText = hi
-        ? `ने ${state.districtName} जिले में जनप्रयास नागरिक सहभागिता मंच के अंतर्गत नीचे सूचीबद्ध सत्यापित सार्वजनिक सेवा गतिविधियों में सफलतापूर्वक भाग लिया है।`
-        : `has successfully contributed to the verified public service activities listed below, under the JanPrayas Citizen Engagement Platform in ${state.districtName} district.`;
+        ? `ने ${state.districtName} जिले में जनप्रयास नागरिक सहभागिता मंच के अंतर्गत नीचे सूचीबद्ध गतिविधियों में भौतिक उपस्थिति (QR स्कैन / वॉक-इन) के माध्यम से सत्यापित रूप से भाग लिया है।`
+        : `has participated in the activities listed below with verified physical attendance (QR scan / walk-in) under the JanPrayas Citizen Engagement Platform in ${state.districtName} district.`;
 
       // Official-style logos — loaded once up front so the real draw pass
       // (draw=true) can drop them straight in with drawImage(). Both resolve
@@ -13906,7 +13913,7 @@
             ctx.fillStyle = "#6B7280";
             ctx.font = "600 15px Inter";
             ctx.fillText(
-              hi ? `+ ${moreCount} अन्य पूर्ण गतिविधियाँ` : `+ ${moreCount} more completed activities`,
+              hi ? `+ ${moreCount} अन्य सत्यापित उपस्थिति` : `+ ${moreCount} more verified attendance${moreCount !== 1 ? "s" : ""}`,
               W / 2, cursorY
             );
           }
@@ -13919,8 +13926,8 @@
           ctx.font = "16px Inter";
           ctx.fillText(
             hi
-              ? `कुल पूर्ण गतिविधियाँ: ${completedActivities.length}  |  कुल भागीदारी: ${leader.missions}  |  प्रमाणपत्र क्र.: ${certificateId}`
-              : `Total completed: ${completedActivities.length}  |  Total participations: ${leader.missions}  |  Certificate No: ${certificateId}`,
+              ? `सत्यापित उपस्थिति: ${completedActivities.length}  |  कुल पंजीकरण: ${leader.missions}  |  प्रमाणपत्र क्र.: ${certificateId}`
+              : `Verified attendances: ${completedActivities.length}  |  Total RSVPs: ${leader.missions}  |  Certificate No: ${certificateId}`,
             W / 2, cursorY
           );
         }
