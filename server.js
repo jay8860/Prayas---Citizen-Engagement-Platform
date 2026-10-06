@@ -3319,8 +3319,8 @@ function base64Url(value) {
 }
 
 function buildBootstrapPayload(isAdmin = false) {
-  const dataMode = getSetting("portal_data_mode", "demo") === "real" ? "real" : "demo";
-  const demoFlag = dataMode === "demo" ? 1 : 0;
+  const dataMode = "real";
+  const demoFlag = 0;
   const locations = safeJsonArray(getSetting("location_catalog_json", "[]"));
   const departments = safeJsonArray(getSetting("department_catalog_json", "[]"));
   const announcementRows = db.prepare("SELECT id, text FROM announcements WHERE is_demo = ? ORDER BY id DESC").all(demoFlag);
@@ -4607,8 +4607,11 @@ async function botChat(body) {
 
   let answer = null;
 
-  // Try Gemini first if the API key is configured
-  if (process.env.GOOGLE_API_KEY) {
+  // Try local FAQ rules first — fast, reliable, covers all common portal questions
+  answer = faqAnswer(question);
+
+  // Only call Gemini for questions the FAQ didn't match
+  if (!answer && process.env.GOOGLE_API_KEY) {
     const systemPrompt = `You are the JanPrayas Portal Assistant — a helpful, concise guide for the JanPrayas Citizen Engagement Portal, a district-level civic action platform.
 
 Answer ONLY questions about the JanPrayas portal:
@@ -4620,13 +4623,8 @@ Answer ONLY questions about the JanPrayas portal:
 - Points and ranks: Nagarik Sewak → Prabhari Sewak → Jan Sewak → Lok Nayak
 - Leaderboard, badges, completion requests, admin review
 
-STRICTLY REFUSE unrelated questions. Keep answers short (2–4 sentences). Respond in the same language the user writes in.`;
+Keep answers short (2–4 sentences). Respond in the same language the user writes in.`;
     answer = await callGeminiRaw(systemPrompt, question, 350);
-  }
-
-  // Always fall back to FAQ rules if Gemini failed or key not set
-  if (!answer) {
-    answer = faqAnswer(question);
   }
 
   if (!answer) {
@@ -5686,7 +5684,7 @@ function bulkReviewMissions(body, admin) {
 // ── Mission analytics ─────────────────────────────────────────────────────────
 
 function buildAnalytics() {
-  const isDemoInt = getSetting("portal_data_mode", "demo") === "real" ? 0 : 1;
+  const isDemoInt = 0;
 
   const totalVolunteers = db.prepare("SELECT COUNT(*) AS n FROM volunteer_profiles").get().n;
   const totalMissions = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE archived_at IS NULL AND is_demo = ?").get(isDemoInt).n;

@@ -3427,7 +3427,7 @@
           <div class="hero-actions">
             <a class="btn btn-saffron" href="#missions" data-i18n="hero-explore">Explore Missions</a>
             <a class="btn btn-soft" href="#volunteer" data-i18n="hero-register">Register as Volunteer</a>
-            <button class="btn btn-soft" type="button" onclick="openOrgAuthSection('signup')" style="flex-basis:100%">🏢 Register as Organization</button>
+            <button class="btn btn-soft" type="button" onclick="openOrgAuthSection('signup')">🏢 Register as Organization</button>
           </div>
           <div class="hero-utility">
             <button type="button" class="hero-checkin-btn" onclick="openModal('checkInModal')" data-i18n="hero-utility-checkin">✅ Check in at venue</button>
@@ -3462,8 +3462,13 @@
           </div>
           <div class="hero-card" style="text-align:center;">
             <div style="font-size:36px;margin-bottom:8px">🧹</div>
-            <div class="hero-card-num" id="heroImpactDrives">156</div>
+            <div class="hero-card-num" id="heroImpactDrives">0</div>
             <div class="hero-card-label" data-i18n="hero-stat-drives">Drives Completed</div>
+          </div>
+          <div class="hero-card" style="text-align:center;">
+            <div style="font-size:36px;margin-bottom:8px">🎯</div>
+            <div class="hero-card-num" id="heroTotalMissions">0</div>
+            <div class="hero-card-label" data-i18n="hero-stat-missions">Total Missions</div>
           </div>
         </div>
       </div>
@@ -5331,7 +5336,7 @@
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="branding" data-i18n="admin-tab-branding">Branding</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="locations" data-i18n="admin-tab-locations">Locations</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="missionsetup" data-i18n="admin-tab-missionsetup">Mission Setup</button>
-          <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="data" data-i18n="admin-tab-data">Data Mode</button>
+          <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="data">Settings</button>
           <button class="admin-tab-btn super-admin-only" type="button" data-admin-tab="newsletter" data-i18n="admin-tab-newsletter">Newsletter</button>
           <button class="admin-tab-btn master-admin-only" type="button" data-admin-tab="users" data-i18n="admin-tab-users">Users &amp; Delegation</button>
           <button class="admin-tab-btn" type="button" data-admin-tab="aiqueue">🤖 AI Queue</button>
@@ -5968,15 +5973,10 @@
 
         <div class="admin-pane" id="adminPaneData">
           <div class="panel-card">
-            <h3 data-i18n="admin-data-title">Deployment Data Mode</h3>
-            <p data-i18n="admin-data-subtitle">Use demo mode for presentations. Use real deploy mode to hide all dummy seeded records and show only actual field data.</p>
-            <div class="message-card" style="margin-bottom:16px">
-              <div class="message-name" id="dataModeLabel"></div>
-              <div class="message-text" id="dataModeCopy"></div>
-            </div>
-            <div class="message-actions">
-              <button class="btn btn-soft" type="button" onclick="setPortalDataMode('demo')">Demo Data</button>
-              <button class="btn btn-primary" type="button" onclick="setPortalDataMode('real')">Real Deploy Version</button>
+            <h3>Portal Data Mode</h3>
+            <div class="message-card" style="margin-bottom:16px;background:var(--surface-success,#f0fdf4);border-color:var(--success,#16a34a)">
+              <div class="message-name" style="color:var(--success,#16a34a)">✅ Real Deploy Mode Active</div>
+              <div class="message-text">The portal is running on real field data only. All demo/seed records are hidden from public view.</div>
             </div>
           </div>
 
@@ -6948,6 +6948,7 @@
       "hero-stat-volunteers": { en: "Registered Volunteers", hi: "पंजीकृत स्वयंसेवक" },
       "hero-stat-trees": { en: "Mission Registrations", hi: "मिशन पंजीकरण" },
       "hero-stat-drives": { en: "Drives Completed", hi: "पूर्ण अभियान" },
+      "hero-stat-missions": { en: "Total Missions", hi: "कुल अभियान" },
       "stats-volunteers": { en: "Registered Volunteers", hi: "पंजीकृत स्वयंसेवक" },
       "stats-missions": { en: "Active Missions", hi: "सक्रिय अभियान" },
       "stats-completed": { en: "Programs Completed", hi: "पूर्ण कार्यक्रम" },
@@ -8855,6 +8856,7 @@
       document.getElementById("heroVolunteerCount").textContent = `${formatCompact(stats.volunteerBase)}+`;
       document.getElementById("heroImpactTrees").textContent = formatCompact(state.volunteerEvents.length);
       document.getElementById("heroImpactDrives").textContent = String(stats.completed);
+      document.getElementById("heroTotalMissions").textContent = String(stats.activeMissions);
     }
 
     function renderTicker() {
