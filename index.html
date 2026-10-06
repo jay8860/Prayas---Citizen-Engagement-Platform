@@ -14392,11 +14392,13 @@
         state.adminLoggedIn = true;
         closeModal("adminLoginModal");
         switchAdminTab("today");
-        await refreshPortalData();
+        openModal("adminPanelModal");
+        try {
+          await refreshPortalData();
+        } catch (e) { /* panel already open, data refresh failed silently */ }
         applyAdminRoleUI();
         if (isSuperAdmin()) loadAdminUsersList();
         renderPosterMissionOptions();
-        openModal("adminPanelModal");
       } catch (error) {
         document.getElementById("adminLoginError").textContent =
           error?.message || (state.lang === "hi" ? "लॉगिन विफल रहा।" : "Login failed.");
