@@ -3537,7 +3537,7 @@ function buildBootstrapPayload(isAdmin = false) {
     date: subscriber.date_label
   }));
 
-  const baseSubscribers = Number(getSetting("newsletter_subscriber_base", "847")) || 847;
+  const baseSubscribers = Number(getSetting("newsletter_subscriber_base", "0")) || 0;
 
   return {
     dataMode,
@@ -3579,6 +3579,8 @@ function buildBootstrapPayload(isAdmin = false) {
     sponsorLeads,
     donations,
     newsletterSubs: baseSubscribers + newsletterSignups.length,
+    newsletterSubsActual: newsletterSignups.length,
+    newsletterSubsBase: baseSubscribers,
     newsletterSignups,
     newsletterDraft: {
       subject: getSetting("newsletter_draft_subject", "District Update"),
@@ -5652,27 +5654,29 @@ function bulkReviewMissions(body, admin) {
 // ── Mission analytics ─────────────────────────────────────────────────────────
 
 function buildAnalytics() {
+  const isDemoInt = getSetting("portal_data_mode", "demo") === "real" ? 0 : 1;
+
   const totalVolunteers = db.prepare("SELECT COUNT(*) AS n FROM volunteer_profiles").get().n;
-  const totalMissions = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE archived_at IS NULL").get().n;
-  const completedMissions = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE status = 'completed' AND archived_at IS NULL").get().n;
-  const pendingRequests = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE source_type = 'community' AND approval_status = 'pending' AND archived_at IS NULL").get().n;
+  const totalMissions = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE archived_at IS NULL AND is_demo = ?").get(isDemoInt).n;
+  const completedMissions = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE status = 'completed' AND archived_at IS NULL AND is_demo = ?").get(isDemoInt).n;
+  const pendingRequests = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE source_type = 'community' AND approval_status = 'pending' AND archived_at IS NULL AND is_demo = ?").get(isDemoInt).n;
   const totalParticipations = db.prepare("SELECT COUNT(*) AS n FROM volunteer_participations").get().n;
 
   const byCategory = db.prepare(`
     SELECT category, COUNT(*) AS missions, SUM(volunteers) AS participants
     FROM missions
-    WHERE archived_at IS NULL
+    WHERE archived_at IS NULL AND is_demo = ?
     GROUP BY category
     ORDER BY participants DESC
-  `).all();
+  `).all(isDemoInt);
 
   const top5Missions = db.prepare(`
     SELECT m.id, m.title, m.category, m.volunteers, m.total, m.status, m.date
     FROM missions m
-    WHERE m.archived_at IS NULL
+    WHERE m.archived_at IS NULL AND m.is_demo = ?
     ORDER BY m.volunteers DESC
     LIMIT 5
-  `).all();
+  `).all(isDemoInt);
 
   const volunteersByWard = db.prepare(`
     SELECT area, COUNT(*) AS count

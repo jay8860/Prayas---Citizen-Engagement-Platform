@@ -3451,8 +3451,8 @@
           <div class="hero-card" style="background:rgba(255,153,51,0.15)">
             <div class="hero-card-icon" style="background:rgba(255,153,51,0.24);color:#FFC36B">🏆</div>
             <div>
-              <div class="hero-card-num" id="heroVolunteerCount">2,400+</div>
-              <div class="hero-card-label" data-i18n="hero-stat-volunteers">Active Volunteers This District</div>
+              <div class="hero-card-num" id="heroVolunteerCount">0+</div>
+              <div class="hero-card-label" data-i18n="hero-stat-volunteers">Registered Volunteers</div>
             </div>
           </div>
           <div class="hero-card" style="text-align:center;">
@@ -6944,7 +6944,7 @@
       "hero-utility-checkin": { en: "Check in at venue", hi: "स्थल पर चेक-इन करें" },
       "hero-utility-track": { en: "Track my request", hi: "अपना अनुरोध ट्रैक करें" },
       "hero-utility-passport": { en: "🎖️ My passport &amp; certificate", hi: "🎖️ मेरा पासपोर्ट और प्रमाणपत्र" },
-      "hero-stat-volunteers": { en: "Active Volunteers This District", hi: "इस जिले के सक्रिय स्वयंसेवक" },
+      "hero-stat-volunteers": { en: "Registered Volunteers", hi: "पंजीकृत स्वयंसेवक" },
       "hero-stat-trees": { en: "Mission Registrations", hi: "मिशन पंजीकरण" },
       "hero-stat-drives": { en: "Drives Completed", hi: "पूर्ण अभियान" },
       "stats-volunteers": { en: "Registered Volunteers", hi: "पंजीकृत स्वयंसेवक" },
@@ -7541,7 +7541,9 @@
         leaders: [],
         volunteers: [],
         volunteerEvents: [],
-        newsletterSubs: 847,
+        newsletterSubs: 0,
+        newsletterSubsActual: 0,
+        newsletterSubsBase: 0,
         newsletterSignups: [],
         newsletterDraft: { subject: "", body: "" },
         locations: [],
@@ -8703,6 +8705,8 @@
       state.wardLeaderboard = Array.isArray(payload.wardLeaderboard) ? payload.wardLeaderboard : [];
       state.newsletterSignups = Array.isArray(payload.newsletterSignups) ? payload.newsletterSignups : [];
       state.newsletterSubs = Number(payload.newsletterSubs || 0);
+      state.newsletterSubsActual = Number(payload.newsletterSubsActual ?? payload.newsletterSubs ?? 0);
+      state.newsletterSubsBase = Number(payload.newsletterSubsBase ?? 0);
       if (payload.newsletterDraft && typeof payload.newsletterDraft === "object") {
         state.newsletterDraft = {
           subject: payload.newsletterDraft.subject || "",
@@ -11423,16 +11427,20 @@
     function renderAdminStats() {
       const completedMissions = state.missions.filter((mission) => mission.status === "completed").length;
       const pendingRequests = state.missions.filter((mission) => mission.sourceType === "community" && mission.approvalStatus === "pending").length;
+      const subsLabel = state.lang === "hi" ? "ग्राहक" : "Subscribers";
+      const subsNote = state.newsletterSubsBase > 0
+        ? ` <span style="font-size:10px;color:var(--text-muted);display:block;margin-top:2px">(${state.newsletterSubsActual} online + ${state.newsletterSubsBase} base)</span>`
+        : "";
       const items = [
-        { label: state.lang === "hi" ? "स्वयंसेवक" : "Volunteers", value: state.volunteers.length },
+        { label: state.lang === "hi" ? "पंजीकृत स्वयंसेवक" : "Registered Volunteers", value: state.volunteers.length },
         { label: state.lang === "hi" ? "अभियान" : "Missions", value: state.missions.length },
         { label: state.lang === "hi" ? "लंबित अनुरोध" : "Pending Requests", value: pendingRequests },
         { label: state.lang === "hi" ? "पूर्ण गतिविधियाँ" : "Completed Activities", value: completedMissions },
-        { label: state.lang === "hi" ? "ग्राहक" : "Subscribers", value: state.newsletterSubs },
+        { label: subsLabel, value: state.newsletterSubs, note: subsNote },
         { label: state.lang === "hi" ? "डेटा मोड" : "Data Mode", value: state.dataMode === "demo" ? "Demo" : "Real" }
       ];
       document.getElementById("adminStatsGrid").innerHTML = items
-        .map((item) => `<div class="admin-stat"><div class="admin-stat-value">${escapeHtml(String(item.value))}</div><div class="admin-stat-label">${escapeHtml(item.label)}</div></div>`)
+        .map((item) => `<div class="admin-stat"><div class="admin-stat-value">${escapeHtml(String(item.value))}${item.note || ""}</div><div class="admin-stat-label">${escapeHtml(item.label)}</div></div>`)
         .join("");
     }
 
