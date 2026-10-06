@@ -4496,6 +4496,28 @@
                 </div>
               </div>
             </div>
+
+            <!-- Points system info card -->
+            <div style="margin-top:24px;background:linear-gradient(135deg,#1B3A6B 0%,#2563EB 100%);border-radius:14px;padding:20px 22px;color:#fff">
+              <div style="font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.65);margin-bottom:10px">🏆 How Points Are Earned</div>
+              <div style="display:grid;gap:8px">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span style="background:rgba(255,255,255,.15);border-radius:8px;padding:4px 10px;font-weight:800;font-size:15px;min-width:44px;text-align:center">40</span>
+                  <span style="font-size:13px">QR scan at venue + selfie, approved by admin</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span style="background:rgba(255,255,255,.15);border-radius:8px;padding:4px 10px;font-weight:800;font-size:15px;min-width:44px;text-align:center">15</span>
+                  <span style="font-size:13px">Walk-in — coordinator marks you present at venue</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span style="background:rgba(255,255,255,.15);border-radius:8px;padding:4px 10px;font-weight:800;font-size:15px;min-width:44px;text-align:center">0</span>
+                  <span style="font-size:13px">Just joining / registering online without attending</span>
+                </div>
+                <div style="margin-top:4px;padding-top:10px;border-top:1px solid rgba(255,255,255,.15);font-size:12px;color:rgba(255,255,255,.75)">
+                  🏅 +100 bonus at 5 verified attendances &nbsp;·&nbsp; 🌟 +200 bonus at 10 verified attendances
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="form-card">
@@ -15148,8 +15170,8 @@
       },
       {
         id: "points",
-        en: { title: "How are JanPrayas points calculated?", body: "You earn points for each mission you attend. Base points depend on the mission category — typically 10–50 per attendance. Bonus multipliers apply for special roles (coordinator, skilled volunteer), consecutive participation streaks, and high-priority community missions. Points are shown in your passport and on the public leaderboard." },
-        hi: { title: "जनप्रयास अंक कैसे गिने जाते हैं?", body: "हर अभियान में भाग लेने पर अंक मिलते हैं। आधार अंक अभियान की श्रेणी पर निर्भर होते हैं — आमतौर पर प्रति उपस्थिति 10–50 अंक। विशेष भूमिकाओं (समन्वयक, कुशल स्वयंसेवक), लगातार भागीदारी और उच्च-प्राथमिकता अभियानों के लिए अतिरिक्त गुणक भी लागू होते हैं। अंक आपके पासपोर्ट और सार्वजनिक लीडरबोर्ड पर दिखाई देते हैं।" }
+        en: { title: "How are JanPrayas points calculated?", body: "Points are awarded only for verified physical attendance — not for simply joining a mission online. Here is how the system works:\n\n• Registration: 10 points (one-time, on sign-up)\n• QR check-in approved: 40 points per mission — you scan the QR code at the venue, take a live selfie, and the admin verifies your attendance\n• Walk-in attendance: 15 points per mission — the coordinator marks you present at the venue\n• Pending QR (selfie not yet reviewed): 0 points until admin approves\n• Just RSVP / joining online without showing up: 0 points\n\nMilestone bonuses:\n• 5 verified attendances → +100 points bonus + 🏅 badge\n• 10 verified attendances → +200 points bonus + 🌟 badge\n\nThis ensures the leaderboard reflects real on-ground participation, not just portal activity." },
+        hi: { title: "जनप्रयास अंक कैसे गिने जाते हैं?", body: "अंक केवल सत्यापित शारीरिक उपस्थिति पर मिलते हैं — केवल ऑनलाइन जुड़ने पर नहीं। यहाँ पूरा विवरण है:\n\n• पंजीकरण: 10 अंक (एक बार, पहली बार साइन-अप पर)\n• QR चेक-इन स्वीकृत: 40 अंक प्रति अभियान — आप स्थल पर QR कोड स्कैन करते हैं, लाइव सेल्फी लेते हैं और एडमिन उपस्थिति सत्यापित करता है\n• वॉक-इन उपस्थिति: 15 अंक प्रति अभियान — समन्वयक आपको स्थल पर उपस्थित चिह्नित करता है\n• लंबित QR (सेल्फी अभी समीक्षाधीन): स्वीकृति होने तक 0 अंक\n• केवल RSVP / बिना उपस्थित हुए ऑनलाइन जुड़ना: 0 अंक\n\nमाइलस्टोन बोनस:\n• 5 सत्यापित उपस्थितियाँ → +100 अंक बोनस + 🏅 बैज\n• 10 सत्यापित उपस्थितियाँ → +200 अंक बोनस + 🌟 बैज\n\nयह सुनिश्चित करता है कि लीडरबोर्ड वास्तविक जमीनी भागीदारी को दर्शाए, न कि केवल पोर्टल गतिविधि को।" }
       },
       {
         id: "certificate",
@@ -15183,8 +15205,8 @@
       },
       {
         id: "leaderboard",
-        en: { title: "How does the leaderboard work?", body: "The public leaderboard ranks all registered volunteers by total JanPrayas points. It updates live as check-ins are recorded. The top contributors each month are highlighted. Your rank is shown in your passport. The leaderboard can be viewed in the 'Leaders' section without logging in." },
-        hi: { title: "लीडरबोर्ड कैसे काम करता है?", body: "सार्वजनिक लीडरबोर्ड सभी पंजीकृत स्वयंसेवकों को उनके कुल जनप्रयास अंकों के आधार पर रैंक करता है। चेक-इन दर्ज होते ही यह लाइव अपडेट होता है। हर महीने के शीर्ष योगदानकर्ताओं को हाइलाइट किया जाता है। आपकी रैंक आपके पासपोर्ट में दिखती है।" }
+        en: { title: "How does the leaderboard work?", body: "The public leaderboard ranks all registered volunteers by total JanPrayas points. Points are earned only through verified physical attendance at missions — not by joining online. The leaderboard therefore reflects who has actually shown up on the ground, not who registered the most missions. Ranks from lowest to highest: Nagarik Sewak → Prabhari Sewak → Jan Sewak → Lok Nayak. Your rank and points are visible in your Volunteer Passport." },
+        hi: { title: "लीडरबोर्ड कैसे काम करता है?", body: "सार्वजनिक लीडरबोर्ड सभी स्वयंसेवकों को उनके कुल जनप्रयास अंकों के आधार पर रैंक करता है। अंक केवल अभियानों में सत्यापित शारीरिक उपस्थिति से मिलते हैं — ऑनलाइन जुड़ने से नहीं। इसलिए लीडरबोर्ड वास्तव में उन लोगों को दर्शाता है जो जमीन पर आए। रैंक क्रम: नागरिक सेवक → प्रभारी सेवक → जन सेवक → लोक नायक। आपकी रैंक और अंक आपके वालंटियर पासपोर्ट में दिखते हैं।" }
       },
       {
         id: "missionclosure",

@@ -61,11 +61,13 @@ function resetLoginAttempts(ip) {
 // ── Gamification: points, streaks, civic ranks, badges ───────────────────────
 
 const POINTS = {
-  register:          10,
-  missionJoin:       25,
-  missionCompleted:  50,   // bonus on top of join when mission is marked completed
-  milestone5:       100,
-  milestone10:      200,
+  register:          10,   // one-time on first registration
+  qrVerified:        40,   // QR scan + selfie approved by admin
+  walkinAttendance:  15,   // org-marked walk-in (no selfie required)
+  milestone5:       100,   // 5+ verified attendances (qr or walkin)
+  milestone10:      200,   // 10+ verified attendances
+  // Removed: missionJoin (25) — RSVP/joining alone earns 0 points
+  // Removed: missionCompleted (50) — completion bonus removed; higher QR rate is the reward
 };
 
 const CIVIC_RANKS = [
@@ -122,10 +124,20 @@ function computeAllVolunteerStats() {
     const missionCount    = rows.length;
     const completedCount  = rows.filter((r) => r.status === "completed").length;
 
-    // Points
-    let points = POINTS.register + missionCount * POINTS.missionJoin + completedCount * POINTS.missionCompleted;
-    if (missionCount >= 10) points += POINTS.milestone10;
-    else if (missionCount >= 5) points += POINTS.milestone5;
+    // Verified attendance counts — only these earn points
+    // qr + attended_at: admin-approved QR selfie check-in
+    // walkin: org-marked present (no selfie required)
+    // qr_new (pending) and plain RSVP (attended_at null) earn 0 attendance points
+    const qrVerifiedCount   = rows.filter((r) => r.checkin_method === "qr" && r.attended_at).length;
+    const walkinCount       = rows.filter((r) => r.checkin_method === "walkin").length;
+    const totalVerified     = qrVerifiedCount + walkinCount;
+
+    // Points: only attendance counts, not just joining
+    let points = POINTS.register
+      + qrVerifiedCount * POINTS.qrVerified
+      + walkinCount     * POINTS.walkinAttendance;
+    if (totalVerified >= 10) points += POINTS.milestone10;
+    else if (totalVerified >= 5) points += POINTS.milestone5;
 
     // Streak — distinct months sorted
     const months = [...new Set(rows.map((r) => r.created_at.slice(0, 7)))].sort();
@@ -148,8 +160,8 @@ function computeAllVolunteerStats() {
     const catCount = {};
     rows.forEach((r) => { if (r.category) catCount[r.category] = (catCount[r.category] || 0) + 1; });
     const badges = CATEGORY_BADGES.filter((b) => (catCount[b.category] || 0) >= 2).map((b) => b.badge);
-    if (missionCount >= 5)  badges.push("🏅");
-    if (missionCount >= 10) badges.push("🌟");
+    if (totalVerified >= 5)  badges.push("🏅");
+    if (totalVerified >= 10) badges.push("🌟");
     if (currentStreak >= 2) badges.push("🔥");
 
     // Attended missions — carries its own completion flag and date so the
@@ -167,7 +179,7 @@ function computeAllVolunteerStats() {
         dateLabel: r.date_label || ""
       }));
 
-    statsMap.set(pid, { points, missionCount, completedCount, currentStreak, longestStreak, badges, attended });
+    statsMap.set(pid, { points, missionCount, completedCount, verifiedCount: totalVerified, qrVerifiedCount, walkinCount, currentStreak, longestStreak, badges, attended });
   });
 
   return statsMap;
