@@ -10784,7 +10784,7 @@
                   <div style="font-size:11px;color:#4338ca;margin-top:3px;line-height:1.5">Volunteers scan this QR on their phone to verify attendance. A live selfie is required. Display this at the venue entrance.</div>
                 </div>
               </div>
-              <button type="button" onclick="downloadOrgCheckinPoster('${escapeHtml(m.checkInCode)}', '${escapeHtml(m.title.replace(/'/g,"\\'"'))}')"
+              <button type="button" onclick="downloadOrgCheckinPoster('${escapeHtml(m.checkInCode)}')"
                 style="width:100%;padding:8px;background:#ede9fe;border:none;border-top:1px solid #c4b5fd;color:#4338ca;font-size:12px;font-weight:700;cursor:pointer">
                 📄 Download Check-in Poster
               </button>
@@ -16698,9 +16698,8 @@
       });
     }
 
-    function downloadOrgCheckinPoster(code, title) {
-      // Lightweight poster for org users — reuse admin poster generator but supply a synthetic mission
-      const synthetic = state.missions.find(m => m.checkInCode === code) || { id: 0, checkInCode: code, title };
+    function downloadOrgCheckinPoster(code) {
+      const synthetic = state.missions.find(m => m.checkInCode === code);
       if (synthetic.id) { downloadCheckinPoster(synthetic.id); return; }
       // Fallback: show the code in an alert since canvas poster needs mission in state
       showToast(`Check-in code: ${code} — share this code with volunteers or show the QR above.`, "📲");
