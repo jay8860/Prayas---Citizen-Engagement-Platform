@@ -5236,10 +5236,15 @@
         <div id="completionCertBlock" style="font-size:12px;color:var(--muted);margin-bottom:14px;padding:6px 10px;background:var(--surface-2,#fafafa);border-radius:6px;border:1px solid var(--border)">
           <span id="completionCertText">Loading attendance data…</span>
         </div>
+        <!-- Mission submitted photos -->
+        <div id="completionClosurePhotosBlock" hidden style="margin-bottom:14px">
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Mission Photos Submitted</div>
+          <div id="completionClosurePhotos" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        </div>
         <!-- QR volunteers list (collapsible) -->
         <details id="completionVolunteerListWrap" style="margin-bottom:14px;font-size:12px" hidden>
-          <summary style="cursor:pointer;font-weight:600;color:var(--primary)">View QR-verified volunteer list</summary>
-          <div id="completionVolunteerList" style="margin-top:6px;max-height:160px;overflow-y:auto;padding:6px;background:var(--surface,#f9f9f9);border-radius:6px;border:1px solid var(--border)"></div>
+          <summary style="cursor:pointer;font-weight:600;color:var(--primary)">View QR check-in list & selfie photos</summary>
+          <div id="completionVolunteerList" style="margin-top:6px;max-height:240px;overflow-y:auto;padding:6px;background:var(--surface,#f9f9f9);border-radius:6px;border:1px solid var(--border)"></div>
         </details>
         <form id="completionSummaryForm">
           <div class="form-group">
@@ -14136,6 +14141,8 @@
       document.getElementById("completionCertText").textContent = "Loading attendance data…";
       document.getElementById("completionVolunteerListWrap").hidden = true;
       document.getElementById("completionSelfReportedBlock").hidden = true;
+      document.getElementById("completionClosurePhotosBlock").hidden = true;
+      document.getElementById("completionClosurePhotos").innerHTML = "";
       openModal("completionSummaryModal");
 
       try {
@@ -14170,6 +14177,14 @@
             `— ${detail.selfReportedBy || "submitter"}${detail.selfReportedPhone ? " · " + detail.selfReportedPhone : ""}`;
           document.getElementById("completionSelfReportedBlock").hidden = false;
         }
+        // Show mission closure photos submitted by org
+        if (isAdmin && detail.closurePhotos && detail.closurePhotos.length > 0) {
+          const photosEl = document.getElementById("completionClosurePhotos");
+          photosEl.innerHTML = detail.closurePhotos.map((p, i) =>
+            `<img src="${escapeHtml(p)}" alt="Mission photo ${i+1}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid var(--border);transition:width 0.2s" onclick="this.style.width=this.style.width==='80px'?'240px':'80px'">`
+          ).join("");
+          document.getElementById("completionClosurePhotosBlock").hidden = false;
+        }
         // QR volunteer list with selfie photos and AI flags
         if (isAdmin && detail.qrVolunteers && detail.qrVolunteers.length > 0) {
           const listEl = document.getElementById("completionVolunteerList");
@@ -14178,14 +14193,18 @@
           listEl.innerHTML = detail.qrVolunteers.map(v => {
             const flag = v.aiFlag || "";
             const flagHtml = flag ? `<span style="font-size:10px;font-weight:600;color:${aiFlagColor[flag]||'#555'}">${aiFlagLabel[flag]||flag}</span>` : "";
+            const checkedIn = v.attendedAt && !v.pending;
+            const statusLabel = v.pending ? "⏳ Pending admin approval" : checkedIn ? "✅ Checked In (QR)" : "📋 RSVP Only (not checked in)";
             const selfieHtml = v.selfiePhoto
-              ? `<img src="${v.selfiePhoto}" alt="selfie" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:2px solid ${flag && flag!=='ok' ? '#ef4444' : '#d1d5db'};cursor:pointer" onclick="this.style.width=this.style.width==='48px'?'200px':'48px'">`
-              : `<div style="width:48px;height:48px;background:#f3f4f6;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px">📷</div>`;
+              ? `<img src="${v.selfiePhoto}" alt="selfie" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:2px solid ${flag && flag!=='ok' ? '#ef4444' : '#d1d5db'};cursor:pointer;transition:width 0.2s" onclick="this.style.width=this.style.width==='48px'?'200px':'48px'">`
+              : checkedIn
+                ? `<div style="width:48px;height:48px;background:#f3f4f6;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px" title="No selfie stored">📷</div>`
+                : `<div style="width:48px;height:48px;background:#f9f9f9;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0.4" title="RSVP only, no check-in">👤</div>`;
             return `<div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
               ${selfieHtml}
               <div style="flex:1;min-width:0">
                 <div style="font-weight:600;font-size:13px">${escapeHtml(v.name)}</div>
-                <div style="font-size:10px;color:var(--muted)">${v.pending ? "⏳ Pending admin approval" : "✅ Verified QR"}</div>
+                <div style="font-size:10px;color:var(--muted)">${statusLabel}</div>
                 ${flagHtml}
               </div>
             </div>`;
