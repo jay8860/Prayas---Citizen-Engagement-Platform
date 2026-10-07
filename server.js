@@ -5963,8 +5963,13 @@ function checkInVolunteer(body) {
     if (!volunteerName) {
       return { ok: false, notRegistered: true, missionTitle: mission.title };
     }
-    const profileId = upsertVolunteerProfile({ name: volunteerName, phone, area: mission.ward || "", email: "", occupation: "", availability: "", message: "", civicOrgs: "", skills: [] });
-    const profile = db.prepare("SELECT * FROM volunteer_profiles WHERE id = ?").get(profileId);
+    // Match by phone alone — not name+phone — so an existing volunteer who
+    // types a different name spelling is recognised rather than duplicated.
+    let profile = db.prepare("SELECT * FROM volunteer_profiles WHERE normalized_phone = ? ORDER BY id DESC LIMIT 1").get(normalizedPhone);
+    if (!profile) {
+      const profileId = upsertVolunteerProfile({ name: volunteerName, phone, area: mission.ward || "", email: "", occupation: "", availability: "", message: "", civicOrgs: "", skills: [] });
+      profile = db.prepare("SELECT * FROM volunteer_profiles WHERE id = ?").get(profileId);
+    }
     const dateLabel = new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
     // checkin_method='qr_new' = auto-registered at venue — marks attendance as pending review.
     // Admin must approve before it counts for certificates/leaderboard.

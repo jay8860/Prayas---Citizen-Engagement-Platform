@@ -10772,6 +10772,23 @@
             <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;color:#1E40AF">
               ⏳ <strong>Completion request pending admin review.</strong> The district administrator will review your submitted photos and summary.
             </div>` : "";
+          const qrSection = (m.checkInCode && m.approval_status === "approved" && m.status !== "completed") ? `
+            <div style="margin-top:12px;border:1.5px solid #6366f1;border-radius:10px;overflow:hidden">
+              <div style="background:#6366f1;padding:6px 12px">
+                <span style="color:#fff;font-size:12px;font-weight:700">📲 QR Check-in Code — Display at the venue on mission day</span>
+              </div>
+              <div style="padding:10px 12px;background:#f5f3ff;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <div id="org-qr-${m.id}" style="flex-shrink:0"></div>
+                <div style="flex:1;min-width:160px">
+                  <div style="font-size:22px;font-weight:800;letter-spacing:5px;color:#1e1b4b">${escapeHtml(m.checkInCode)}</div>
+                  <div style="font-size:11px;color:#4338ca;margin-top:3px;line-height:1.5">Volunteers scan this QR on their phone to verify attendance. A live selfie is required. Display this at the venue entrance.</div>
+                </div>
+              </div>
+              <button type="button" onclick="downloadOrgCheckinPoster('${escapeHtml(m.checkInCode)}', '${escapeHtml(m.title.replace(/'/g,"\\'"'))}')"
+                style="width:100%;padding:8px;background:#ede9fe;border:none;border-top:1px solid #c4b5fd;color:#4338ca;font-size:12px;font-weight:700;cursor:pointer">
+                📄 Download Check-in Poster
+              </button>
+            </div>` : "";
           return `<div style="background:var(--card-bg,#fff);border:${isReturned ? "2px solid #F59E0B" : "1px solid var(--border)"};border-radius:12px;padding:14px 16px">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
               <div style="font-weight:700;font-size:14px">${escapeHtml(m.title)}</div>
@@ -10785,10 +10802,12 @@
             </div>
             ${returnedBanner}
             ${pendingBanner}
+            ${qrSection}
             ${posterSection}
             ${walkinSection}
           </div>`;
         }).join("");
+        renderOrgQrCodes(missions);
       } catch (error) {
         listEl.innerHTML = `<p style="color:var(--error);font-size:13px">Could not load missions.</p>`;
       }
@@ -11723,6 +11742,14 @@
           if (!haystack.includes(q)) return false;
         }
         return true;
+      });
+      // Sort: completion-requested first, then open/active before completed, then newest first
+      const _msPriority = { open: 0, full: 0, closed: 1, completed: 2 };
+      filtered.sort((a, b) => {
+        if (a.completionRequested !== b.completionRequested) return a.completionRequested ? -1 : 1;
+        const pa = _msPriority[a.status] ?? 3, pb = _msPriority[b.status] ?? 3;
+        if (pa !== pb) return pa - pb;
+        return b.id - a.id;
       });
       if (countEl) {
         countEl.textContent = state.lang === "hi"
@@ -16547,6 +16574,11 @@
       const video = document.getElementById("checkInCamera");
       const canvas = document.getElementById("checkInCanvas");
       const errEl = document.getElementById("checkInError");
+      // readyState >= 2 (HAVE_CURRENT_DATA) means the camera has a real frame
+      if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
+        errEl.textContent = "Camera not ready yet — please wait a moment and try again.";
+        return;
+      }
       canvas.width = 320;
       canvas.height = Math.round(video.videoHeight * (320 / video.videoWidth)) || 240;
       canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -16638,13 +16670,7 @@
       if (typeof QRCode === "undefined") return;
       state.missions.forEach((m) => {
         if (!m.checkInCode) return;
-        // Scanning this opens the portal directly with the check-in modal
-        // pre-filled — a volunteer just has to add their phone number and
-        // tap Check In, instead of retyping a 6-character code by hand.
         const checkinUrl = `${window.location.origin}${window.location.pathname}?checkin=${m.checkInCode}`;
-        // Two possible homes for the same QR: the admin panel's mission
-        // status list (`qr-{id}`) and the public mission card, visible to
-        // every visitor (`qr-card-{id}`).
         ["qr-" + m.id, "qr-card-" + m.id].forEach((elId) => {
           const el = document.getElementById(elId);
           if (!el || el.innerHTML) return;
@@ -16658,6 +16684,26 @@
           });
         });
       });
+    }
+
+    // Render QR codes for org-portal mission cards (org-qr-{id} elements).
+    function renderOrgQrCodes(missions) {
+      if (typeof QRCode === "undefined") return;
+      missions.forEach((m) => {
+        if (!m.checkInCode) return;
+        const el = document.getElementById("org-qr-" + m.id);
+        if (!el || el.innerHTML) return;
+        const checkinUrl = `${window.location.origin}${window.location.pathname}?checkin=${m.checkInCode}`;
+        new QRCode(el, { text: checkinUrl, width: 64, height: 64, colorDark: "#000", colorLight: "#fff", correctLevel: QRCode.CorrectLevel.L });
+      });
+    }
+
+    function downloadOrgCheckinPoster(code, title) {
+      // Lightweight poster for org users — reuse admin poster generator but supply a synthetic mission
+      const synthetic = state.missions.find(m => m.checkInCode === code) || { id: 0, checkInCode: code, title };
+      if (synthetic.id) { downloadCheckinPoster(synthetic.id); return; }
+      // Fallback: show the code in an alert since canvas poster needs mission in state
+      showToast(`Check-in code: ${code} — share this code with volunteers or show the QR above.`, "📲");
     }
 
     // Tapping "Check In" directly on a mission card: prefill the code (and a
