@@ -712,6 +712,10 @@ const seedLeaders = [
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
+// Startup volume/path sanity check — visible in Railway logs
+const DB_EXISTS_AT_BOOT = fs.existsSync(DB_PATH);
+console.log(`[BOOT] DB path: ${DB_PATH} | exists: ${DB_EXISTS_AT_BOOT} | dir: ${path.dirname(DB_PATH)}`);
+
 const SERVER_START_TIME = Date.now();
 
 const db = new DatabaseSync(DB_PATH);
@@ -3640,6 +3644,7 @@ function buildBootstrapPayload(isAdmin = false) {
 
   return {
     dataMode,
+    serverStartedAt: new Date(SERVER_START_TIME).toISOString(),
     showDistrictMap: getSetting("show_district_map", "0") === "1",
     districtName: getSetting("site_district_name", DISTRICT_NAME),
     stateName:    getSetting("site_state_name",    STATE_NAME),
