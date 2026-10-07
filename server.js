@@ -4008,8 +4008,8 @@ function registerVolunteer(body) {
     try {
       db.prepare(`
         INSERT INTO volunteer_participations (
-          volunteer_profile_id, mission_id, mission_title, date_label, created_at
-        ) VALUES (?, ?, ?, ?, ?)
+          volunteer_profile_id, mission_id, mission_title, date_label, checkin_method, created_at
+        ) VALUES (?, ?, ?, ?, 'rsvp', ?)
       `).run(finalProfile.id, mission.id, mission.title, dateLabel, isoNow());
       const nextVolunteers = Math.min(mission.total, mission.volunteers + 1);
       const nextStatus = nextVolunteers >= mission.total ? "full" : mission.status;
@@ -6165,7 +6165,7 @@ function getMissionCompletionDetail(missionId) {
     SELECT p.name, vp.attended_at, vp.checkin_method, vp.selfie_photo, vp.ai_flag
     FROM volunteer_participations vp
     JOIN volunteer_profiles p ON p.id = vp.volunteer_profile_id
-    WHERE vp.mission_id = ? AND vp.checkin_method IN ('qr', 'qr_new')
+    WHERE vp.mission_id = ? AND vp.checkin_method IN ('qr', 'qr_new', 'rsvp')
     ORDER BY vp.attended_at ASC
   `).all(missionId);
 
@@ -6181,7 +6181,8 @@ function getMissionCompletionDetail(missionId) {
     SELECT COUNT(*) AS n FROM volunteer_participations WHERE mission_id = ?
   `).get(missionId).n;
 
-  const certEligible = qrVolunteers.length + walkinVolunteers.length;
+  const qrVerifiedCount = qrVolunteers.filter(v => v.attended_at).length;
+  const certEligible = qrVerifiedCount + walkinVolunteers.length;
   return {
     missionId,
     missionTitle: mission.title,
@@ -6190,7 +6191,7 @@ function getMissionCompletionDetail(missionId) {
     selfReportedPhone: mission.completion_requested_phone || "",
     closurePhotos: safeJsonArray(mission.completion_closure_photos),
     returnedComment: mission.completion_returned_comment || "",
-    qrVerifiedCount: qrVolunteers.length,
+    qrVerifiedCount,
     qrVolunteers: qrVolunteers.map(v => ({ name: v.name, attendedAt: v.attended_at, pending: v.checkin_method === "qr_new", selfiePhoto: v.selfie_photo || "", aiFlag: v.ai_flag || "" })),
     walkinCount: walkinVolunteers.length,
     walkinVolunteers: walkinVolunteers.map(v => ({ name: v.name, attendedAt: v.attended_at })),
