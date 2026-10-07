@@ -7,7 +7,11 @@ const { DatabaseSync } = require("node:sqlite");
 const PORT = Number(process.env.PORT || 3000);
 const APP_ROOT = __dirname;
 const DB_DIR = path.join(APP_ROOT, "data");
-const DB_PATH = process.env.PRAYAS_DB_PATH || path.join(DB_DIR, "prayas.sqlite");
+// On Railway, RAILWAY_ENVIRONMENT is set automatically and the persistent volume
+// is mounted at /data (see railway.toml). Use that path so the database survives
+// redeployments. Locally, fall back to the project-relative data/ directory.
+const DB_PATH = process.env.PRAYAS_DB_PATH
+  || (process.env.RAILWAY_ENVIRONMENT ? "/data/prayas.sqlite" : path.join(DB_DIR, "prayas.sqlite"));
 const INDEX_PATH = path.join(APP_ROOT, "index.html");
 const ASSETS_DIR = path.join(APP_ROOT, "assets");
 const ADMIN_PASSWORD = process.env.PRAYAS_ADMIN_PASSWORD || "JanPrayas@2026";
@@ -708,7 +712,7 @@ const seedLeaders = [
   }
 ];
 
-fs.mkdirSync(DB_DIR, { recursive: true });
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 const SERVER_START_TIME = Date.now();
 
