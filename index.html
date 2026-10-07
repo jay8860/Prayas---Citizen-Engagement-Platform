@@ -9052,9 +9052,11 @@
     // (community-submitted missions occasionally have looser text).
     function parseMissionDateRange(dateStr) {
       if (!dateStr) return null;
+      const s = String(dateStr);
       const to24 = (h, period) => { h = Number(h) % 12; if (/pm/i.test(period)) h += 12; return h; };
-      // Multi-day: "12 April 2025, 9:00 AM – 14 April 2025, 5:00 PM"
-      const multi = String(dateStr).match(/^(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)[^0-9]*(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)/i);
+
+      // Multi-day, comma format:  "12 April 2025, 9:00 AM – 14 April 2025, 5:00 PM"
+      const multi = s.match(/^(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)[^0-9]*(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)/i);
       if (multi) {
         const sm = MONTHS_EN.indexOf(multi[2]);
         const em = MONTHS_EN.indexOf(multi[8]);
@@ -9064,15 +9066,42 @@
           return { start, end, day: Number(multi[1]), monthIdx: sm, year: Number(multi[3]) };
         }
       }
-      // Single-day: "12 April 2025, 9:00 AM – 12:00 PM"
-      const m = String(dateStr).match(/^(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)[^0-9]*(\d{1,2}):(\d{2}) (AM|PM)/i);
-      if (!m) return null;
-      const monthIdx = MONTHS_EN.indexOf(m[2]);
-      if (monthIdx === -1) return null;
-      const day = Number(m[1]), year = Number(m[3]);
-      const start = new Date(year, monthIdx, day, to24(m[4], m[6]), Number(m[5]));
-      const end   = new Date(year, monthIdx, day, to24(m[7], m[9]), Number(m[8]));
-      return { start, end, day, monthIdx, year };
+      // Multi-day, "at" format (en-IN locale from server):
+      //   "6 October 2026 at 9:00 am – 31 October 2026 at 12:00 pm"
+      const multiAt = s.match(/^(\d{1,2}) (\w+) (\d{4}) at (\d{1,2}):(\d{2}) (am|pm)[^0-9]*(\d{1,2}) (\w+) (\d{4}) at (\d{1,2}):(\d{2}) (am|pm)/i);
+      if (multiAt) {
+        const sm = MONTHS_EN.indexOf(multiAt[2]);
+        const em = MONTHS_EN.indexOf(multiAt[8]);
+        if (sm !== -1 && em !== -1) {
+          const start = new Date(Number(multiAt[3]), sm, Number(multiAt[1]), to24(multiAt[4], multiAt[6]), Number(multiAt[5]));
+          const end   = new Date(Number(multiAt[9]), em, Number(multiAt[7]), to24(multiAt[10], multiAt[12]), Number(multiAt[11]));
+          return { start, end, day: Number(multiAt[1]), monthIdx: sm, year: Number(multiAt[3]) };
+        }
+      }
+      // Single-day, comma format:  "12 April 2025, 9:00 AM – 12:00 PM"
+      const m = s.match(/^(\d{1,2}) (\w+) (\d{4}),\s*(\d{1,2}):(\d{2}) (AM|PM)[^0-9]*(\d{1,2}):(\d{2}) (AM|PM)/i);
+      if (m) {
+        const monthIdx = MONTHS_EN.indexOf(m[2]);
+        if (monthIdx !== -1) {
+          const day = Number(m[1]), year = Number(m[3]);
+          const start = new Date(year, monthIdx, day, to24(m[4], m[6]), Number(m[5]));
+          const end   = new Date(year, monthIdx, day, to24(m[7], m[9]), Number(m[8]));
+          return { start, end, day, monthIdx, year };
+        }
+      }
+      // Single-day, "at" format (en-IN locale from server):
+      //   "6 October 2026 at 6:00 am – 8:00 pm"
+      const mAt = s.match(/^(\d{1,2}) (\w+) (\d{4}) at (\d{1,2}):(\d{2}) (am|pm)[^0-9]*(\d{1,2}):(\d{2}) (am|pm)/i);
+      if (mAt) {
+        const monthIdx = MONTHS_EN.indexOf(mAt[2]);
+        if (monthIdx !== -1) {
+          const day = Number(mAt[1]), year = Number(mAt[3]);
+          const start = new Date(year, monthIdx, day, to24(mAt[4], mAt[6]), Number(mAt[5]));
+          const end   = new Date(year, monthIdx, day, to24(mAt[7], mAt[9]), Number(mAt[8]));
+          return { start, end, day, monthIdx, year };
+        }
+      }
+      return null;
     }
 
     // Returns a short badge {label, tone} if a mission is starting soon or
