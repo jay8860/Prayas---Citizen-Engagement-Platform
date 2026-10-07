@@ -1480,11 +1480,22 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === "/health") {
       let dbOk = false;
-      try { db.prepare("SELECT 1").get(); dbOk = true; } catch (e) {}
+      let dbStats = {};
+      try {
+        db.prepare("SELECT 1").get();
+        dbOk = true;
+        dbStats = {
+          volunteers: db.prepare("SELECT COUNT(*) AS n FROM volunteer_profiles").get().n,
+          missions: db.prepare("SELECT COUNT(*) AS n FROM missions WHERE archived_at IS NULL").get().n,
+          participations: db.prepare("SELECT COUNT(*) AS n FROM volunteer_participations").get().n,
+          dbPath: DB_PATH,
+        };
+      } catch (e) { dbStats = { error: e.message }; }
       return sendJson(res, dbOk ? 200 : 503, {
         ok: dbOk,
         dbOk,
-        uptimeSeconds: Math.floor((Date.now() - SERVER_START_TIME) / 1000)
+        uptimeSeconds: Math.floor((Date.now() - SERVER_START_TIME) / 1000),
+        ...dbStats
       });
     }
 
@@ -2694,6 +2705,44 @@ server.listen(PORT, () => {
   if (ALLOWED_ORIGIN === "*") {
     console.warn("[WARN] PRAYAS_ALLOWED_ORIGIN is not set — CORS allows all origins. Set this env var to your domain before going public.");
   }
+  // Log DB path and row counts on every startup so any path mismatch is
+  // immediately visible in Railway logs.
+  try {
+    const vols = db.prepare("SELECT COUNT(*) AS n FROM volunteer_profiles").get().n;
+    const miss = db.prepare("SELECT COUNT(*) AS n FROM missions").get().n;
+    const part = db.prepare("SELECT COUNT(*) AS n FROM volunteer_participations").get().n;
+    console.log(`[DB] Path: ${DB_PATH}`);
+    console.log(`[DB] Volunteers: ${vols} | Missions: ${miss} | Participations: ${part}`);
+    if (vols === 0 && miss === 0) {
+      console.warn("[DB] WARNING: Database appears empty — verify the volume is mounted at the correct path.");
+    }
+  } catch (e) {
+    console.error("[DB] Could not read startup stats:", e.message);
+  }
+  // Schedule a daily backup using VACUUM INTO so data survives even if the
+  // volume configuration ever changes. Keeps 7 rolling days of backups.
+  function backupDatabase() {
+    const backupDir = path.join(path.dirname(DB_PATH), "backups");
+    try {
+      fs.mkdirSync(backupDir, { recursive: true });
+      const date = new Date().toISOString().slice(0, 10);
+      const dest = path.join(backupDir, `prayas-${date}.sqlite`);
+      if (!fs.existsSync(dest)) {
+        db.exec(`VACUUM INTO '${dest.replace(/'/g, "''")}'`);
+        console.log(`[DB] Backup written: ${dest}`);
+        const kept = fs.readdirSync(backupDir)
+          .filter((f) => f.startsWith("prayas-") && f.endsWith(".sqlite"))
+          .sort();
+        kept.slice(0, Math.max(0, kept.length - 7)).forEach((f) => {
+          try { fs.unlinkSync(path.join(backupDir, f)); } catch (_) {}
+        });
+      }
+    } catch (e) {
+      console.error("[DB] Backup failed:", e.message);
+    }
+  }
+  setTimeout(backupDatabase, 60_000);                  // 1 min after startup
+  setInterval(backupDatabase, 24 * 60 * 60 * 1000);   // then every 24 hours
 });
 
 function gracefulShutdown(signal) {
