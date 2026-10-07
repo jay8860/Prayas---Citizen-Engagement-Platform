@@ -11865,8 +11865,10 @@
 
     function renderDataModePanel() {
       const isDemo = state.dataMode === "demo";
-      document.getElementById("dataModeLabel").textContent = isDemo ? "Demo Data Mode Active" : "Real Deploy Mode Active";
-      document.getElementById("dataModeCopy").textContent = isDemo
+      const labelEl = document.getElementById("dataModeLabel");
+      if (labelEl) labelEl.textContent = isDemo ? "Demo Data Mode Active" : "Real Deploy Mode Active";
+      const copyEl = document.getElementById("dataModeCopy");
+      if (copyEl) copyEl.textContent = isDemo
         ? "Dummy seeded records are visible for presentation and walkthroughs."
         : "Only real field data is visible. Dummy seeded content is hidden.";
 
