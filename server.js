@@ -129,15 +129,18 @@ function computeAllVolunteerStats() {
     // Verified attendance counts — only these earn points
     // qr + attended_at: admin-approved QR selfie check-in
     // walkin: org-marked present (no selfie required)
-    // qr_new (pending) and plain RSVP (attended_at null) earn 0 attendance points
+    // bypass: admin bulk-added offline participant (e.g. donor who couldn't self-register)
+    // qr_new (pending) and plain rsvp (attended_at null) earn 0 attendance points
     const qrVerifiedCount   = rows.filter((r) => r.checkin_method === "qr" && r.attended_at).length;
     const walkinCount       = rows.filter((r) => r.checkin_method === "walkin").length;
-    const totalVerified     = qrVerifiedCount + walkinCount;
+    const bypassCount       = rows.filter((r) => r.checkin_method === "bypass").length;
+    const totalVerified     = qrVerifiedCount + walkinCount + bypassCount;
 
     // Points: only attendance counts, not just joining
     let points = POINTS.register
       + qrVerifiedCount * POINTS.qrVerified
-      + walkinCount     * POINTS.walkinAttendance;
+      + walkinCount     * POINTS.walkinAttendance
+      + bypassCount     * POINTS.walkinAttendance;
     if (totalVerified >= 10) points += POINTS.milestone10;
     else if (totalVerified >= 5) points += POINTS.milestone5;
 
@@ -1297,7 +1300,9 @@ function parseMissionStart(dateStr) {
   if (monthIdx === -1) return null;
   let hour = Number(m[4]) % 12;
   if (/pm/i.test(m[6])) hour += 12;
-  return new Date(Number(m[3]), monthIdx, Number(m[1]), hour, Number(m[5]));
+  // Stored times are IST (UTC+5:30). Convert to UTC so comparison with new Date() is correct
+  // regardless of the server's local timezone (Railway runs UTC).
+  return new Date(Date.UTC(Number(m[3]), monthIdx, Number(m[1]), hour, Number(m[5])) - 330 * 60 * 1000);
 }
 
 async function generatePosterText(title, category, date, venue, lang) {
@@ -2386,6 +2391,13 @@ const server = http.createServer(async (req, res) => {
       requireAdmin(req);
       const missionId = Number(url.pathname.split("/")[4]);
       return sendJson(res, 200, getMissionCompletionDetail(missionId));
+    }
+
+    if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/bypass-add$/.test(url.pathname)) {
+      requireAdmin(req);
+      const missionId = Number(url.pathname.split("/")[4]);
+      const body = await readJsonBody(req);
+      return sendJson(res, 200, bypassAddParticipants(missionId, body));
     }
 
     if (req.method === "GET" && /^\/api\/missions\/\d+\/attendance-summary$/.test(url.pathname)) {
@@ -6002,7 +6014,8 @@ function checkInVolunteer(body) {
   }
 
   // Normal path: auto-confirm, run AI analysis in background for admin info.
-  db.prepare("UPDATE volunteer_participations SET attended_at = ?, selfie_photo = ?, gps_lat = ?, gps_lng = ? WHERE id = ?")
+  // Always stamp checkin_method='qr' so 'rsvp' volunteers who scan QR become cert-eligible.
+  db.prepare("UPDATE volunteer_participations SET attended_at = ?, selfie_photo = ?, gps_lat = ?, gps_lng = ?, checkin_method = 'qr' WHERE id = ?")
     .run(isoNow(), selfiePhoto, gpsLat, gpsLng, participation.id);
   analyzeCheckinSelfieAsync(participation.id, selfiePhoto);
   return { ok: true, checkedIn: true, missionTitle: mission.title };
@@ -6177,12 +6190,20 @@ function getMissionCompletionDetail(missionId) {
     ORDER BY vp.attended_at ASC
   `).all(missionId);
 
+  const bypassVolunteers = db.prepare(`
+    SELECT p.name, vp.attended_at, p.phone
+    FROM volunteer_participations vp
+    JOIN volunteer_profiles p ON p.id = vp.volunteer_profile_id
+    WHERE vp.mission_id = ? AND vp.checkin_method = 'bypass'
+    ORDER BY p.name ASC
+  `).all(missionId);
+
   const totalRsvp = db.prepare(`
     SELECT COUNT(*) AS n FROM volunteer_participations WHERE mission_id = ?
   `).get(missionId).n;
 
   const qrVerifiedCount = qrVolunteers.filter(v => v.attended_at).length;
-  const certEligible = qrVerifiedCount + walkinVolunteers.length;
+  const certEligible = qrVerifiedCount + walkinVolunteers.length + bypassVolunteers.length;
   return {
     missionId,
     missionTitle: mission.title,
@@ -6195,9 +6216,61 @@ function getMissionCompletionDetail(missionId) {
     qrVolunteers: qrVolunteers.map(v => ({ name: v.name, attendedAt: v.attended_at, pending: v.checkin_method === "qr_new", selfiePhoto: v.selfie_photo || "", aiFlag: v.ai_flag || "" })),
     walkinCount: walkinVolunteers.length,
     walkinVolunteers: walkinVolunteers.map(v => ({ name: v.name, attendedAt: v.attended_at })),
+    bypassCount: bypassVolunteers.length,
+    bypassVolunteers: bypassVolunteers.map(v => ({ name: v.name, phone: v.phone })),
     totalRsvp,
     certEligibleCount: certEligible,
   };
+}
+
+function bypassAddParticipants(missionId, body) {
+  ensureRowExists("missions", missionId, "Mission not found.");
+  const participants = Array.isArray(body.participants) ? body.participants : [];
+  if (!participants.length) throw publicError(400, "No participants provided.");
+
+  let added = 0, skipped = 0;
+  const addedNames = [];
+
+  for (const p of participants) {
+    const name = String(p.name || "").trim().slice(0, 100);
+    const phone = String(p.phone || "").trim();
+    if (!name || !phone) { skipped++; continue; }
+
+    const normalizedPhone = normalizeVolunteerPhone(phone);
+    if (!normalizedPhone) { skipped++; continue; }
+
+    // Find or create volunteer profile
+    let profile = db.prepare("SELECT * FROM volunteer_profiles WHERE normalized_phone = ? ORDER BY id DESC LIMIT 1").get(normalizedPhone);
+    if (!profile) {
+      const mission = db.prepare("SELECT ward FROM missions WHERE id = ?").get(missionId);
+      const profileId = upsertVolunteerProfile({ name, phone, area: mission?.ward || "", email: "", occupation: "", availability: "", message: "", civicOrgs: "", skills: [] });
+      profile = db.prepare("SELECT * FROM volunteer_profiles WHERE id = ?").get(profileId);
+    }
+
+    // Check if any participation exists for this profile + mission
+    const existing = db.prepare(
+      "SELECT id, checkin_method, attended_at FROM volunteer_participations WHERE volunteer_profile_id = ? AND mission_id = ? ORDER BY id DESC LIMIT 1"
+    ).get(profile.id, missionId);
+
+    if (existing) {
+      if (existing.attended_at) { skipped++; continue; } // already attended
+      // Upgrade rsvp → bypass
+      db.prepare("UPDATE volunteer_participations SET attended_at = ?, checkin_method = 'bypass' WHERE id = ?")
+        .run(isoNow(), existing.id);
+    } else {
+      const missionRow = db.prepare("SELECT title, date, ward FROM missions WHERE id = ?").get(missionId);
+      const dateLabel = missionRow?.date?.split(",")[0] || new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+      db.prepare(`INSERT INTO volunteer_participations (volunteer_profile_id, mission_id, mission_title, date_label, attended_at, checkin_method, created_at)
+        VALUES (?, ?, ?, ?, ?, 'bypass', ?)`)
+        .run(profile.id, missionId, missionRow?.title || "", dateLabel, isoNow(), isoNow());
+    }
+    added++;
+    addedNames.push(name);
+  }
+
+  writeAuditLog("bypass_add", "mission", missionId,
+    `Admin bulk-added ${added} offline participant(s) via bypass: ${addedNames.join(", ")}`, null);
+  return { ok: true, added, skipped, addedNames };
 }
 
 function getMissionAttendanceSummary(missionId) {

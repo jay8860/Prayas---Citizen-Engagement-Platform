@@ -5246,6 +5246,25 @@
           <summary style="cursor:pointer;font-weight:600;color:var(--primary)">View QR check-in list & selfie photos</summary>
           <div id="completionVolunteerList" style="margin-top:6px;max-height:240px;overflow-y:auto;padding:6px;background:var(--surface,#f9f9f9);border-radius:6px;border:1px solid var(--border)"></div>
         </details>
+        <!-- Bypass / offline participants -->
+        <div id="completionBypassBlock" hidden style="margin-bottom:14px">
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Offline Participants (Admin-Added)</div>
+          <div id="completionBypassList" style="font-size:12px;display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+        <!-- Add offline participants inline panel -->
+        <div id="bypassAddPanel" style="margin-bottom:14px;border:1.5px dashed var(--border);border-radius:10px;padding:12px" hidden>
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px">➕ Add Offline Participants</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px">One person per line: <strong>Full Name, Phone</strong><br>e.g. Ramesh Kumar, 9876543210</div>
+          <textarea id="bypassAddTextarea" rows="5" style="width:100%;font-size:13px;padding:8px;border:1px solid var(--border);border-radius:8px;resize:vertical" placeholder="Ramesh Kumar, 9876543210&#10;Sunita Devi, 9123456789"></textarea>
+          <div id="bypassAddError" style="color:var(--danger,#DC2626);font-size:12px;margin-top:4px"></div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-primary" type="button" onclick="submitBypassAdd()" style="flex:1">Add &amp; Confirm Attendance</button>
+            <button class="btn btn-soft" type="button" onclick="document.getElementById('bypassAddPanel').hidden=true">Cancel</button>
+          </div>
+        </div>
+        <button class="btn btn-soft" type="button" id="bypassAddToggleBtn" onclick="toggleBypassPanel()" style="width:100%;margin-bottom:12px;font-size:13px" hidden>
+          ➕ Add Offline / Bypass Participants
+        </button>
         <form id="completionSummaryForm">
           <div class="form-group">
             <label for="completionTurnout">Actual Volunteers Who Showed Up</label>
@@ -12761,7 +12780,7 @@
       // Merely being RSVPd to a mission that was later closed/completed does NOT count — the volunteer
       // must have been physically verified present. Use the same rule as the points system.
       const completedActivities = attended.filter(
-        (e) => e && ((e.checkinMethod === "qr" && e.checkedIn) || e.checkinMethod === "walkin")
+        (e) => e && ((e.checkinMethod === "qr" && e.checkedIn) || e.checkinMethod === "walkin" || e.checkinMethod === "bypass")
       );
       const avatarEl = document.getElementById("passportAvatar");
       const avatarPhotoEl = document.getElementById("passportAvatarPhoto");
@@ -13796,7 +13815,7 @@
       if (!leader) return;
       const attended = Array.isArray(leader.attended) ? leader.attended : [];
       const completedActivities = attended.filter(
-        (e) => e && ((e.checkinMethod === "qr" && e.checkedIn) || e.checkinMethod === "walkin")
+        (e) => e && ((e.checkinMethod === "qr" && e.checkedIn) || e.checkinMethod === "walkin" || e.checkinMethod === "bypass")
       );
       if (!completedActivities.length) {
         showToast(state.lang === "hi" ? "प्रमाणपत्र केवल सत्यापित उपस्थिति के बाद उपलब्ध होगा।" : "Certificate requires at least one admin-verified attendance (QR scan or walk-in).", "ℹ️");
@@ -14170,6 +14189,10 @@
       document.getElementById("completionSelfReportedBlock").hidden = true;
       document.getElementById("completionClosurePhotosBlock").hidden = true;
       document.getElementById("completionClosurePhotos").innerHTML = "";
+      document.getElementById("completionBypassBlock").hidden = true;
+      document.getElementById("completionBypassList").innerHTML = "";
+      document.getElementById("bypassAddPanel").hidden = true;
+      document.getElementById("bypassAddToggleBtn").hidden = true;
       openModal("completionSummaryModal");
 
       try {
@@ -14182,20 +14205,37 @@
         }
         const qr = detail.qrVerifiedCount ?? 0;
         const wi = detail.walkinCount ?? 0;
-        const cert = detail.certEligibleCount ?? (qr + wi);
+        const bp = detail.bypassCount ?? 0;
+        const cert = detail.certEligibleCount ?? (qr + wi + bp);
         document.getElementById("completionQrCount").textContent = qr;
         document.getElementById("completionWalkinCount").textContent = wi;
+        let certParts = [];
+        if (qr > 0) certParts.push(`${qr} QR-verified`);
+        if (wi > 0) certParts.push(`${wi} walk-in`);
+        if (bp > 0) certParts.push(`${bp} offline/bypass`);
         document.getElementById("completionCertText").textContent =
           cert > 0
-            ? `🎓 ${cert} volunteer${cert !== 1 ? "s" : ""} will receive a certificate (${qr} QR-verified + ${wi} walk-in).`
+            ? `🎓 ${cert} volunteer${cert !== 1 ? "s" : ""} will receive a certificate (${certParts.join(" + ")}).`
             : "No verified attendees recorded yet. Certificates will be generated for all QR-checked volunteers after marking complete.";
         if (cert === 0 && detail.totalRsvp > 0) {
           document.getElementById("completionCertText").textContent +=
             ` (${detail.totalRsvp} volunteer${detail.totalRsvp !== 1 ? "s" : ""} are registered.)`;
         }
         // Pre-fill turnout with total verified
-        if (!document.getElementById("completionTurnout").value && (qr + wi) > 0) {
-          document.getElementById("completionTurnout").value = qr + wi;
+        if (!document.getElementById("completionTurnout").value && (qr + wi + bp) > 0) {
+          document.getElementById("completionTurnout").value = qr + wi + bp;
+        }
+        // Show bypass volunteers if any
+        if (isAdmin && detail.bypassVolunteers && detail.bypassVolunteers.length > 0) {
+          const listEl = document.getElementById("completionBypassList");
+          listEl.innerHTML = detail.bypassVolunteers.map(v =>
+            `<span style="background:var(--surface,#f3f4f6);border:1px solid var(--border);border-radius:16px;padding:3px 10px;font-size:12px">👤 ${escapeHtml(v.name)}</span>`
+          ).join("");
+          document.getElementById("completionBypassBlock").hidden = false;
+        }
+        // Show bypass add button for admins
+        if (isAdmin) {
+          document.getElementById("bypassAddToggleBtn").hidden = false;
         }
         // Show submitter's self-reported note (admin only)
         if (isAdmin && detail.selfReportedNote) {
@@ -15833,6 +15873,43 @@
       state.lang = state.lang === "en" ? "hi" : "en";
       renderAll();
       persistState();
+    }
+
+    function toggleBypassPanel() {
+      const panel = document.getElementById("bypassAddPanel");
+      panel.hidden = !panel.hidden;
+      if (!panel.hidden) document.getElementById("bypassAddTextarea").focus();
+    }
+
+    async function submitBypassAdd() {
+      const missionId = state.pendingCompletionMissionId;
+      const errEl = document.getElementById("bypassAddError");
+      errEl.textContent = "";
+      const raw = document.getElementById("bypassAddTextarea").value.trim();
+      if (!raw) { errEl.textContent = "Please enter at least one name and phone number."; return; }
+      const participants = raw.split("\n").map(line => {
+        const parts = line.split(",").map(s => s.trim());
+        return { name: parts[0] || "", phone: parts[1] || "" };
+      }).filter(p => p.name && p.phone);
+      if (!participants.length) { errEl.textContent = "No valid entries found. Format: Full Name, Phone"; return; }
+      const btn = document.querySelector("#bypassAddPanel .btn-primary");
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Adding…";
+      try {
+        const data = await apiRequest(`/api/admin/missions/${missionId}/bypass-add`, {
+          method: "POST", body: JSON.stringify({ participants })
+        });
+        showToast(`Added ${data.added} participant(s)${data.skipped ? `, ${data.skipped} skipped` : ""}.`, "✅");
+        document.getElementById("bypassAddTextarea").value = "";
+        document.getElementById("bypassAddPanel").hidden = true;
+        await openCompletionSummaryModal(missionId);
+      } catch (e) {
+        errEl.textContent = e?.message || "Something went wrong.";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+      }
     }
 
     function attachEvents() {
