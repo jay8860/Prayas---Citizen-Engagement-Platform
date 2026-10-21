@@ -12825,9 +12825,9 @@
       const pendingActivities = attended.filter((entry) => entry && entry.pending);
       const hi = state.lang === "hi";
       // Split attended into 3 groups
-      const verifiedEntries = attended.filter((e) => e && ((e.checkinMethod === "qr" && e.checkedIn) || e.checkinMethod === "walkin"));
+      const verifiedEntries = attended.filter((e) => e && ((e.checkinMethod === "qr" && e.checkedIn) || e.checkinMethod === "walkin" || e.checkinMethod === "bypass"));
       const pendingEntries  = attended.filter((e) => e && e.pending);
-      const rsvpOnlyEntries = attended.filter((e) => e && !e.pending && !((e.checkinMethod === "qr" && e.checkedIn) || e.checkinMethod === "walkin"));
+      const rsvpOnlyEntries = attended.filter((e) => e && !e.pending && !((e.checkinMethod === "qr" && e.checkedIn) || e.checkinMethod === "walkin" || e.checkinMethod === "bypass"));
       function timelineGroup(entries, icon, label, color) {
         if (!entries.length) return "";
         return `<div style="margin-bottom:10px">
@@ -16777,7 +16777,7 @@
 
     function downloadOrgCheckinPoster(code) {
       const synthetic = state.missions.find(m => m.checkInCode === code);
-      if (synthetic.id) { downloadCheckinPoster(synthetic.id); return; }
+      if (synthetic && synthetic.id) { downloadCheckinPoster(synthetic.id); return; }
       // Fallback: show the code in an alert since canvas poster needs mission in state
       showToast(`Check-in code: ${code} — share this code with volunteers or show the QR above.`, "📲");
     }

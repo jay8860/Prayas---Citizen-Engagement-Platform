@@ -6442,7 +6442,7 @@ function updateVolunteerPhone(body) {
 // ── Admin Today Summary ───────────────────────────────────────────────────────
 
 function getTodaySummary() {
-  const pendingCheckins = db.prepare("SELECT COUNT(*) AS n FROM volunteer_participations WHERE checkin_method='qr_new' AND attended_at IS NULL").get().n;
+  const pendingCheckins = db.prepare("SELECT COUNT(*) AS n FROM volunteer_participations WHERE checkin_method='qr_new'").get().n;
   const pendingCommunityMissions = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE source_type='community' AND approval_status='pending' AND archived_at IS NULL").get().n;
   const pendingOrgs = db.prepare("SELECT COUNT(*) AS n FROM organizations WHERE status='pending'").get().n;
   const aiQueueItems = db.prepare("SELECT COUNT(*) AS n FROM missions WHERE ai_flag IN ('flagged','rejected') AND archived_at IS NULL").get().n +
