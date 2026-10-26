@@ -11790,7 +11790,8 @@
               <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})" title="Edit mission details, date, location or slots">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
               ${mission.status === "completed"
                 ? `<button class="btn btn-soft" type="button" onclick="confirmUnmarkCompleted(${mission.id})" title="Revert to Open status — data is kept">${state.lang === "hi" ? "पूर्ण चिह्न हटाएं" : "Unmark Completed"}</button>
-                   <button class="btn btn-soft" type="button" onclick="openMediaStoryModal(${mission.id})" title="Generate a press-ready media summary">📰 ${state.lang === "hi" ? "मीडिया स्टोरी" : "Media Story"}</button>`
+                   <button class="btn btn-soft" type="button" onclick="openMediaStoryModal(${mission.id})" title="Generate a press-ready media summary">📰 ${state.lang === "hi" ? "मीडिया स्टोरी" : "Media Story"}</button>
+                   <button class="btn btn-soft" type="button" onclick="bulkDownloadMissionCertificates(${mission.id})" title="Download certificates for all verified participants as a ZIP">🎓 ${state.lang === "hi" ? "सभी प्रमाणपत्र डाउनलोड करें" : "Download All Certs"}</button>`
                 : `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})" title="Mark this activity as done and issue participation certificates">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>`}
               ${mission.status === "closed"
                 ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')" title="Reopen registrations — volunteers can join again">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>`
