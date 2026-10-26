@@ -2393,6 +2393,12 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, getMissionCompletionDetail(missionId));
     }
 
+    if (req.method === "GET" && /^\/api\/admin\/missions\/\d+\/cert-bundle$/.test(url.pathname)) {
+      requireAdmin(req);
+      const missionId = Number(url.pathname.split("/")[4]);
+      return sendJson(res, 200, getMissionCertBundle(missionId));
+    }
+
     if (req.method === "POST" && /^\/api\/admin\/missions\/\d+\/bypass-add$/.test(url.pathname)) {
       requireAdmin(req);
       const missionId = Number(url.pathname.split("/")[4]);
@@ -6271,6 +6277,40 @@ function bypassAddParticipants(missionId, body) {
   writeAuditLog("bypass_add", "mission", missionId,
     `Admin bulk-added ${added} offline participant(s) via bypass: ${addedNames.join(", ")}`, null);
   return { ok: true, added, skipped, addedNames };
+}
+
+function getMissionCertBundle(missionId) {
+  const mission = db.prepare("SELECT id, title FROM missions WHERE id = ?").get(missionId);
+  if (!mission) throw publicError(404, "Mission not found.");
+
+  const eligibleIds = db.prepare(`
+    SELECT DISTINCT volunteer_profile_id
+    FROM volunteer_participations
+    WHERE mission_id = ? AND attended_at IS NOT NULL
+      AND checkin_method IN ('qr', 'walkin', 'bypass')
+  `).all(missionId).map(r => r.volunteer_profile_id);
+
+  if (!eligibleIds.length) return { missionTitle: mission.title, volunteers: [] };
+
+  const statsMap = computeAllVolunteerStats();
+
+  const volunteers = eligibleIds.map(profileId => {
+    const p = db.prepare("SELECT id, name FROM volunteer_profiles WHERE id = ?").get(profileId);
+    if (!p) return null;
+    const stats = statsMap.get(p.id) || { points: POINTS.register, missionCount: 0, attended: [] };
+    const rank = getCivicRank(stats.points);
+    return {
+      id: p.id,
+      name: p.name,
+      missions: stats.missionCount,
+      points: stats.points,
+      attended: stats.attended || [],
+      civicRankEn: rank.en,
+      civicRankHi: rank.hi,
+    };
+  }).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name));
+
+  return { missionTitle: mission.title, volunteers };
 }
 
 function getMissionAttendanceSummary(missionId) {

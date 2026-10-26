@@ -11573,7 +11573,8 @@
               <button class="btn btn-soft" type="button" onclick="editMission(${mission.id})" title="Edit mission details, date, location or slots">${state.lang === "hi" ? "संपादित करें" : "Edit"}</button>
               ${mission.status === "completed"
                 ? `<button class="btn btn-soft" type="button" onclick="confirmUnmarkCompleted(${mission.id})" title="Revert to Open status — certificates are not yet revoked">${state.lang === "hi" ? "पूर्ण चिह्न हटाएं" : "Unmark Completed"}</button>
-                   <button class="btn btn-soft" type="button" onclick="openMediaStoryModal(${mission.id})" title="Generate a press-ready media summary for this completed activity">📰 ${state.lang === "hi" ? "मीडिया स्टोरी" : "Media Story"}</button>`
+                   <button class="btn btn-soft" type="button" onclick="openMediaStoryModal(${mission.id})" title="Generate a press-ready media summary for this completed activity">📰 ${state.lang === "hi" ? "मीडिया स्टोरी" : "Media Story"}</button>
+                   <button class="btn btn-soft" type="button" onclick="bulkDownloadMissionCertificates(${mission.id})" title="Download certificates for all verified participants as a ZIP">🎓 ${state.lang === "hi" ? "सभी प्रमाणपत्र डाउनलोड करें" : "Download All Certs"}</button>`
                 : `<button class="btn btn-primary" type="button" onclick="openCompletionSummaryModal(${mission.id})" title="Mark this activity as done and issue participation certificates">${state.lang === "hi" ? "पूर्ण चिह्नित करें" : "Mark Completed"}</button>`}
               ${mission.status === "closed"
                 ? `<button class="btn btn-soft" type="button" onclick="updateMissionStatus(${mission.id}, 'open')" title="Reopen registrations — volunteers can join again">${state.lang === "hi" ? "फिर से खोलें" : "Reopen"}</button>`
@@ -14166,6 +14167,222 @@
 
         finishAndDownload();
       }, 150);
+    }
+
+    // Renders one certificate to a canvas and resolves with it.
+    // Accepts the same "leader" shape as downloadCertificate() so both paths share the logic.
+    async function renderCertificateCanvas(leader, { districtLogo, janprayasLogo, sigCollector, sigCEO, cs, hi }) {
+      const attended = Array.isArray(leader.attended) ? leader.attended : [];
+      const completedActivities = attended.filter(
+        (e) => e && ((e.checkinMethod === "qr" && e.checkedIn) || e.checkinMethod === "walkin" || e.checkinMethod === "bypass")
+      );
+      const W = 1120;
+      const SCALE = 2;
+      const certificateId = `JANPRAYAS-${state.stateAbbr || "ST"}-${String(leader.id).padStart(4, "0")}`;
+      const verifyUrl = `${window.location.origin}/verify/${leader.id}`;
+      const shownActivities = completedActivities.slice(0, 4);
+      const moreCount = completedActivities.length - shownActivities.length;
+      const bodyText = hi
+        ? `ने ${state.districtName} जिले में जनप्रयास नागरिक सहभागिता मंच के अंतर्गत नीचे सूचीबद्ध गतिविधियों में भौतिक उपस्थिति (QR स्कैन / वॉक-इन) के माध्यम से सत्यापित रूप से भाग लिया है।`
+        : `has participated in the activities listed below with verified physical attendance (QR scan / walk-in) under the JanPrayas Citizen Engagement Platform in ${state.districtName} district.`;
+
+      function paint(ctx, H, draw) {
+        ctx.textAlign = "center";
+        if (draw) {
+          ctx.fillStyle = "#FBF7EE";
+          ctx.fillRect(0, 0, W, H);
+          ctx.save();
+          ctx.translate(W / 2, Math.min(470, H / 2));
+          ctx.globalAlpha = 0.05;
+          ctx.strokeStyle = "#1B3A6B";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(0, 0, 210, 0, Math.PI * 2);
+          ctx.stroke();
+          for (let i = 0; i < 24; i++) {
+            const angle = (i / 24) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(angle) * 210, Math.sin(angle) * 210);
+            ctx.stroke();
+          }
+          ctx.restore();
+          const drawCornerFlourish = (x, y, flipX, flipY) => {
+            ctx.save(); ctx.translate(x, y); ctx.scale(flipX, flipY);
+            ctx.strokeStyle = "#C8A96A"; ctx.globalAlpha = 0.65; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI / 2); ctx.stroke();
+            for (let i = 0; i <= 4; i++) {
+              const angle = (i / 4) * (Math.PI / 2);
+              ctx.beginPath(); ctx.moveTo(Math.cos(angle) * 8, Math.sin(angle) * 8);
+              ctx.lineTo(Math.cos(angle) * 24, Math.sin(angle) * 24); ctx.stroke();
+            }
+            ctx.restore();
+          };
+          ctx.fillStyle = "#FF9933"; ctx.fillRect(0, 0, W, 18);
+          ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 18, W, 12);
+          ctx.fillStyle = "#138808"; ctx.fillRect(0, 30, W, 18);
+          ctx.strokeStyle = "#1B3A6B"; ctx.lineWidth = 7; ctx.strokeRect(28, 28, W - 56, H - 56);
+          ctx.lineWidth = 2; ctx.strokeStyle = "#C8A96A"; ctx.strokeRect(44, 44, W - 88, H - 88);
+          ctx.lineWidth = 1; ctx.strokeStyle = "#1B3A6B"; ctx.strokeRect(52, 52, W - 104, H - 104);
+          drawCornerFlourish(48, 48, 1, 1); drawCornerFlourish(W - 48, 48, -1, 1);
+          drawCornerFlourish(48, H - 48, 1, -1); drawCornerFlourish(W - 48, H - 48, -1, -1);
+          ctx.fillStyle = "#1B3A6B";
+          ctx.font = "700 18px Inter";
+          ctx.fillText(hi ? "छत्तीसगढ़ सरकार" : "GOVERNMENT OF CHHATTISGARH", W / 2, 108);
+          ctx.font = "700 30px Georgia";
+          ctx.fillText(hi ? (cs.orgTitleHi || "जिला प्रशासन") + " " + (state.districtName || "") : (cs.orgTitleEn || "District Administration") + " " + (state.districtName || ""), W / 2, 148);
+          ctx.font = "700 26px Georgia";
+          ctx.fillText(hi ? "जनप्रयास नागरिक सहभागिता मंच" : "JanPrayas Citizen Engagement Platform", W / 2, 186);
+          ctx.fillStyle = "#6B7280"; ctx.font = "600 16px Inter";
+          ctx.fillText(hi ? "नागरिक योगदान का आधिकारिक प्रमाणपत्र" : "Official Certificate of Civic Contribution", W / 2, 220);
+          const logoSize = 104;
+          if (districtLogo) ctx.drawImage(districtLogo, 190 - logoSize / 2, 156 - logoSize / 2, logoSize, logoSize);
+          if (janprayasLogo) ctx.drawImage(janprayasLogo, (W - 190) - logoSize / 2, 156 - logoSize / 2, logoSize, logoSize);
+          ctx.fillStyle = "#6B7280"; ctx.font = "18px Georgia";
+          ctx.fillText(hi ? "यह प्रमाणित किया जाता है कि" : "This is to certify that", W / 2, 294);
+        }
+        const nameSize = fitSingleLineFontSize(ctx, leader.name, W - 300, "Georgia", 42, 22, "700");
+        if (draw) {
+          ctx.fillStyle = "#1B3A6B"; ctx.font = `700 ${nameSize}px Georgia`;
+          ctx.fillText(leader.name, W / 2, 356);
+        }
+        let cursorY = 400;
+        ctx.font = "18px Georgia";
+        const bodyLines = wrapLinesOnly(ctx, bodyText, W - 260, 2);
+        if (draw) { ctx.fillStyle = "#374151"; bodyLines.forEach((line, i) => ctx.fillText(line, W / 2, cursorY + i * 26)); }
+        cursorY += bodyLines.length * 26 + 16;
+        if (draw) { ctx.fillStyle = "#8B6A2F"; ctx.font = "700 14px Inter"; ctx.fillText(hi ? "पूर्ण गतिविधियाँ" : "COMPLETED ACTIVITIES", W / 2, cursorY); }
+        cursorY += 30;
+        shownActivities.forEach((entry) => {
+          const size = fitSingleLineFontSize(ctx, `• ${entry.title}`, W - 320, "Inter", 21, 15, "700");
+          if (draw) { ctx.fillStyle = "#1B3A6B"; ctx.font = `700 ${size}px Inter`; ctx.fillText(`• ${entry.title}`, W / 2, cursorY); }
+          cursorY += size + 10;
+        });
+        if (moreCount > 0) {
+          if (draw) { ctx.fillStyle = "#6B7280"; ctx.font = "600 15px Inter"; ctx.fillText(hi ? `+ ${moreCount} अन्य सत्यापित उपस्थिति` : `+ ${moreCount} more verified attendance${moreCount !== 1 ? "s" : ""}`, W / 2, cursorY); }
+          cursorY += 26;
+        }
+        cursorY += 14;
+        if (draw) {
+          ctx.fillStyle = "#6B7280"; ctx.font = "16px Inter";
+          ctx.fillText(hi ? `सत्यापित उपस्थिति: ${completedActivities.length}  |  कुल पंजीकरण: ${leader.missions}  |  प्रमाणपत्र क्र.: ${certificateId}` : `Verified attendances: ${completedActivities.length}  |  Total RSVPs: ${leader.missions}  |  Certificate No: ${certificateId}`, W / 2, cursorY);
+          cursorY += 26;
+          ctx.fillText(hi ? `जारी किया गया: ${formatDate(new Date(), "hi")}  |  नागरिक रैंक: ${leader.civicRankHi || leader.civicRankEn}` : `Issued on ${formatDate(new Date(), "en")}  |  Civic Rank: ${leader.civicRankEn}`, W / 2, cursorY);
+        } else { cursorY += 26; }
+        const sigY = cursorY + 96;
+        if (draw) {
+          ctx.strokeStyle = "#C8A96A"; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(210, sigY - 26); ctx.lineTo(910, sigY - 26); ctx.stroke();
+          const drawSig = (img, lineX1, lineX2, centerX, nameText, titleText, yBase) => {
+            if (img) { const sigImgH = 56, sigImgW = Math.round(img.width * (56 / img.height)); ctx.save(); ctx.globalCompositeOperation = "multiply"; ctx.drawImage(img, centerX - sigImgW / 2, yBase - 6 - sigImgH, sigImgW, sigImgH); ctx.restore(); }
+            ctx.strokeStyle = "#1B3A6B"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(lineX1, yBase); ctx.lineTo(lineX2, yBase); ctx.stroke();
+            ctx.fillStyle = "#1B3A6B"; ctx.font = "700 15px Inter"; ctx.textAlign = "center"; ctx.fillText(nameText, centerX, yBase + 24);
+            ctx.fillStyle = "#6B7280"; ctx.font = "13px Inter"; ctx.fillText(titleText, centerX, yBase + 44);
+          };
+          const sig1Name = cs.sig1Name || "Collector";
+          const sig1Title = hi ? (cs.sig1TitleHi || `कलेक्टर, ${state.districtName}`) : (cs.sig1TitleEn || `Collector, ${state.districtName}`);
+          const sig2Name = cs.sig2Name || "CEO, Zila Panchayat";
+          const sig2Title = hi ? (cs.sig2TitleHi || `सीईओ, जिला पंचायत ${state.districtName}`) : (cs.sig2TitleEn || `CEO, Zila Panchayat ${state.districtName}`);
+          drawSig(sigCollector, 120, 380, 250, sig1Name, sig1Title, sigY + 52);
+          drawSig(sigCEO, 740, 1000, 870, sig2Name, sig2Title, sigY + 52);
+          ctx.textAlign = "center"; ctx.fillStyle = "#6B7280"; ctx.font = "13px Inter";
+          ctx.fillText(hi ? `जारी किया: ${formatDate(new Date(), "hi")}` : `Issued: ${formatDate(new Date(), "en")}`, W / 2, sigY + 52);
+        }
+        return sigY + 168;
+      }
+
+      const scratch = document.createElement("canvas");
+      scratch.width = W; scratch.height = 10;
+      const measuredFooterY = paint(scratch.getContext("2d"), 0, false);
+      const H = Math.max(measuredFooterY + 110, 760);
+      const canvas = document.createElement("canvas");
+      canvas.width = W * SCALE; canvas.height = H * SCALE;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(SCALE, SCALE);
+      const footerY = paint(ctx, H, true);
+
+      // QR code — wrap setTimeout in a Promise so callers can await it.
+      await new Promise((resolve) => {
+        if (typeof QRCode === "undefined") {
+          ctx.fillStyle = "#6B7280"; ctx.textAlign = "left"; ctx.font = "13px Inter";
+          ctx.fillText(hi ? `सत्यापन: ${verifyUrl}` : `Verify online: ${verifyUrl}`, 70, footerY + 22);
+          ctx.textAlign = "center";
+          resolve(); return;
+        }
+        const qrHost = document.createElement("div");
+        qrHost.style.position = "fixed"; qrHost.style.left = "-9999px";
+        document.body.appendChild(qrHost);
+        new QRCode(qrHost, { text: verifyUrl, width: 150, height: 150, colorDark: "#1B3A6B", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+        setTimeout(() => {
+          const qrCanvas = qrHost.querySelector("canvas");
+          const qrImg = qrHost.querySelector("img");
+          const qrSize = 76, qrX = 70, qrY = footerY - 14;
+          ctx.fillStyle = "#FFFFFF"; ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
+          if (qrCanvas) ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+          else if (qrImg) ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+          document.body.removeChild(qrHost);
+          ctx.textAlign = "left"; ctx.fillStyle = "#1B3A6B"; ctx.font = "700 13px Inter";
+          ctx.fillText(hi ? "प्रामाणिकता सत्यापित करें" : "Verify Authenticity", qrX + qrSize + 16, qrY + 22);
+          ctx.fillStyle = "#6B7280"; ctx.font = "12px Inter";
+          ctx.fillText(hi ? "इस QR कोड को स्कैन करें या नीचे दिया लिंक खोलें:" : "Scan this QR code, or open the link below:", qrX + qrSize + 16, qrY + 42);
+          ctx.fillStyle = "#1B3A6B"; ctx.font = "600 13px Inter";
+          ctx.fillText(verifyUrl, qrX + qrSize + 16, qrY + 62);
+          ctx.textAlign = "right"; ctx.fillStyle = "#6B7280"; ctx.font = "12px Inter";
+          ctx.fillText(hi ? `प्रमाणपत्र क्र. ${certificateId}` : `Certificate No. ${certificateId}`, W - 70, qrY + 22);
+          ctx.fillText(hi ? "डिजिटल रूप से जनरेट किया गया" : "Digitally generated and verifiable online", W - 70, qrY + 42);
+          ctx.textAlign = "center";
+          resolve();
+        }, 150);
+      });
+
+      return canvas;
+    }
+
+    async function bulkDownloadMissionCertificates(missionId) {
+      if (typeof JSZip === "undefined") {
+        showToast("JSZip library not loaded. Please refresh and try again.", "⚠️");
+        return;
+      }
+      const btn = document.querySelector(`[onclick="bulkDownloadMissionCertificates(${missionId})"]`);
+      const origText = btn ? btn.textContent : "";
+      if (btn) { btn.disabled = true; btn.textContent = "⏳ Generating…"; }
+      try {
+        const bundle = await apiRequest(`/api/admin/missions/${missionId}/cert-bundle`);
+        if (!bundle.volunteers || !bundle.volunteers.length) {
+          showToast("No cert-eligible participants found for this mission.", "ℹ️");
+          return;
+        }
+        const hi = state.lang === "hi";
+        const cs = state.certSettings || {};
+        const [districtLogo, janprayasLogo, sigCollector, sigCEO] = await Promise.all([
+          loadImage("assets/dhamtari-emblem.png"),
+          loadImage("assets/janprayas-logo.png"),
+          cs.hasSig1 ? loadImage("/api/cert-assets/sig1") : loadImage("assets/sig-collector.png"),
+          cs.hasSig2 ? loadImage("/api/cert-assets/sig2") : loadImage("assets/sig-ceo.png")
+        ]);
+        const assets = { districtLogo, janprayasLogo, sigCollector, sigCEO, cs, hi };
+        const zip = new JSZip();
+        const total = bundle.volunteers.length;
+        for (let i = 0; i < total; i++) {
+          const volunteer = bundle.volunteers[i];
+          if (btn) btn.textContent = `⏳ ${i + 1}/${total}…`;
+          const canvas = await renderCertificateCanvas(volunteer, assets);
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+          const safeName = volunteer.name.replace(/[^a-zA-Z0-9ऀ-ॿ ]/g, "").replace(/\s+/g, "_");
+          zip.file(`${safeName}_certificate.png`, blob);
+        }
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        const missionSlug = (bundle.missionTitle || "mission").replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_").slice(0, 40);
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement("a");
+        a.href = url; a.download = `${missionSlug}_certificates.zip`; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        showToast(`Downloaded ${total} certificate${total !== 1 ? "s" : ""} as ZIP.`, "🎓");
+      } catch (err) {
+        handleRequestError(err);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = origText; }
+      }
     }
 
     async function verifyDonation(donationId) {
@@ -17082,6 +17299,7 @@
 
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
 
   <!-- Floating check-in button — appears once the user scrolls past the hero -->
   <button id="floatingCheckIn" type="button" onclick="openModal('checkInModal')">
